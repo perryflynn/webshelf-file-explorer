@@ -60,6 +60,22 @@ Ext.define('DirectoryListing.view.Viewport', {
                   
                },
                {
+                  region:'north',
+                  xtype:'panel',
+                  bodyPadding:5,
+                  layout:'anchor',
+                  items: [
+                     {
+                        xtype:'textfield',
+                        xid:'current-path',
+                        border:0,
+                        readOnly:true,
+                        anchor:'100%',
+                        value:'/'
+                     }
+                  ]
+               },
+               {
                   region:'center',
                   xtype:'gridpanel',
                   xid:'filelist',
@@ -69,6 +85,12 @@ Ext.define('DirectoryListing.view.Viewport', {
                         text:'Open',
                         xid:'file-open',
                         disabled:true
+                     },
+                     { xtype:'tbfill' },
+                     {
+                        xtype:'button',
+                        text:'About',
+                        xid:'about'
                      }
                   ],
                   

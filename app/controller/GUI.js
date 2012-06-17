@@ -10,6 +10,7 @@ Ext.define('DirectoryListing.controller.GUI', {
         { ref: 'window', selector: 'window[xid=filewindow]' },
         { ref: 'dirtree', selector: 'window[xid=filewindow] treepanel[xid=dirtree]' },
         { ref: 'filelist', selector: 'window[xid=filewindow] gridpanel[xid=filelist]' },
+        { ref: 'currentpath', selector: 'window[xid=filewindow] panel textfield[xid=current-path]' },
         
         { ref: 'openbutton', selector: 'window[xid=filewindow] gridpanel[xid=filelist] toolbar button[xid=file-open]' }
         
@@ -24,6 +25,9 @@ Ext.define('DirectoryListing.controller.GUI', {
             },
             'window treepanel[xid=dirtree] toolbar button': {
                click: this.onTreePanelButtonClicked
+            },
+            'window gridpanel[xid=filelist] toolbar button': {
+               click: this.onGridPanelButtonClicked
             },
             'window treepanel[xid=dirtree]': {
                itemclick: this.onTreeDirSelected
@@ -60,6 +64,18 @@ Ext.define('DirectoryListing.controller.GUI', {
       }
    },
    
+   onGridPanelButtonClicked: function(btn) {
+      if(btn.xid=='about') {
+         Ext.require('DirectoryListing.view.AboutWindow', function() {
+            Ext.create('DirectoryListing.view.AboutWindow').show();
+         });
+      }
+      if(btn.xid=='file-open') {
+         var record = btn.up('gridpanel').getSelectionModel().getSelection()[0];
+         this.onOpenFile(null, record);
+      }
+   },
+   
    onTreeDirSelected: function(tree, item) {
       var path = item.data.id;
       
@@ -71,6 +87,7 @@ Ext.define('DirectoryListing.controller.GUI', {
       
       tree.expand(item);
       this.getOpenbutton().disable();
+      this.getCurrentpath().setValue(item.data.id);
       
    },
    

@@ -72,7 +72,7 @@ if(isset($_GET['path']) && !empty($_GET['path'])) {
                
                $absfile = BASE.$filebase.$file;
                $result[] = array(
-                   "id" => $filebase.$file,
+                   "id" => "/".trim($filebase.$file, "/")."/",
                    "text" => $file,
                    "leaf" => false,
                    "children" => array(
