@@ -18,7 +18,7 @@ Ext.define('DirectoryListing.view.Viewport', {
             xtype:'window',
             xid:'filewindow',
 
-            title:'File Explorer',
+            title:'File Explorer @ '+hostname,
             width:1024,
             height:600,
             maximizable:true,
@@ -239,7 +239,7 @@ Ext.define('DirectoryListing.view.Viewport', {
          
       }
       
-      return '<img src="icons/'+filename+'.png" alt="'+ext+'" title="'+ext+'">';
+      return '<img src="fileicons/'+filename+'.png" alt="'+ext+'" title="'+ext+'">';
       
    }
    

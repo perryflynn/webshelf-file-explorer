@@ -11,12 +11,14 @@
       <script type="text/javascript" src="config.js"></script>
       <script type="text/javascript" src="app/app.js"></script>
       
+      <script type="text/javascript">
+         var hostname = "<?php echo $_SERVER['HTTP_HOST']; ?>";
+      </script>
+      
    </head>
    <body>
       
-      <noscript>
-         Please enable Java Script!
-      </noscript>
+      Please enable Java Script!
       
    </body>
 </html>

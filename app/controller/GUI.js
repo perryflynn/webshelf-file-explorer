@@ -47,7 +47,17 @@ Ext.define('DirectoryListing.controller.GUI', {
     },
     
    onBodyRendered: function() {
+      var me = this;
       this.getDirtree().getStore().load({
+         params: {
+            path:'/'
+         },
+         callback: function() {
+            me.getDirtree().getStore().getRootNode().getChildAt(0).expand();
+         }
+      });
+      
+      this.getFilelist().getStore().load({
          params: {
             path:'/'
          }
@@ -87,7 +97,7 @@ Ext.define('DirectoryListing.controller.GUI', {
       
       tree.expand(item);
       this.getOpenbutton().disable();
-      this.getCurrentpath().setValue(item.data.id);
+      this.getCurrentpath().setValue((item.data.id=="root" ? "/" : item.data.id));
       
    },
    

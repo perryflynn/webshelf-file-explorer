@@ -94,6 +94,15 @@ if(isset($_GET['path']) && !empty($_GET['path'])) {
          }
       }
       
+      if(isset($_GET['node']) && $_GET['node']=="root") {
+         $result = array(
+            "id" => "/",
+            "text" => "/",
+            "leaf" => false,
+            "children" => $result
+         );
+      }
+      
       response(true, null, $result);
       
    }
