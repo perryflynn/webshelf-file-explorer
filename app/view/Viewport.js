@@ -29,13 +29,17 @@ Ext.define('DirectoryListing.view.Viewport', {
             items: [
                {
                   region:'west',
-                  width:200,
+                  width:220,
                   xtype:'treepanel',
                   xid:'dirtree',
                   rootVisible: false,
                   split: true,
                   
                   tbar: [
+                     {
+                        text:'Refresh',
+                        xid:'tree-reload'
+                     },
                      {
                         text:'Expand all',
                         xid:'expandall'
@@ -82,8 +86,17 @@ Ext.define('DirectoryListing.view.Viewport', {
                   
                   tbar: [
                      {
+                        text:'Refresh',
+                        xid:'list-reload'
+                     },
+                     {
                         text:'Open',
                         xid:'file-open',
+                        disabled:true
+                     },
+                     {
+                        text:'Direct URL',
+                        xid:'direct-link',
                         disabled:true
                      },
                      { xtype:'tbfill' },
@@ -186,6 +199,7 @@ Ext.define('DirectoryListing.view.Viewport', {
             case 'css':
             case 'xml':
             case 'xaml':
+            case 'phps':
                filename='page_white_code'; break;
             case 'jar':
             case 'class':

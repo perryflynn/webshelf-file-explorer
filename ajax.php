@@ -24,6 +24,10 @@ function is_allowed($filter, $path) {
 }
 
 
+
+/**
+ * Tree und Filelist ----------------------------------------------------------- 
+ */
 if(isset($_GET['node']) && !empty($_GET['node']) && $_GET['node']!="root") {
    $_GET['path'] = $_GET['node'];
 }
@@ -56,16 +60,20 @@ if(isset($_GET['path']) && !empty($_GET['path'])) {
          foreach($files as $file) {
             if($file!="." && $file!=".." && is_allowed($filter, $path."/".$file)) {
                
-               $childs = scandir(BASE.$filebase.$file);
-               $folders = 0;
-               $files = 0;
-               foreach($childs as $child) {
-                  $absfile = BASE.$filebase.$file."/".$child;
-                  if($child!="." && $child!="..") {
-                     if(is_file($absfile)) {
-                        $files++;
-                     } elseif(is_dir($absfile)) {
-                        $folders++;
+               $folders = -1;
+               $files = -1;
+               if(is_dir(BASE.$filebase.$file)) {
+                  $folders = 0;
+                  $files = 0;
+                  $childs = scandir(BASE.$filebase.$file);
+                  foreach($childs as $child) {
+                     $absfile = BASE.$filebase.$file."/".$child;
+                     if($child!="." && $child!="..") {
+                        if(is_file($absfile)) {
+                           $files++;
+                        } elseif(is_dir($absfile)) {
+                           $folders++;
+                        }
                      }
                   }
                }
@@ -85,7 +93,9 @@ if(isset($_GET['path']) && !empty($_GET['path'])) {
                        "mtime" => date("Y-m-d H:i", filemtime($absfile)),
                        "size" => filesize($absfile),
                        "extension" => (is_array(explode(".", $file)) && count(explode(".", $file))>0 ? end(explode(".", $file)) : ""),
-                       "url" => "files/".$filebase.$file
+                       "url" => "files/".$filebase.$file,
+                       "fqdnurl" => ($_SERVER['SERVER_PORT']==443 ? "https://" : "http://").str_replace("//", "/", trim($_SERVER['SERVER_NAME'], "/")."/".
+                           trim(dirname($_SERVER['PHP_SELF']), "/")."/files/".$filebase.$file),
                    ),
                    "qtip" => $folders." Folders, ".$files." Files"
                );
