@@ -5,7 +5,6 @@ Ext.define('DirectoryListing.view.AboutWindow', {
    
    title:'About',
    width:400,
-   height:100,
    
    items: [{
          xtype:'panel',
@@ -13,8 +12,13 @@ Ext.define('DirectoryListing.view.AboutWindow', {
          items: [
             {
                xtype:'container',
+               html:(Config.about && Config.about.length>0 ? Config.about+"<hr>" : "")
+            },
+            {
+               xtype:'container',
                html:
-                  'By Christian Blechert (<a href="http://fiae.ws" target="_blank">http://fiae.ws</a>)<br>'+
+                  '<b><u>Credits</u></b><br>'+
+                  'Script by Christian Blechert (<a href="http://fiae.ws" target="_blank">http://fiae.ws</a>)<br>'+
                   'Powered by <a href="http://www.sencha.com/products/extjs/" target="_blank">ExtJS</a>'
             }
          ]
