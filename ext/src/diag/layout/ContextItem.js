@@ -1,10 +1,31 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
+// This override adds diagnostics to the Ext.layout.ContextItem class.
+
 /**
- * This override adds diagnostics to the {@link Ext.layout.ContextItem} class.
  */
 Ext.define('Ext.diag.layout.ContextItem', {
-
     override: 'Ext.layout.ContextItem',
 
+    /** @ignore */
     requires: [
         'Ext.layout.Context',
         'Ext.diag.layout.Context'
@@ -91,13 +112,6 @@ Ext.define('Ext.diag.layout.ContextItem', {
         return this.callParent(arguments);
     },
 
-    doInvalidate: function () {
-        if (this.context.logOn.doInvalidate) {
-            Ext.log('doInvalidate: ', this.id);
-        }
-        return this.callParent(arguments);
-    },
-
     getEl: function (el) {
         var child = this.callParent(arguments);
         if (child && child !== this && child.parent !== this) {
@@ -109,15 +123,18 @@ Ext.define('Ext.diag.layout.ContextItem', {
     },
 
     init: function () {
-        var me = this;
+        var me = this,
+            ret;
 
-        me.callParent(arguments);
+        ret = me.callParent(arguments);
 
-        if (this.context.logOn.initItem) {
+        if (me.context.logOn.initItem) {
             Ext.log(me.id, ' consumers: content=', me.consumersContentWidth,'/',me.consumersContentHeight,
                 ', container=', me.consumersContainerWidth,'/',me.consumersContainerHeight,
                 ', size=', me.consumersWidth,'/',me.consumersHeight);
         }
+
+        return ret;
     },
 
     invalidate: function () {

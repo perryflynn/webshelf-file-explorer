@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @docauthor Robert Dougan <rob@sencha.com>
  *
@@ -26,6 +46,11 @@
  *
  * Some other useful configuration options when using {@link #grow} are {@link #growMin} and {@link #growMax}.
  * These allow you to set the minimum and maximum grow heights for the textarea.
+ * 
+ * **NOTE:** In some browsers, carriage returns ('\r', not to be confused with new lines)
+ * will be automatically stripped out the value is set to the textarea. Since we cannot
+ * use any reasonable method to attempt to re-insert these, they will automatically be
+ * stripped out to ensure the behaviour is consistent across browser.
  */
 Ext.define('Ext.form.field.TextArea', {
     extend:'Ext.form.field.Text',
@@ -37,13 +62,16 @@ Ext.define('Ext.form.field.TextArea', {
         'Ext.util.DelayedTask'
     ],
 
-    // This template includes a \n after <textarea> opening tag so that an initial value starting 
-    // with \n does not lose its first character when the markup is parsed.
-    // Both textareas below have the same value:
-    // <textarea>initial value</textarea>
-    // <textarea>
-    // initial value
-    // </textarea>
+    // This template includes a `\n` after `<textarea>` opening tag so that an
+    // initial value starting with `\n` does not lose its first character when
+    // the markup is parsed. Both textareas below have the same value:
+    //
+    //     <textarea>initial value</textarea>
+    //
+    //     <textarea>
+    //     initial value
+    //     </textarea>
+    //
     fieldSubTpl: [
         '<textarea id="{id}" {inputAttrTpl}',
             '<tpl if="name"> name="{name}"</tpl>',
@@ -55,7 +83,7 @@ Ext.define('Ext.form.field.TextArea', {
             '<tpl if="readOnly"> readonly="readonly"</tpl>',
             '<tpl if="disabled"> disabled="disabled"</tpl>',
             '<tpl if="tabIdx"> tabIndex="{tabIdx}"</tpl>',
-            ' class="{fieldCls} {typeCls}" ',
+            ' class="{fieldCls} {typeCls} {inputCls}" ',
             '<tpl if="fieldStyle"> style="{fieldStyle}"</tpl>',
             ' autocomplete="off">\n',
             '<tpl if="value">{[Ext.util.Format.htmlEncode(values.value)]}</tpl>',
@@ -117,6 +145,10 @@ Ext.define('Ext.form.field.TextArea', {
     componentLayout: 'textareafield',
     
     setGrowSizePolicy: Ext.emptyFn,
+    
+    returnRe: /\r/g,
+
+    inputCls: Ext.baseCSSPrefix + 'form-textarea',
 
     // private
     getSubTplData: function() {
@@ -143,10 +175,40 @@ Ext.define('Ext.form.field.TextArea', {
 
         me.callParent(arguments);
 
-        me.needsMaxCheck = me.enforceMaxLength && !Ext.supports.TextAreaMaxLength;
+        me.needsMaxCheck = me.enforceMaxLength && me.maxLength !== Number.MAX_VALUE && !Ext.supports.TextAreaMaxLength;
         if (me.needsMaxCheck) {
             me.inputEl.on('paste', me.onPaste, me);
         }
+    },
+    
+    // The following overrides deal with an issue whereby some browsers
+    // will strip carriage returns from the textarea input, while others
+    // will not. Since there's no way to be sure where to insert returns,
+    // the best solution is to strip them out in all cases to ensure that
+    // the behaviour is consistent in a cross browser fashion. As such,
+    // we override in all cases when setting the value to control this.
+    transformRawValue: function(value){
+        return this.stripReturns(value);
+    },
+    
+    transformOriginalValue: function(value){
+        return this.stripReturns(value); 
+    },
+    
+    getValue: function(){
+        return this.stripReturns(this.callParent());    
+    },
+    
+    valueToRaw: function(value){
+        value = this.stripReturns(value);
+        return this.callParent([value]);
+    },
+    
+    stripReturns: function(value){
+        if (value && typeof value === 'string') {
+            value = value.replace(this.returnRe, '');
+        }
+        return value;
     },
 
     onPaste: function(e){
@@ -172,18 +234,26 @@ Ext.define('Ext.form.field.TextArea', {
     // private
     fireKey: function(e) {
         var me = this,
+            key = e.getKey(),
             value;
             
-        if (e.isSpecialKey() && (me.enterIsSpecial || (e.getKey() !== e.ENTER || e.hasModifier()))) {
+        if (e.isSpecialKey() && (me.enterIsSpecial || (key !== e.ENTER || e.hasModifier()))) {
             me.fireEvent('specialkey', me, e);
         }
         
-        if (me.needsMaxCheck && e.getKey() !== e.BACKSPACE && !e.isNavKeyPress()) {
+        if (me.needsMaxCheck && key !== e.BACKSPACE && key !== e.DELETE && !e.isNavKeyPress() && !me.isCutCopyPasteSelectAll(e, key)) {
             value = me.getValue();
             if (value.length >= me.maxLength) {
                 e.stopEvent();
             }
         }
+    },
+    
+    isCutCopyPasteSelectAll: function(e, key) {
+        if (e.ctrlKey) {
+            return key === e.A || key === e.C || key === e.V || key === e.X;
+        }
+        return false;
     },
 
     /**
@@ -221,7 +291,8 @@ Ext.define('Ext.form.field.TextArea', {
     beforeDestroy: function(){
         var task = this.pasteTask;
         if (task) {
-            task.delay();
+            task.cancel();
+            this.pasteTask = null;
         }    
         this.callParent();
     }

@@ -19,8 +19,8 @@ Ext.define('DirectoryListing.view.Viewport', {
             xid:'filewindow',
 
             title:'File Explorer @ '+hostname,
-            width:1024,
-            height:600,
+            width:Config.winWidth,
+            height:Config.winHeight,
             maximizable:true,
             closable:false,
             autoShow:true,

@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * History management component that allows you to register arbitrary tokens that signify application
  * history state on navigation actions.  You can then handle the history {@link #change} event in order
@@ -17,7 +37,7 @@ Ext.define('Ext.util.History', {
     },
 
     /**
-     * @cfg {Boolean} useTopWindow
+     * @property
      * True to use `window.top.location.hash` or false to use `window.location.hash`.
      */
     useTopWindow: true,
@@ -35,7 +55,7 @@ Ext.define('Ext.util.History', {
 
     constructor: function() {
         var me = this;
-        me.oldIEMode = Ext.isIE6 || Ext.isIE7 || !Ext.isStrict && Ext.isIE8;
+        me.oldIEMode = Ext.isIE7m || !Ext.isStrict && Ext.isIE8;
         me.iframe = null;
         me.hiddenField = null;
         me.ready = false;
@@ -203,7 +223,8 @@ Ext.define('Ext.util.History', {
             if (!me.iframe) {
                 me.iframe = DomHelper.append(me.hiddenField.parentNode, {
                     tag: 'iframe',
-                    id: me.iframeId
+                    id: me.iframeId,
+                    src: Ext.SSL_SECURE_URL
                 });
             }
         }

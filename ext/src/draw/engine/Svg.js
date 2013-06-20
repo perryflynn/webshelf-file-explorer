@@ -1,5 +1,24 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
- * @class Ext.draw.engine.Svg
  * Provides specific methods to draw with SVG.
  */
 Ext.define('Ext.draw.engine.Svg', {
@@ -656,6 +675,7 @@ Ext.define('Ext.draw.engine.Svg', {
 
     /**
      * Checks if the specified CSS class exists on this element's DOM node.
+     * @param {Ext.draw.Sprite} sprite The sprite to look into.
      * @param {String} className The CSS class to check for
      * @return {Boolean} True if the class exists, else false
      */

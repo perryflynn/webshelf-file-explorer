@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * This mixin enables classes to declare relationships to child elements and provides the
  * mechanics for acquiring the {@link Ext.Element elements} and storing them on an object
@@ -16,7 +36,7 @@
  *          ],
  *          
  *          renderTpl: [
- *              '&lt;div id="{id}-bodyEl"&gt;&lt;/div&gt;'
+ *              '<div id="{id}-bodyEl"></div>'
  *          ],
  *          
  *          // ...
@@ -71,9 +91,9 @@
  *          ],
  *          
  *          renderTpl: [
- *              '&lt;div id="{id}-bodyEl"&gt;'
- *                  '&lt;div id="{id}-innerEl"&gt;&lt;/div&gt;'
- *              '&lt;/div&gt;'
+ *              '<div id="{id}-bodyEl">'
+ *                  '<div id="{id}-innerEl"></div>'
+ *              '</div>'
  *          ],
  *          
  *          // ...
@@ -129,7 +149,7 @@ Ext.define('Ext.util.ElementContainer', {
     },
 
     /**
-     * Adds each argument passed to this method to the {@link #childEls} array.
+     * Adds each argument passed to this method to the {@link Ext.AbstractComponent#cfg-childEls childEls} array.
      */
     addChildEls: function () {
         var me = this,

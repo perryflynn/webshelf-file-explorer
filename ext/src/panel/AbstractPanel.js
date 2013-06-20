@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @class Ext.panel.AbstractPanel
  * @private
@@ -23,6 +43,7 @@ Ext.define('Ext.panel.AbstractPanel', {
     /**
      * @cfg {String} [baseCls=x-panel]
      * The base CSS class to apply to this panel's element.
+     * @since 2.3.0
      */
     baseCls : Ext.baseCSSPrefix + 'panel',
 
@@ -35,8 +56,9 @@ Ext.define('Ext.panel.AbstractPanel', {
 
     /**
      * @cfg {Boolean} bodyBorder
-     * A shortcut to add or remove the border on the body of a panel. This only applies to a panel which has the {@link #frame} configuration set to `true`.
-     * Defaults to <code>undefined</code>.
+     * A shortcut to add or remove the border on the body of a panel. In the classic theme
+     * this only applies to a panel which has the {@link #frame} configuration set to `true`.
+     * @since 2.3.0
      */
 
     /**
@@ -51,6 +73,8 @@ bodyStyle: {
     padding: '10px'
 }
      * </code></pre>
+     *
+     * @since 2.3.0
      */
 
     /**
@@ -68,6 +92,36 @@ bodyCls: ['foo', 'bar']
      * `true` in this class to identify an object as an instantiated Panel, or subclass thereof.
      */
     isPanel: true,
+    
+    /**
+     * @property {Ext.dom.Element} body
+     * The Panel's body {@link Ext.dom.Element Element} which may be used to contain HTML content.
+     * The content may be specified in the {@link #html} config, or it may be loaded using the
+     * {@link #loader} config. Read-only.
+     *
+     * If this is used to load visible HTML elements in either way, then
+     * the Panel may not be used as a Layout for hosting nested Panels.
+     *
+     * If this Panel is intended to be used as the host of a Layout (See {@link #layout}
+     * then the body Element must not be loaded or changed - it is under the control
+     * of the Panel's Layout.
+     *
+     * @readonly
+     */
+
+    /**
+     * @property {String} [contentPaddingProperty='bodyPadding']
+     * @inheritdoc
+     */ 
+    contentPaddingProperty: 'bodyPadding',
+    
+    /**
+     * @cfg {Boolean/Number} shrinkWrapDock
+     * Allows for this panel to include the {@link #dockedItems} when trying to determine the overall
+     * size of the panel. This option is only applicable when this panel is also shrink wrapping in the
+     * same dimensions. See {@link Ext.AbstractComponent#shrinkWrap} for an explanation of the configuration options.
+     */
+    shrinkWrapDock: false,
 
     componentLayout: 'dock',
 
@@ -85,11 +139,14 @@ bodyCls: ['foo', 'bar']
         // panel and the body. This in turn allows CSS height to expand or contract the
         // panel during things like portlet dragging where we want to avoid running a ton
         // of layouts during the drag operation.
-        (Ext.isIE6 || Ext.isIE7 || Ext.isIEQuirks) ? '<div></div>' : '',
+        // This empty div also has to be relatively positioned, otherwise it crashes IE6-9 Quirks
+        // when panel is rendered in a table-based layout.
+        (Ext.isIE7m || Ext.isIEQuirks) ? '<div style="position:relative"></div>' : '',
         '<div id="{id}-body" class="{baseCls}-body<tpl if="bodyCls"> {bodyCls}</tpl>',
             ' {baseCls}-body-{ui}<tpl if="uiCls">',
                 '<tpl for="uiCls"> {parent.baseCls}-body-{parent.ui}-{.}</tpl>',
-            '</tpl>"<tpl if="bodyStyle"> style="{bodyStyle}"</tpl>>',
+            '</tpl>{childElCls}"',
+            '<tpl if="bodyStyle"> style="{bodyStyle}"</tpl>>',
             '{%this.renderContainer(out,values);%}',
         '</div>',
         '{% this.renderDockedItems(out,values,1); %}'
@@ -119,28 +176,21 @@ var panel = new Ext.panel.Panel({
 });</code></pre>
      */
 
+    // @since 2.3.0
     border: true,
 
+    /**
+     * @private
+     */
+    emptyArray: [],
+
     initComponent : function() {
+        this.initBorderProps();
+        this.callParent();
+    },
+
+    initBorderProps: function() {
         var me = this;
-
-        me.addEvents(
-            /**
-             * @event bodyresize
-             * Fires after the Panel has been resized.
-             * @param {Ext.panel.Panel} p the Panel which has been resized.
-             * @param {Number} width The Panel body's new width.
-             * @param {Number} height The Panel body's new height.
-             */
-            'bodyresize'
-            // // inherited
-            // 'activate',
-            // // inherited
-            // 'deactivate'
-        );
-
-        //!frame
-        //!border
 
         if (me.frame && me.border && me.bodyBorder === undefined) {
             me.bodyBorder = false;
@@ -148,8 +198,6 @@ var panel = new Ext.panel.Panel({
         if (me.frame && me.border && (me.bodyBorder === false || me.bodyBorder === 0)) {
             me.manageBodyBorders = true;
         }
-
-        me.callParent();
     },
 
     beforeDestroy: function(){
@@ -185,6 +233,7 @@ var panel = new Ext.panel.Panel({
      * items will only be matched by component id or itemId -- if you pass a numeric index only non-docked child components will be searched.
      * @param {String/Number} comp The component id, itemId or position to find
      * @return {Ext.Component} The component (if found)
+     * @since 2.3.0
      */
     getComponent: function(comp) {
         var component = this.callParent(arguments);
@@ -220,28 +269,44 @@ var panel = new Ext.panel.Panel({
      */
     initBodyStyles: function() {
         var me = this,
-            body = me.getProtoBody(),
-            Element = Ext.Element;
+            body = me.getProtoBody();
 
         if (me.bodyPadding !== undefined) {
-            body.setStyle('padding', Element.unitizeBox((me.bodyPadding === true) ? 5 : me.bodyPadding));
+            if (me.layout.managePadding) {
+                // If the container layout manages padding, the layout will apply the 
+                // padding to an inner element rather than the body element.  The
+                // assumed intent is for the configured padding to override any padding
+                // that is applied to the body element via stylesheet rules.  It is
+                // therefore necessary to set the body element's padding to "0".
+                body.setStyle('padding', 0);
+            } else {
+                body.setStyle('padding', this.unitizeBox((me.bodyPadding === true) ? 5 : me.bodyPadding));
+            }
         }
+        me.initBodyBorder();
+    },
+
+    initBodyBorder: function() {
+        var me = this;
+
         if (me.frame && me.bodyBorder) {
             if (!Ext.isNumber(me.bodyBorder)) {
                 me.bodyBorder = 1;
             }
-            body.setStyle('border-width', Element.unitizeBox(me.bodyBorder));
+            me.getProtoBody().setStyle('border-width', this.unitizeBox(me.bodyBorder));
         }
     },
 
     getCollapsedDockedItems: function () {
-        return [ this.getReExpander() ];
+        var me = this;
+        return me.header === false || me.collapseMode == 'placeholder' ? me.emptyArray : [ me.getReExpander() ];
     },
 
     /**
      * Sets the body style according to the passed parameters.
      * @param {Mixed} style A full style specification string, or object, or the name of a style property to set.
      * @param {String} value If the first param was a style property name, the style property value.
+     * @return {Ext.panel.Panel} this
      */
     setBodyStyle: function(style, value) {
         var me = this,
@@ -250,25 +315,42 @@ var panel = new Ext.panel.Panel({
         if (Ext.isFunction(style)) {
             style = style();
         }
-        if (arguments.length == 1 && Ext.isString(style)) {
-            style = Ext.Element.parseStyles(style);
+        if (arguments.length == 1) {
+            if (Ext.isString(style)) {
+                style = Ext.Element.parseStyles(style);     
+            }
+            body.setStyle(style);
+        } else {
+            body.setStyle(style, value);
         }
-
-        body.setStyle.apply(me.body, arguments);
+        return me;
     },
 
+    /**
+     * Adds a CSS class to the body element. If not rendered, the class will
+     * be added when the panel is rendered. 
+     * @param {String} cls The class to add
+     * @return {Ext.panel.Panel} this
+     */
     addBodyCls: function(cls) {
         var me = this,
             body = me.rendered ? me.body : me.getProtoBody();
 
         body.addCls(cls);
+        return me;
     },
 
+    /**
+     * Removes a CSS class from the body element.
+     * @param {String} cls The class to remove
+     * @return {Ext.panel.Panel} this
+     */
     removeBodyCls: function(cls) {
         var me = this,
             body = me.rendered ? me.body : me.getProtoBody();
 
         body.removeCls(cls);
+        return me;
     },
 
     // inherit docs
@@ -308,6 +390,10 @@ var panel = new Ext.panel.Panel({
     // @private
     getTargetEl : function() {
         return this.body;
+    },
+
+    applyTargetCls: function(targetCls) {
+        this.getProtoBody().addCls(targetCls);
     },
 
     getRefItems: function(deep) {

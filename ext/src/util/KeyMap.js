@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * Handles mapping key events to handling functions for an element or a Component. One KeyMap can be used for multiple
  * actions.
@@ -54,7 +74,9 @@
  *
  * Since 4.1.0, KeyMaps can bind to Components and process key-based events fired by Components.
  *
- * To bind to a Component, use the single parameter form of constructor:
+ * To bind to a Component, use the single parameter form of constructor and include the Component event name
+ * to listen for, and a `processEvent` implementation which returns the key event for further processing by
+ * the KeyMap:
  *
  *     var map = new Ext.util.KeyMap({
  *         target: myGridView,
@@ -74,7 +96,7 @@
  *                 e.store.remove(e.record);
  *
  *                 // Attempt to select the record that's now in its place
- *                 e.view.getSelectionModel().select(e,index);
+ *                 e.view.getSelectionModel().select(e.index);
  *                 e.view.el.focus();
  *             }
  *         }
@@ -109,6 +131,12 @@ Ext.define('Ext.util.KeyMap', {
     /**
      * @cfg {Object} [processEventScope=this]
      * The scope (`this` context) in which the {@link #processEvent} method is executed.
+     */
+
+    /**
+     * @cfg {Boolean} [ignoreInputFields=false]
+     * Configure this as `true` if there are any input fields within the {@link #target}, and this KeyNav
+     * should not process events from input fields, (`&lt;input>, &lt;textarea> and elements with `contentEditable="true"`)
      */
 
     /**
@@ -201,21 +229,59 @@ Ext.define('Ext.util.KeyMap', {
      * set no action is performed..
      */
     addBinding : function(binding){
-        var keyCode = binding.key,
-            processed = false,
-            key,
-            keys,
-            keyString,
+        var me = this,
+            keyCode = binding.key,
             i,
             len;
 
+        if (me.processing) {
+            me.bindings = bindings.slice(0);
+        }
+        
         if (Ext.isArray(binding)) {
             for (i = 0, len = binding.length; i < len; i++) {
-                this.addBinding(binding[i]);
+                me.addBinding(binding[i]);
             }
             return;
         }
 
+        me.bindings.push(Ext.apply({
+            keyCode: me.processKeys(keyCode)
+        }, binding));
+    },
+    
+    /**
+     * Remove a binding from this KeyMap.
+     * @param {Object} binding See {@link #addBinding for options}
+     */
+    removeBinding: function(binding){
+        var me = this,
+            bindings = me.bindings,
+            len = bindings.length,
+            i, item, keys;
+            
+        if (me.processing) {
+            me.bindings = bindings.slice(0);
+        }
+        
+        keys = me.processKeys(binding.key);
+        for (i = 0; i < len; ++i) {
+            item = bindings[i];
+            if (item.fn === binding.fn && item.scope === binding.scope) {
+                if (binding.alt == item.alt && binding.crtl == item.crtl && binding.shift == item.shift) {
+                    if (Ext.Array.equals(item.keyCode, keys)) {
+                        Ext.Array.erase(me.bindings, i, 1);
+                        return;
+                    }
+                }
+            }
+        }
+    },
+    
+    processKeys: function(keyCode){
+        var processed = false,
+            key, keys, keyString, len, i;
+            
         if (Ext.isString(keyCode)) {
             keys = [];
             keyString = keyCode.toUpperCase();
@@ -239,51 +305,66 @@ Ext.define('Ext.util.KeyMap', {
                 }
             }
         }
-
-        this.bindings.push(Ext.apply({
-            keyCode: keyCode
-        }, binding));
+        return keyCode;
     },
 
     /**
-     * Process any keydown events on the element
+     * Process the {@link #eventName event} from the {@link #target}.
      * @private
      * @param {Ext.EventObject} event
      */
-    handleKeyDown: function(event) {
-        var me = this,
-            bindings, i, len;
+    handleTargetEvent: (function() {
+        var tagRe = /input|textarea/i;
 
-        if (this.enabled) { //just in case
-            bindings = this.bindings;
-            i = 0;
-            len = bindings.length;
+        return function(event) {
+            var me = this,
+                bindings, i, len,
+                target, contentEditable;
 
-            // Process the event
-            event = me.processEvent.apply(me||me.processEventScope, arguments);
+            if (me.enabled) { //just in case
+                bindings = me.bindings;
+                i = 0;
+                len = bindings.length;
 
-            // If the processor does not return a keyEvent, we can't process it.
-            // Allow them to return false to cancel processing of the event
-            if (!event.getKey) {
-                return event;
-            }
-            for(; i < len; ++i){
-                this.processBinding(bindings[i], event);
+                // Process the event
+                event = me.processEvent.apply(me||me.processEventScope, arguments);
+
+                // Ignore events from input fields if configured to do so
+                if (me.ignoreInputFields) {
+                    target = event.target;
+                    contentEditable = target.contentEditable;
+                    // contentEditable will default to inherit if not specified, only check if the
+                    // attribute has been set or explicitly set to true
+                    // http://html5doctor.com/the-contenteditable-attribute/
+                    if (tagRe.test(target.tagName) || (contentEditable === '' || contentEditable === 'true')) {
+                        return;
+                    }
+                }
+
+                // If the processor does not return a keyEvent, we can't process it.
+                // Allow them to return false to cancel processing of the event
+                if (!event.getKey) {
+                    return event;
+                }
+                me.processing = true;
+                for(; i < len; ++i){
+                    me.processBinding(bindings[i], event);
+                }
+                me.processing = false;
             }
         }
-    },
+    }()),
 
     /**
      * @cfg {Function} processEvent
      * An optional event processor function which accepts the argument list provided by the
      * {@link #eventName configured event} of the {@link #target}, and returns a keyEvent for processing by the KeyMap.
      *
-     * This may be useful when the {@link #target} is a Component with s complex event signature. Extra information from
-     * the event arguments may be injected into the event for use by the handler functions before returning it.
+     * This may be useful when the {@link #target} is a Component with s complex event signature, where the event is not
+     * the first parameter. Extra information from the event arguments may be injected into the event for use by the handler
+     * functions before returning it.
      */
-    processEvent: function(event){
-        return event;
-    },
+    processEvent: Ext.identityFn,
 
     /**
      * Process a particular binding and fire the handler if necessary.
@@ -365,6 +446,35 @@ Ext.define('Ext.util.KeyMap', {
             scope: scope
         });
     },
+    
+    /**
+     * Shorthand for removing a single key listener.
+     *
+     * @param {Number/Number[]/Object} key Either the numeric key code, array of key codes or an object with the
+     * following options: `{key: (number or array), shift: (true/false), ctrl: (true/false), alt: (true/false)}`
+     * @param {Function} fn The function to call
+     * @param {Object} [scope] The scope (`this` reference) in which the function is executed.
+     * Defaults to the browser window.
+     */
+    un: function(key, fn, scope) {
+        var keyCode, shift, ctrl, alt;
+        if (Ext.isObject(key) && !Ext.isArray(key)) {
+            keyCode = key.key;
+            shift = key.shift;
+            ctrl = key.ctrl;
+            alt = key.alt;
+        } else {
+            keyCode = key;
+        }
+        this.removeBinding({
+            key: keyCode,
+            shift: shift,
+            ctrl: ctrl,
+            alt: alt,
+            fn: fn,
+            scope: scope
+        });
+    },
 
     /**
      * Returns true if this KeyMap is enabled
@@ -381,7 +491,7 @@ Ext.define('Ext.util.KeyMap', {
         var me = this;
         
         if (!me.enabled) {
-            me.target.on(me.eventName, me.handleKeyDown, me);
+            me.target.on(me.eventName, me.handleTargetEvent, me);
             me.enabled = true;
         }
     },
@@ -393,7 +503,7 @@ Ext.define('Ext.util.KeyMap', {
         var me = this;
         
         if (me.enabled) {
-            me.target.removeListener(me.eventName, me.handleKeyDown, me);
+            me.target.removeListener(me.eventName, me.handleTargetEvent, me);
             me.enabled = false;
         }
     },
@@ -415,12 +525,17 @@ Ext.define('Ext.util.KeyMap', {
      * @param {Boolean} removeTarget True to also remove the {@link #target}
      */
     destroy: function(removeTarget) {
-        var me = this;
+        var me = this,
+            target = me.target;
 
         me.bindings = [];
         me.disable();
         if (removeTarget === true) {
-            me.target.isComponent ? me.target.destroy() : me.target.remove();
+            if (target.isComponent) {
+                target.destroy();
+            } else {
+                target.remove();
+            }
         }
         delete me.target;
     }

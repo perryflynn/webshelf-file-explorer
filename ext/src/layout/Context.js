@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * Manages context information during a layout.
  *
@@ -15,7 +35,7 @@
  * Work done during layout falls into either a "read phase" or a "write phase" and it is
  * essential to always be aware of the current phase. Most methods in
  * {@link Ext.layout.Layout Layout} are called during a read phase:
- * {@link Ext.layout.Layout#calculate claculate},
+ * {@link Ext.layout.Layout#calculate calculate},
  * {@link Ext.layout.Layout#completeLayout completeLayout} and
  * {@link Ext.layout.Layout#finalizeLayout finalizeLayout}. The exceptions to this are
  * {@link Ext.layout.Layout#beginLayout beginLayout},
@@ -272,7 +292,7 @@
  *    that are shrink-wrapped. If a component has raw content (not container items), the
  *    componentLayout must publish these values instead.
  * 
- * @protected
+ * @private
  */
 Ext.define('Ext.layout.Context', {
     requires: [
@@ -282,8 +302,6 @@ Ext.define('Ext.layout.Context', {
         'Ext.fx.Anim',
         'Ext.fx.Manager'
     ],
-
-    currentOwnerCtContext: null,
 
     remainingLayouts: 0,
 
@@ -348,20 +366,28 @@ Ext.define('Ext.layout.Context', {
 
     callLayout: function (layout, methodName) {
         this.currentLayout = layout;
-        var ownerContext = this.getCmp(layout.owner);
-        layout[methodName](ownerContext);
+        layout[methodName](this.getCmp(layout.owner));
     },
 
-    cancelComponent: function (comp, isChild) {
+    cancelComponent: function (comp, isChild, isDestroying) {
         var me = this,
             components = comp,
             isArray = !comp.isComponent,
             length = isArray ? components.length : 1,
-            i, k, klen, items, layout, newQueue, oldQueue, entry, temp;
+            i, k, klen, items, layout, newQueue, oldQueue, entry, temp,
+            ownerCtContext;
 
         for (i = 0; i < length; ++i) {
             if (isArray) {
                 comp = components[i];
+            }
+
+            // If the component is being destroyed, remove the component's ContextItem from its parent's contextItem.childItems array
+            if (isDestroying && comp.ownerCt) {
+                ownerCtContext = this.items[comp.ownerCt.el.id];
+                if (ownerCtContext) {
+                    Ext.Array.remove(ownerCtContext.childItems, me.getCmp(comp));
+                }
             }
 
             if (!isChild) {
@@ -419,9 +445,10 @@ Ext.define('Ext.layout.Context', {
 
     clearTriggers: function (layout, inDom) {
         var id = layout.id,
-            triggers = this.triggers[inDom ? 'dom' : 'data'][id],
+            collection = this.triggers[inDom ? 'dom' : 'data'],
+            triggers = collection && collection[id],
             length = (triggers && triggers.length) || 0,
-            collection, i, item, trigger;
+            i, item, trigger;
 
         for (i = 0; i < length; ++i) {
             trigger = triggers[i];
@@ -429,21 +456,6 @@ Ext.define('Ext.layout.Context', {
 
             collection = inDom ? item.domTriggers : item.triggers;
             delete collection[trigger.prop][id];
-        }
-    },
-
-    finishInvalidate: function (options, item, name) {
-        // When calling a callback, the currentLayout needs to be adjusted so
-        // that whichever layout caused the invalidate is the currentLayout...
-        if (options[name]) {
-            var me = this,
-                currentLayout = me.currentLayout;
-
-            me.currentLayout = options.layout || null;
-
-            options[name](item, options);
-
-            me.currentLayout = currentLayout;
         }
     },
 
@@ -571,8 +583,7 @@ Ext.define('Ext.layout.Context', {
                   (items[id] = new Ext.layout.ContextItem({
                                     context: this,
                                     target: target,
-                                    el: el,
-                                    ownerCtContext: this.currentOwnerCtContext
+                                    el: el
                                 }));
 
         return item;
@@ -586,9 +597,6 @@ Ext.define('Ext.layout.Context', {
             layout, key;
 
         Ext.failedLayouts = (Ext.failedLayouts || 0) + 1;
-        //<debug>
-        Ext.log('Layout run failed');
-        //</debug>
 
         for (key in layouts) {
             layout = layouts[key];
@@ -598,6 +606,14 @@ Ext.define('Ext.layout.Context', {
                 layout.ownerContext = null;
             }
         }
+
+        //<debug>
+        if (Ext.repoDevMode && !this.pageAnalyzerMode) {
+            Ext.Error.raise('Layout run failed');
+        } else {
+            Ext.log.error('Layout run failed');
+        }
+        //</debug>
     },
 
     /**
@@ -608,186 +624,131 @@ Ext.define('Ext.layout.Context', {
      * that new components will be introduced to the layout.
      * 
      * @param {Ext.Component/Array} components An array of Components or a single Component.
-     * @param {Ext.layout.ContextItem} ownerCtContext The ownerCt's ContextItem.
      * @param {Boolean} full True if all properties should be invalidated, otherwise only
      *  those calculated by the component should be invalidated.
      */
-    invalidate: function (components, ownerCtContext, full) {
+    invalidate: function (components, full) {
         var me = this,
             isArray = !components.isComponent,
-            itemCache = me.items,
-            running = me.state > 0,
-            previousOwnerCtContext = me.currentOwnerCtContext,
-            componentChildrenDone, containerChildrenDone, containerLayoutDone, ownerCt,
-            firstTime, i, k, comp, item, items, length, componentLayout, layout, props,
-            invalidateData;
-
-        me.currentOwnerCtContext = ownerCtContext;
+            containerLayoutDone,
+            firstTime, i, comp, item, items, length, componentLayout, layout,
+            invalidateOptions, token;
 
         for (i = 0, length = isArray ? components.length : 1; i < length; ++i) {
             comp = isArray ? components[i] : components;
 
             if (comp.rendered && !comp.hidden) {
-                firstTime = !comp.componentLayout.ownerContext;
                 item = me.getCmp(comp);
-                if (firstTime) {
-                    // this must occur before we proceed since it can do many things (like
-                    // add children perhaps)
-                    if (comp.beforeLayout) {
-                        comp.beforeLayout();
-                    }
+                
+                // Layout optimizations had to be disabled because they break
+                // Dock layout behavior.
+//                 if (item.optOut) {
+//                     continue;
+//                 }
 
-                    // Normally the firstTime we meet a component is before the context is
-                    // run, but it is possible for components to be added to a run already
-                    // in progress. If so, we have to lookup the ownerCtContext since the
-                    // odds are very high that the new component is a child of something
-                    // already in the run. It is currently unsupported to drag in the
-                    // owner of a running component (that would need to cleanup the
-                    // isTopLevel indicators as well as boxParent tracking).
-                    if (running && !ownerCtContext && (ownerCt = comp.ownerCt)) {
-                        ownerCtContext = itemCache[ownerCt.el.id];
-                    }
-
-                    item.init(ownerCtContext);
-                }
-                componentChildrenDone = containerChildrenDone = containerLayoutDone = true;
-
-                // A ComponentLayout MUST implement getLayoutItems to allow its children to
-                // be collected. Ext.container.Container does this, but non-Container Components
-                // which manage Components as part of their structure (eg HtmlEditor) must
-                // return child Components through their own implementation of getLayoutItems.
                 componentLayout = comp.componentLayout;
-                componentLayout.ownerContext = item;
+                firstTime = !componentLayout.ownerContext;
+                layout = (comp.isContainer && !comp.collapsed) ? comp.layout : null;
+
+                // Extract any invalidate() options for this item.
+                invalidateOptions = me.invalidateData[item.id];
+                delete me.invalidateData[item.id];
+
+                // We invalidate the contextItem's in a top-down manner so that SizeModel
+                // info for containers is available to their children. This is a critical
+                // optimization since sizeModel determination often requires knowing the
+                // sizeModel of the ownerCt. If this weren't cached as we descend, this
+                // would be an O(N^2) operation! (where N=number of components, or 300+/-
+                // in Themes)
+                token = item.init(full, invalidateOptions);
+
+                if (invalidateOptions) {
+                    me.processInvalidate(invalidateOptions, item, 'before');
+                }
+
+                // Allow the component layout a chance to effect its size model before we
+                // recurse down the component hierarchy (since children need to know the
+                // size model of their ownerCt).
+                if (componentLayout.beforeLayoutCycle) {
+                    componentLayout.beforeLayoutCycle(item);
+                }
+                
+                if (layout && layout.beforeLayoutCycle) {
+                    // allow the container layout take a peek as well. Table layout can
+                    // influence its children's styling due to the interaction of nesting
+                    // table-layout:fixed and auto inside each other without intervening
+                    // elements of known size.
+                    layout.beforeLayoutCycle(item);
+                }
+
+                // Finish up the item-level processing that is based on the size model of
+                // the component.
+                token = item.initContinue(token);
+
+                // Start this state variable at true, since that is the value we want if
+                // they do not apply (i.e., no work of this kind on which to wait).
+                containerLayoutDone = true;
+
+                // A ComponentLayout MUST implement getLayoutItems to allow its children
+                // to be collected. Ext.container.Container does this, but non-Container
+                // Components which manage Components as part of their structure (e.g.,
+                // HtmlEditor) must still return child Components via getLayoutItems.
                 if (componentLayout.getLayoutItems) {
                     componentLayout.renderChildren();
 
                     items = componentLayout.getLayoutItems();
                     if (items.length) {
-                        me.invalidate(items, item, true);
-                        componentChildrenDone = false;
+                        me.invalidate(items, true);
                     }
                 }
 
-                if (comp.isContainer && !comp.collapsed) {
-                    layout = comp.layout;
-                    layout.ownerContext = item;
-                    layout.renderChildren();
-
+                if (layout) {
                     containerLayoutDone = false;
+                    layout.renderChildren();
 
                     items = layout.getVisibleItems();
                     if (items.length) {
-                        me.invalidate(items, item, true);
-                        containerChildrenDone = false;
-                    }
-                } else {
-                    layout = null;
-                }
-
-                if (firstTime){
-                    item.hasRawContent = true;
-
-                    // we need to know how we will determine content size: containers can look at
-                    // the results of their items but non-containers or item-less containers with
-                    // raw markup need to be measured in the DOM:
-                    if (item.target.isContainer) {
-                        if (item.target.items.items.length || !item.target.getTargetEl().dom.firstChild) {
-                            item.hasRawContent = false;
-                        }
-                    }
-
-                } else {
-                    item.doInvalidate(full);
-
-                    // invalidate the elements owned by the component:
-                    items = item.children;
-                    for (k = items.length; k--; ) {
-                        items[k].doInvalidate(true);
+                        me.invalidate(items, true);
                     }
                 }
 
-                // These properties are only set when they are true:
-                props = item.props;
-                if (componentChildrenDone) {
-                    props.componentChildrenDone = true;
-                    if (containerChildrenDone) {
-                        props.childrenDone = true;
-                    }
-                }
-                if (containerChildrenDone) {
-                    props.containerChildrenDone = true;
-                }
-                if (containerLayoutDone) {
-                    props.containerLayoutDone = true;
-                }
+                // Finish the processing that requires the size models of child items to
+                // be determined (and some misc other stuff).
+                item.initDone(containerLayoutDone);
 
-                invalidateData = me.invalidateData[item.id];
-                if (invalidateData) {
-                    delete me.invalidateData[item.id];
-                    if (invalidateData.state) {
-                        Ext.apply(item.state, invalidateData.state);
-                    }
-                    me.finishInvalidate(invalidateData, item, 'before');
-                }
-
+                // Inform the layouts that we are about to begin (or begin again) now that
+                // the size models of the component and its children are setup.
                 me.resetLayout(componentLayout, item, firstTime);
                 if (layout) {
                     me.resetLayout(layout, item, firstTime);
                 }
 
-                if (invalidateData) {
-                    me.finishInvalidate(invalidateData, item, 'after');
-                }
+                // This has to occur after the component layout has had a chance to begin
+                // so that we can determine what kind of animation might be needed. TODO-
+                // move this determination into the layout itself.
+                item.initAnimation();
 
-                if (item.boxChildren && item.widthModel.shrinkWrap) {
-                    // set a very large width to allow the children to measure their natural
-                    // widths (this is cleared once all children have been measured):
-                    item.el.setWidth(10000);
-
-                    // don't run layouts for this component until we clear this width...
-                    item.state.blocks = (item.state.blocks || 0) + 1;
-                }
-
-                if (firstTime) {
-                    item.initAnimatePolicy();
+                if (invalidateOptions) {
+                    me.processInvalidate(invalidateOptions, item, 'after');
                 }
             }
         }
 
-        me.currentOwnerCtContext = previousOwnerCtContext;
+        me.currentLayout = null;
     },
 
     layoutDone: function (layout) {
-        var ownerContext = layout.ownerContext,
-            ownerCtContext;
+        var ownerContext = layout.ownerContext;
 
         layout.running = false;
 
-        // Once a component layout completes, we can mark it as "done" but we can also
-        // decrement the remainingChildLayouts property on the ownerCtContext. When that
-        // goes to 0, we can mark the ownerCtContext as "childrenDone".
+        // Once a component layout completes, we can mark it as "done".
         if (layout.isComponentLayout) {
             if (ownerContext.measuresBox) {
                 ownerContext.onBoxMeasured(); // be sure to release our boxParent
             }
 
             ownerContext.setProp('done', true);
-
-            ownerCtContext = ownerContext.ownerCtContext;
-            if (ownerCtContext) {
-                if (ownerContext.target.ownerLayout.isComponentLayout) {
-                    if (! --ownerCtContext.remainingComponentChildLayouts) {
-                        ownerCtContext.setProp('componentChildrenDone', true);
-                    }
-                } else {
-                    if (! --ownerCtContext.remainingContainerChildLayouts) {
-                        ownerCtContext.setProp('containerChildrenDone', true);
-                    }
-                }
-                if (! --ownerCtContext.remainingChildLayouts) {
-                    ownerCtContext.setProp('childrenDone', true);
-                }
-            }
         } else {
             ownerContext.setProp('containerLayoutDone', true);
         }
@@ -798,6 +759,21 @@ Ext.define('Ext.layout.Context', {
 
     newQueue: function () {
         return new Ext.util.Queue();
+    },
+
+    processInvalidate: function (options, item, name) {
+        // When calling a callback, the currentLayout needs to be adjusted so
+        // that whichever layout caused the invalidate is the currentLayout...
+        if (options[name]) {
+            var me = this,
+                currentLayout = me.currentLayout;
+
+            me.currentLayout = options.layout || null;
+
+            options[name](item, options);
+
+            me.currentLayout = currentLayout;
+        }
     },
 
     /**
@@ -842,16 +818,23 @@ Ext.define('Ext.layout.Context', {
     },
 
     chainFns: function (oldOptions, newOptions, funcName) {
-        var oldFn = oldOptions[funcName],
+        var me = this,
+            oldLayout = oldOptions.layout,
+            newLayout = newOptions.layout,
+            oldFn = oldOptions[funcName],
             newFn = newOptions[funcName];
 
         // Call newFn last so it can get the final word on things... also, the "this"
         // pointer will be passed correctly by createSequence with oldFn first.
         return function (contextItem) {
+            var prev = me.currentLayout;
             if (oldFn) {
+                me.currentLayout = oldLayout;
                 oldFn.call(oldOptions.scope || oldOptions, contextItem, oldOptions);
             }
+            me.currentLayout = newLayout;
             newFn.call(newOptions.scope || newOptions, contextItem, newOptions);
+            me.currentLayout = prev;
         };
     },
 
@@ -876,6 +859,8 @@ Ext.define('Ext.layout.Context', {
             comp = item.target;
         }
 
+        item.invalid = true;
+
         // See if comp is contained by any component already in the queue (ignore comp if
         // that is the case). Eliminate any components in the queue that are contained by
         // comp (by not adding them to newQueue).
@@ -892,6 +877,12 @@ Ext.define('Ext.layout.Context', {
                 if (!(oldOptions = old.options)) {
                     old.options = options;
                 } else if (options) {
+                    if (options.widthModel) {
+                        oldOptions.widthModel = options.widthModel;
+                    }
+                    if (options.heightModel) {
+                        oldOptions.heightModel = options.heightModel;
+                    }
                     if (!(oldState = oldOptions.state)) {
                         oldOptions.state = options.state;
                     } else if (options.state) {
@@ -952,12 +943,28 @@ Ext.define('Ext.layout.Context', {
     },
 
     /**
+     * Removes the ContextItem for an element from the cache and from the parent's
+     * "children" array.
+     * @param {Ext.layout.ContextItem} parent
+     * @param {Ext.dom.Element} el
+     */
+    removeEl: function (parent, el) {
+        var id = el.id,
+            children = parent.children,
+            items = this.items;
+
+        if(children) {
+            Ext.Array.remove(children, items[id]);
+        }
+        delete items[id];
+    },
+
+    /**
      * Resets the given layout object. This is called at the start of the run and can also
      * be called during the run by calling {@link #invalidate}.
      */
     resetLayout: function (layout, ownerContext, firstTime) {
-        var me = this,
-            ownerCtContext;
+        var me = this;
 
         me.currentLayout = layout;
 
@@ -980,24 +987,11 @@ Ext.define('Ext.layout.Context', {
             ++me.remainingLayouts;
             ++layout.layoutCount; // the number of whole layouts run for the layout
 
+            layout.ownerContext = ownerContext;
             layout.beginCount = 0; // the number of beginLayout calls
             layout.blockCount = 0; // the number of blocks set for the layout
             layout.calcCount = 0; // the number of times calculate is called
             layout.triggerCount = 0; // the number of triggers set for the layout
-
-            // Count the children of each ownerCt so we can tell when they are all done:
-            if (layout.isComponentLayout && (ownerCtContext = ownerContext.ownerCtContext)) {
-                // This layout's ownerCt is in this run... The component associated with
-                // this layout (the "target") could be owned by the ownerCt's container
-                // layout or component layout (e.g. docked items)! To manage this, we keep
-                // two counters for these and one for the combined total:
-                if (ownerContext.target.ownerLayout.isComponentLayout) {
-                    ++ownerCtContext.remainingComponentChildLayouts;
-                } else {
-                    ++ownerCtContext.remainingContainerChildLayouts;
-                }
-                ++ownerCtContext.remainingChildLayouts;
-            }
 
             if (!layout.initialized) {
                 layout.initLayout();
@@ -1017,25 +1011,6 @@ Ext.define('Ext.layout.Context', {
                     // trigger/unblock layouts, but what layouts are really looking for with
                     // this property is for it to go to true, not just be set to a value...
                     ownerContext.unsetProp('done');
-
-                    // On subsequent resets we increment the child layout count properties
-                    // on ownerCtContext and clear 'childrenDone' and the appropriate other
-                    // indicator as we transition to 1:
-                    ownerCtContext = ownerContext.ownerCtContext;
-                    if (ownerCtContext) {
-                        if (ownerContext.target.ownerLayout.isComponentLayout) {
-                            if (++ownerCtContext.remainingComponentChildLayouts == 1) {
-                                ownerCtContext.unsetProp('componentChildrenDone');
-                            }
-                        } else {
-                            if (++ownerCtContext.remainingContainerChildLayouts == 1) {
-                                ownerCtContext.unsetProp('containerChildrenDone');
-                            }
-                        }
-                        if (++ownerCtContext.remainingChildLayouts == 1) {
-                            ownerCtContext.unsetProp('childrenDone');
-                        }
-                    }
                 }
 
                 // and it needs to be removed from the completion and/or finalize queues...
@@ -1086,7 +1061,7 @@ Ext.define('Ext.layout.Context', {
                 flushed = true; // all flushed now, so more progress is required
 
                 me.flushLayouts('completionQueue', 'completeLayout');
-            } else {
+            } else if (!me.invalidQueue.length) {
                 // after a flush, we must make progress or something is WRONG
                 me.state = 2;
                 break;
@@ -1196,7 +1171,7 @@ Ext.define('Ext.layout.Context', {
 
     /**
      * Set the size of a component, element or composite or an array of components or elements.
-     * @param {Ext.Component/Ext.Component[]/Ext.dom.Element/Ext.dom.Element[]/Ext.dom.CompositeElement}
+     * @param {Ext.Component/Ext.Component[]/Ext.dom.Element/Ext.dom.Element[]/Ext.dom.CompositeElement} items
      * The item(s) to size.
      * @param {Number} width The new width to set (ignored if undefined or NaN).
      * @param {Number} height The new height to set (ignored if undefined or NaN).
@@ -1226,7 +1201,7 @@ Ext.define('Ext.layout.Context', {
             contextItem = this.get(item);
             contextItem.setSize(width, height);
 
-            item = items[++i]; // this accomodation avoids making an array of 1 
+            item = items[++i]; // this accomodation avoids making an array of 1
         }
     }
 });

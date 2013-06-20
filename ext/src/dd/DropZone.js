@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * This class provides a container DD instance that allows dropping on multiple child target nodes.
  *
@@ -93,7 +113,7 @@ Ext.define('Ext.dd.DropZone', {
     /**
      * Called while the DropZone determines that a {@link Ext.dd.DragSource} is over a drop node
      * that has either been registered or detected by a configured implementation of {@link #getTargetFromEvent}.
-     * The default implementation returns this.dropNotAllowed, so it should be
+     * The default implementation returns this.dropAllowed, so it should be
      * overridden to provide the proper feedback.
      * @param {Object} nodeData The custom data associated with the drop node (this is the same value returned from
      * {@link #getTargetFromEvent} for this node)
@@ -102,6 +122,7 @@ Ext.define('Ext.dd.DropZone', {
      * @param {Object} data An object containing arbitrary data supplied by the drag source
      * @return {String} status The CSS class that communicates the drop status back to the source so that the
      * underlying {@link Ext.dd.StatusProxy} can be updated
+     * @template
      */
     onNodeOver : function(n, dd, e, data){
         return this.dropAllowed;
@@ -116,6 +137,7 @@ Ext.define('Ext.dd.DropZone', {
      * @param {Ext.dd.DragSource} source The drag source that was dragged over this drop zone
      * @param {Event} e The event
      * @param {Object} data An object containing arbitrary data supplied by the drag source
+     * @template
      */
     onNodeOut : function(n, dd, e, data){
         
@@ -131,6 +153,7 @@ Ext.define('Ext.dd.DropZone', {
      * @param {Event} e The event
      * @param {Object} data An object containing arbitrary data supplied by the drag source
      * @return {Boolean} True if the drop was valid, else false
+     * @template
      */
     onNodeDrop : function(n, dd, e, data){
         return false;
@@ -145,6 +168,7 @@ Ext.define('Ext.dd.DropZone', {
      * @param {Object} data An object containing arbitrary data supplied by the drag source
      * @return {String} status The CSS class that communicates the drop status back to the source so that the
      * underlying {@link Ext.dd.StatusProxy} can be updated
+     * @template
      */
     onContainerOver : function(dd, e, data){
         return this.dropNotAllowed;
@@ -159,6 +183,7 @@ Ext.define('Ext.dd.DropZone', {
      * @param {Event} e The event
      * @param {Object} data An object containing arbitrary data supplied by the drag source
      * @return {Boolean} True if the drop was valid, else false
+     * @template
      */
     onContainerDrop : function(dd, e, data){
         return false;
@@ -174,6 +199,7 @@ Ext.define('Ext.dd.DropZone', {
      * @param {Object} data An object containing arbitrary data supplied by the drag source
      * @return {String} status The CSS class that communicates the drop status back to the source so that the
      * underlying {@link Ext.dd.StatusProxy} can be updated
+     * @template
      */
     notifyEnter : function(dd, e, data){
         return this.dropNotAllowed;
@@ -191,6 +217,7 @@ Ext.define('Ext.dd.DropZone', {
      * @param {Object} data An object containing arbitrary data supplied by the drag source
      * @return {String} status The CSS class that communicates the drop status back to the source so that the
      * underlying {@link Ext.dd.StatusProxy} can be updated
+     * @template
      */
     notifyOver : function(dd, e, data){
         var n = this.getTargetFromEvent(e);
@@ -218,6 +245,7 @@ Ext.define('Ext.dd.DropZone', {
      * @param {Ext.dd.DragSource} source The drag source that was dragged over this drop target
      * @param {Event} e The event
      * @param {Object} data An object containing arbitrary data supplied by the drag zone
+     * @template
      */
     notifyOut : function(dd, e, data){
         if(this.lastOverNode){
@@ -235,16 +263,22 @@ Ext.define('Ext.dd.DropZone', {
      * @param {Event} e The event
      * @param {Object} data An object containing arbitrary data supplied by the drag source
      * @return {Boolean} False if the drop was invalid.
+     * @template
      */
     notifyDrop : function(dd, e, data){
-        if(this.lastOverNode){
-            this.onNodeOut(this.lastOverNode, dd, e, data);
-            this.lastOverNode = null;
+        var me = this,
+            n = me.getTargetFromEvent(e),
+            result = n ?
+                me.onNodeDrop(n, dd, e, data) :
+                me.onContainerDrop(dd, e, data);
+
+        // Exit the overNode upon drop.
+        // Must do this after dropping because exiting a node may perform actions which invalidate a drop.
+        if (me.lastOverNode) {
+            me.onNodeOut(me.lastOverNode, dd, e, data);
+            me.lastOverNode = null;
         }
-        var n = this.getTargetFromEvent(e);
-        return n ?
-            this.onNodeDrop(n, dd, e, data) :
-            this.onContainerDrop(dd, e, data);
+        return result;
     },
 
     // private

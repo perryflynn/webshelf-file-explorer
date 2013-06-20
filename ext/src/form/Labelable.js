@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * A mixin which allows a component to be configured and decorated with a label and/or error message as is
  * common for form fields. This is used by e.g. Ext.form.field.Base and Ext.form.FieldContainer
@@ -47,6 +67,9 @@ Ext.define("Ext.form.Labelable", {
          */
         'bodyEl',
 
+        // private - the TD which contains the msgTarget: 'side' error icon
+        'sideErrorCell',
+
         /**
          * @property {Ext.Element} errorEl
          * The div Element that will contain the component's error message(s). Note that depending on the configured
@@ -66,28 +89,39 @@ Ext.define("Ext.form.Labelable", {
      *
      * The structure of a field is a table as follows:
      * 
-     * If `label:align: 'left|top'`:
-     *
-     *      +----------------------+------------+---------+--------------+
+     * If `labelAlign: 'left', `msgTarget: 'side'`
+     * 
+     *      +----------------------+----------------------+-------------+
      *      | Label:               | InputField           | sideErrorEl |
-     *      +----------------------+------------+---------+-------------+
-     *      |                      | underErrorEl (colspan=3)           |
+     *      +----------------------+----------------------+-------------+
+     *
+     * If `labelAlign: 'left', `msgTarget: 'under'`
+     * 
+     *      +----------------------+------------------------------------+
+     *      | Label:               | InputField      (colspan=2)        |
+     *      |                      | underErrorEl                       |
+     *      +----------------------+------------------------------------+
+     *
+     * If `labelAlign: 'top', `msgTarget: 'side'`
+     *
+     *      +---------------------------------------------+-------------+
+     *      | label                                       |             |
+     *      | InputField                                  | sideErrorEl |
+     *      +---------------------------------------------+-------------+
+     *
+     * If `labelAlign: 'top', `msgTarget: 'under'`
+     * 
+     *      +-----------------------------------------------------------+
+     *      | label                                                     |
+     *      | InputField                      (colspan=2)               |
+     *      | underErrorEl                                              |
      *      +-----------------------------------------------------------+
      *
-     * Or, if `labelAlign: 'top'`:
-     *
-     *      +-----------------------------------------------------------+
-     *      | labelAlign:'top' label: (colspan=3)                       |
-     *      +----------------------+------------+---------+-------------+
-     *      | InputField (colspan=2)                      | sideErrorEl |
-     *      +----------------------+------------+---------+-------------+
-     *      | underErrorEl (colspan=3)                                  |
-     *      +-----------------------------------------------------------+
-     *
-     * The total columns always adds up to 3 (even if `labelAlign: 'top'`) because when
+     * The total columns always the same for fields with each setting of {@link #labelAlign} because when
      * rendered into a {@link Ext.layout.container.Form} layout, just the `TR` of the table
      * will be placed into the form's main `TABLE`, and the columns of all the siblings
-     * must match so that they all line up.
+     * must match so that they all line up. In a {@link Ext.layout.container.Form} layout, different
+     * settings of {@link #labelAlign} are not supported because of the incompatible column structure.
      *
      * When the triggerCell or side error cell are hidden or shown, the input cell's colspan
      * is recalculated to maintain the correct 3 visible column count.
@@ -95,31 +129,18 @@ Ext.define("Ext.form.Labelable", {
      */
     labelableRenderTpl: [
 
-        // Top TR if labelAlign =='top'
-        '<tpl if="labelAlign==\'top\'">',
-            '<tr>',
-                '<td id="{id}-labelCell" colspan="3" style="{labelCellStyle}" {labelCellAttrs}>',
-                    '{beforeLabelTpl}',
-                    '<label id="{id}-labelEl" {labelAttrTpl}<tpl if="inputId"> for="{inputId}"</tpl> class="{labelCls}"',
-                        '<tpl if="labelStyle"> style="{labelStyle}"</tpl>>',
-                        '{beforeLabelTextTpl}',
-                        '<tpl if="fieldLabel">{fieldLabel}{labelSeparator}</tpl>',
-                        '{afterLabelTextTpl}',
-                    '</label>',
-                    '{afterLabelTpl}',
-                '</td>',
-            '</tr>',
-        '</tpl>',
-
         // body row. If a heighted Field (eg TextArea, HtmlEditor, this must greedily consume height.
-        '<tr id="{id}-inputRow" <tpl if="inFormLayout">id="{id}"</tpl>>',
+        '<tr role="presentation" id="{id}-inputRow" <tpl if="inFormLayout">id="{id}"</tpl> class="{inputRowCls}">',
 
             // Label cell
             '<tpl if="labelOnLeft">',
-                '<td id="{id}-labelCell" style="{labelCellStyle}" {labelCellAttrs}>',
+                '<td role="presentation" id="{id}-labelCell" style="{labelCellStyle}" {labelCellAttrs}>',
                     '{beforeLabelTpl}',
                     '<label id="{id}-labelEl" {labelAttrTpl}<tpl if="inputId"> for="{inputId}"</tpl> class="{labelCls}"',
-                        '<tpl if="labelStyle"> style="{labelStyle}"</tpl>>',
+                        '<tpl if="labelStyle"> style="{labelStyle}"</tpl>',
+                        // Required for Opera
+                        ' unselectable="on"',
+                    '>',
                         '{beforeLabelTextTpl}',
                         '<tpl if="fieldLabel">{fieldLabel}{labelSeparator}</tpl>',
                         '{afterLabelTextTpl}',
@@ -129,28 +150,43 @@ Ext.define("Ext.form.Labelable", {
             '</tpl>',
 
             // Body of the input. That will be an input element, or, from a TriggerField, a table containing an input cell and trigger cell(s)
-            '<td class="{baseBodyCls} {fieldBodyCls}" id="{id}-bodyEl" role="presentation" colspan="{bodyColspan}">',
-                '{beforeSubTpl}',
-                '{[values.$comp.getSubTplMarkup()]}',
-                '{afterSubTpl}',
-            '</td>',
+            '<td role="presentation" class="{baseBodyCls} {fieldBodyCls} {extraFieldBodyCls}" id="{id}-bodyEl" colspan="{bodyColspan}" role="presentation">',
+                '{beforeBodyEl}',
 
-            // Side error element
-            '<tpl if="msgTarget==\'side\'">',
-                '<td id="{id}-errorEl" class="{errorMsgCls}" style="display:none" width="{errorIconWidth}"></td>',
+                // Label just sits on top of the input field if labelAlign === 'top'
+                '<tpl if="labelAlign==\'top\'">',
+                    '{beforeLabelTpl}',
+                    '<div role="presentation" id="{id}-labelCell" style="{labelCellStyle}">',
+                        '<label id="{id}-labelEl" {labelAttrTpl}<tpl if="inputId"> for="{inputId}"</tpl> class="{labelCls}"',
+                            '<tpl if="labelStyle"> style="{labelStyle}"</tpl>',
+                            // Required for Opera
+                            ' unselectable="on"',
+                        '>',
+                            '{beforeLabelTextTpl}',
+                            '<tpl if="fieldLabel">{fieldLabel}{labelSeparator}</tpl>',
+                            '{afterLabelTextTpl}',
+                        '</label>',
+                    '</div>',
+                    '{afterLabelTpl}',
+                '</tpl>',
+
+                '{beforeSubTpl}',
+                '{[values.$comp.getSubTplMarkup(values)]}',
+                '{afterSubTpl}',
+
+            // Final TD. It's a side error element unless there's a floating external one
+            '<tpl if="msgTarget===\'side\'">',
+                '{afterBodyEl}',
+                '</td>',
+                '<td role="presentation" id="{id}-sideErrorCell" vAlign="{[values.labelAlign===\'top\' && !values.hideLabel ? \'bottom\' : \'middle\']}" style="{[values.autoFitErrors ? \'display:none\' : \'\']}" width="{errorIconWidth}">',
+                    '<div role="presentation" id="{id}-errorEl" class="{errorMsgCls}" style="display:none"></div>',
+                '</td>',
+            '<tpl elseif="msgTarget==\'under\'">',
+                '<div role="presentation" id="{id}-errorEl" class="{errorMsgClass}" colspan="2" style="display:none"></div>',
+                '{afterBodyEl}',
+                '</td>',
             '</tpl>',
         '</tr>',
-
-        // Under error element is another TR
-        '<tpl if="msgTarget==\'under\'">',
-            '<tr>',
-                // Align under the input element
-                '<tpl if="labelOnLeft">',
-                    '<td></td>',
-                '</tpl>',
-                '<td id="{id}-errorEl" class="{errorMsgClass}" colspan="{[values.labelOnLeft ? 2 : 3]}" style="display:none"></td>',
-            '</tr>',
-        '</tpl>',
         {
             disableFormats: true
         }
@@ -159,11 +195,20 @@ Ext.define("Ext.form.Labelable", {
     /**
      * @cfg {String/String[]/Ext.XTemplate} activeErrorsTpl
      * The template used to format the Array of error messages passed to {@link #setActiveErrors} into a single HTML
-     * string. By default this renders each message as an item in an unordered list.
+     * string. if the {@link #msgTarget} is title, it defaults to a list separated by new lines. Otherwise, it 
+     * renders each message as an item in an unordered list.
      */
-    activeErrorsTpl: [
+    activeErrorsTpl: undefined,
+
+    htmlActiveErrorsTpl: [
         '<tpl if="errors && errors.length">',
-            '<ul><tpl for="errors"><li>{.}</li></tpl></ul>',
+            '<ul class="{listCls}"><tpl for="errors"><li role="alert">{.}</li></tpl></ul>',
+        '</tpl>'
+    ],
+    
+    plaintextActiveErrorsTpl: [
+        '<tpl if="errors && errors.length">',
+            '<tpl for="errors"><tpl if="xindex &gt; 1">\n</tpl>{.}</tpl>',
         '</tpl>'
     ],
 
@@ -203,6 +248,9 @@ Ext.define("Ext.form.Labelable", {
      * The CSS class to be applied to the body content element.
      */
     baseBodyCls: Ext.baseCSSPrefix + 'form-item-body',
+
+    // private
+    inputRowCls: Ext.baseCSSPrefix + 'form-item-input-row',
 
     /**
      * @cfg {String} fieldBodyCls
@@ -255,11 +303,13 @@ Ext.define("Ext.form.Labelable", {
      */
     labelPad : 5,
 
+    //<locale>
     /**
      * @cfg {String} labelSeparator
      * Character(s) to be inserted at the end of the {@link #fieldLabel label text}.
+     *
+     * Set to empty string to hide the separator completely.
      */
-    //<locale>
     labelSeparator : ':',
     //</locale>
 
@@ -282,8 +332,8 @@ Ext.define("Ext.form.Labelable", {
      * rendered and space to be reserved for it; this is useful if you want a field without a label to line up with
      * other labeled fields in the same form.
      *
-     * If you wish to unconditionall hide the label even if a non-empty fieldLabel is configured, then set the {@link
-     * #hideLabel} config to true.
+     * If you wish to unconditionall hide the label even if a non-empty fieldLabel is configured, then set the
+     * {@link #hideLabel} config to true.
      */
     hideEmptyLabel: true,
 
@@ -329,6 +379,23 @@ Ext.define("Ext.form.Labelable", {
     noWrap: true,
 
     labelableInsertions: [
+
+        /**
+         * @cfg {String/Array/Ext.XTemplate} beforeBodyEl
+         * An optional string or `XTemplate` configuration to insert in the field markup
+         * at the beginning of the input containing element. If an `XTemplate` is used, the component's {@link Ext.AbstractComponent#renderData render data}
+         * serves as the context.
+         */
+        'beforeBodyEl',
+
+        /**
+         * @cfg {String/Array/Ext.XTemplate} afterBodyEl
+         * An optional string or `XTemplate` configuration to insert in the field markup
+         * at the end of the input containing element. If an `XTemplate` is used, the component's {@link Ext.AbstractComponent#renderData render data}
+         * serves as the context.
+         */
+        'afterBodyEl',
+
         /**
          * @cfg {String/Array/Ext.XTemplate} beforeLabelTpl
          * An optional string or `XTemplate` configuration to insert in the field markup
@@ -386,7 +453,9 @@ Ext.define("Ext.form.Labelable", {
         'labelAttrTpl'
     ],
 
-    labelableRenderProps: 'allowBlank,labelAlign,fieldBodyCls,baseBodyCls,clearCls,labelSeparator,msgTarget',
+    // This is an array to avoid a split on every call to Ext.copyTo
+    labelableRenderProps: ['allowBlank', 'id', 'labelAlign', 'fieldBodyCls', 'extraFieldBodyCls', 
+        'baseBodyCls', 'clearCls', 'labelSeparator', 'msgTarget', 'inputRowCls'],
 
     /**
      * Performs initialization of this mixin. Component classes using this mixin should call this method during their
@@ -403,7 +472,16 @@ Ext.define("Ext.form.Labelable", {
             me.padding = undefined;
             me.extraMargins = Ext.Element.parseBox(padding);
         }
+        
+        if (!me.activeErrorsTpl) {
+            if (me.msgTarget == 'title') {
+                me.activeErrorsTpl = me.plaintextActiveErrorsTpl;
+            } else {
+                me.activeErrorsTpl = me.htmlActiveErrorsTpl;
+            }
+        }
 
+        me.addCls(Ext.plainTableCls);
         me.addCls(me.formItemCls);
         
         // Prevent first render of active error, at Field render time from signalling a change from undefined to "
@@ -418,15 +496,33 @@ Ext.define("Ext.form.Labelable", {
              */
             'errorchange'
         );
+
+        // bubbleEvents on the prototype of a mixin won't work, so call enableBubble
+        me.enableBubble('errorchange');
+    },
+
+    /**
+     * Returns the trimmed label by slicing off the label separator character. Can be overridden.
+     * @return {String} The trimmed field label, or empty string if not defined
+     */
+    trimLabelSeparator: function() {
+        var me = this,
+            separator = me.labelSeparator,
+            label = me.fieldLabel || '',
+            lastChar = label.substr(label.length - 1);
+
+        // if the last char is the same as the label separator then slice it off otherwise just return label value
+        return lastChar === separator ? label.slice(0, -1) : label;
     },
 
     /**
      * Returns the label for the field. Defaults to simply returning the {@link #fieldLabel} config. Can be overridden
-     * to provide
+     * to provide a custom generated label.
+     * @template
      * @return {String} The configured field label, or empty string if not defined
      */
     getFieldLabel: function() {
-        return this.fieldLabel || '';
+        return this.trimLabelSeparator();
     },
     
     /**
@@ -439,8 +535,7 @@ Ext.define("Ext.form.Labelable", {
         
         var me = this,
             separator = me.labelSeparator,
-            labelEl = me.labelEl,
-            last;
+            labelEl = me.labelEl;
         
         me.fieldLabel = label;
         if (me.rendered) {
@@ -448,11 +543,7 @@ Ext.define("Ext.form.Labelable", {
                 labelEl.parent().setDisplayed('none');
             } else {
                 if (separator) {
-                    last = label.substr(label.length - 1);
-                    // append separator if necessary
-                    if (last != separator) {
-                        label += separator;
-                    }
+                    label = me.trimLabelSeparator() + separator;
                 }
                 labelEl.update(label);
                 labelEl.parent().setDisplayed('');
@@ -492,24 +583,28 @@ Ext.define("Ext.form.Labelable", {
     getLabelableRenderData: function() {
         var me = this,
             data,
-            tempEl;
+            tempEl,
+            topLabel = me.labelAlign === 'top';
 
         if (!Ext.form.Labelable.errorIconWidth) {
-            Ext.form.Labelable.errorIconWidth = (tempEl = Ext.getBody().createChild({style: 'position:absolute', cls: Ext.baseCSSPrefix + 'form-invalid-icon'})).getWidth();
+            tempEl = Ext.getBody().createChild({style: 'position:absolute', cls: Ext.baseCSSPrefix + 'form-invalid-icon'});
+            Ext.form.Labelable.errorIconWidth = tempEl.getWidth() + tempEl.getMargin('l');
             tempEl.remove();
         }
 
         data = Ext.copyTo({
             inFormLayout   : me.ownerLayout && me.ownerLayout.type === 'form',
             inputId        : me.getInputId(),
-            labelOnLeft    : me.labelAlign != 'top',
+            labelOnLeft    : !topLabel,
+            hideLabel      : !me.hasVisibleLabel(),
             fieldLabel     : me.getFieldLabel(),
             labelCellStyle : me.getLabelCellStyle(),
             labelCellAttrs : me.getLabelCellAttrs(),
             labelCls       : me.getLabelCls(),
             labelStyle     : me.getLabelStyle(),
             bodyColspan    : me.getBodyColspan(),
-            errorMsgCls    : me.errorMsgCls + (me.autoFitErrors ? '' : ' ' + Ext.baseCSSPrefix + 'external-error-icon'),
+            externalError  : !me.autoFitErrors,
+            errorMsgCls    : me.getErrorMsgCls(),
             errorIconWidth : Ext.form.Labelable.errorIconWidth
         },
         me, me.labelableRenderProps, true);
@@ -518,28 +613,31 @@ Ext.define("Ext.form.Labelable", {
 
         return data;
     },
-    
-    beforeLabelableRender: function() {
-        var me = this;
-        if (me.ownerLayout) {
-            me.addCls(Ext.baseCSSPrefix + me.ownerLayout.type + '-form-item');
-        }
-    },
 
-    onLabelableRender: function() {
-        var me = this,
-            margins,
-            side,
-            style = {};
-
-        if (me.extraMargins) {
-            margins = me.el.getMargin();
-            for (side in margins) {
-                if (margins.hasOwnProperty(side)) {
-                    style['margin-' + side] = (margins[side] + me.extraMargins[side]) + 'px';
-                }
+    xhooks: {
+        beforeRender: function() {
+            var me = this;
+            me.setFieldDefaults(me.getHierarchyState().fieldDefaults);
+            if (me.ownerLayout) {
+                me.addCls(Ext.baseCSSPrefix + me.ownerLayout.type + '-form-item');
             }
-            me.el.setStyle(style);
+        },
+
+        onRender: function() {
+            var me = this,
+                margins,
+                side,
+                style = {};
+
+            if (me.extraMargins) {
+                margins = me.el.getMargin();
+                for (side in margins) {
+                    if (margins.hasOwnProperty(side)) {
+                        style['margin-' + side] = (margins[side] + me.extraMargins[side]) + 'px';
+                    }
+                }
+                me.el.setStyle(style);
+            }
         }
     },
     
@@ -553,7 +651,19 @@ Ext.define("Ext.form.Labelable", {
         }
         return !(this.hideEmptyLabel && !this.getFieldLabel());
     },
-
+    
+    /**
+     * Gets the width of the label (if visible)
+     * @return {Number} The label width
+     */
+    getLabelWidth: function(){
+        var me = this;
+        if (!me.hasVisibleLabel()) {
+            return 0;
+        }
+        return me.labelWidth + me.labelPad;
+    },
+    
     /**
      * @private
      * Calculates the colspan value for the body cell - the cell which contains the input field.
@@ -562,33 +672,38 @@ Ext.define("Ext.form.Labelable", {
      */
     getBodyColspan: function() {
         var me = this,
-            hideLabelCell = !me.hasVisibleLabel(),
             result;
 
-            // In the base case, the body cell spans itself, the triggerWrap cell, and the sideErrorEl by default, so 3
-            // If the label cell is hidden, or on the row above, the body cell must span the left label cell too, so 4
-            // TriggerFields which show the trigger cell, decrement this in the subclass implementation.
-            result = (hideLabelCell || me.labelAlign === 'top') ? 3 : 2;
-
-            if (me.hasActiveError()) {
-                result--;
-            }
-
-            return result;
+        if (me.msgTarget === 'side' && (!me.autoFitErrors || me.hasActiveError())) {
+            result = 1;
+        } else {
+            result = 2;
+        }
+        if (me.labelAlign !== 'top' && !me.hasVisibleLabel()) {
+            result++;
+        }
+        return result;
     },
     
-    getLabelCls: function(){
-        var labelCls = this.labelCls,
+    getLabelCls: function() {
+        var labelCls = this.labelCls + ' ' + Ext.dom.Element.unselectableCls,
             labelClsExtra = this.labelClsExtra;
-            
+
         return labelClsExtra ? labelCls + ' ' + labelClsExtra : labelCls;
     },
 
     getLabelCellStyle: function() {
         var me = this,
-            hideLabelCell = me.hideLabel || (!me.fieldLabel && me.hideEmptyLabel);
+            hideLabelCell = me.hideLabel || (!me.getFieldLabel() && me.hideEmptyLabel);
 
         return hideLabelCell ? 'display:none;' : '';
+    },
+    
+    getErrorMsgCls: function() {
+        var me = this,
+            hideLabelCell = (me.hideLabel || (!me.fieldLabel && me.hideEmptyLabel));
+        
+        return me.errorMsgCls + (!hideLabelCell && me.labelAlign === 'top' ? ' ' + Ext.baseCSSPrefix + 'lbl-top-err-icon' : '');
     },
 
     getLabelCellAttrs: function() {
@@ -614,13 +729,13 @@ Ext.define("Ext.form.Labelable", {
 
         // Calculate label styles up front rather than in the Field layout for speed; this
         // is safe because label alignment/width/pad are not expected to change.
-        if (me.labelAlign === 'top') {
-            labelStyle = 'margin-bottom:' + labelPad + 'px;';
-        } else {
+        if (me.labelAlign !== 'top') {
             if (me.labelWidth) {
                 labelStyle = 'width:' + me.labelWidth + 'px;';
             }
-            labelStyle += 'margin-right:' + labelPad + 'px;';
+            if (labelPad) {
+                labelStyle += 'margin-right:' + labelPad + 'px;';
+            }
         }
         
         return labelStyle + (me.labelStyle || '');
@@ -697,7 +812,10 @@ Ext.define("Ext.form.Labelable", {
         errors = Ext.Array.from(errors);
         this.activeError = errors[0];
         this.activeErrors = errors;
-        this.activeError = this.getTpl('activeErrorsTpl').apply({errors: errors});
+        this.activeError = this.getTpl('activeErrorsTpl').apply({
+            errors: errors,
+            listCls: Ext.plainListCls 
+        });
         this.renderActiveError();
     },
 
@@ -748,16 +866,11 @@ Ext.define("Ext.form.Labelable", {
      * @param {Object} defaults The defaults to apply to the object.
      */
     setFieldDefaults: function(defaults) {
-        var me = this,
-            val, key;
+        var key;
 
         for (key in defaults) {
-            if (defaults.hasOwnProperty(key)) {
-                val = defaults[key];
-
-                if (!me.hasOwnProperty(key)) {
-                    me[key] = val;
-                }
+            if (!this.hasOwnProperty(key)) {
+                this[key] = defaults[key];
             }
         }
     }

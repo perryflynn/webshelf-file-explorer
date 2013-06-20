@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * The class is the default component layout for {@link Ext.Component} when no explicit
  * `{@link Ext.Component#componentLayout componentLayout}` is configured.
@@ -11,7 +31,7 @@
  * In either of these size models, the dimension of the outer element is of a known size.
  * The size is found in the `ownerContext` (the {@link Ext.layout.ContextItem} for the owner
  * component) as either "width" or "height". This value, if available, is passed to the
- * {@link #publishInnerWidth} or {@link #publishInnerHeight} method, respectively.
+ * `publishInnerWidth` or `publishInnerHeight` method, respectively.
  * 
  * ## shrinkWrap
  *
@@ -20,10 +40,10 @@
  * 
  * For example, for a shrinkWrap width, the following sequence of calls are made:
  * 
- * * {@link Ext.layout.component.Component#measureContentWidth}
- * * {@link #publishOwnerWidth}
- *    * {@link #calculateOwnerWidthFromContentWidth}
- *    * {@link #publishInnerWidth} (in the event of hitting a min/maxWidth constraint)
+ * - `Ext.layout.component.Component#measureContentWidth`
+ * - `publishOwnerWidth`
+ *    - `calculateOwnerWidthFromContentWidth`
+ *    - `publishInnerWidth` (in the event of hitting a min/maxWidth constraint)
  *
  * ## natural
  *
@@ -31,8 +51,8 @@
  * (owner) element. This size is then used to determine the content area in much the same
  * way as if the outer element had a `configured` or `calculated` size model.
  * 
- * * {@link Ext.layout.component.Component#measureOwnerWidth}
- * * {@link #publishInnerWidth}
+ * - `Ext.layout.component.Component#measureOwnerWidth`
+ * - `publishInnerWidth`
  *
  * @protected
  */
@@ -71,16 +91,16 @@ Ext.define('Ext.layout.component.Auto', {
         var me = this,
             lastWidthModel = me.lastWidthModel,
             lastHeightModel = me.lastHeightModel,
-            owner = me.owner;
+            el = me.owner.el;
             
         me.callParent(arguments);
             
         if (lastWidthModel && lastWidthModel.fixed && ownerContext.widthModel.shrinkWrap) {
-            owner.el.setWidth(null);
+            el.setWidth(null);
         }
             
         if (lastHeightModel && lastHeightModel.fixed && ownerContext.heightModel.shrinkWrap) {
-            owner.el.setHeight(null);
+            el.setHeight(null);
         }    
     },
 
@@ -137,24 +157,12 @@ Ext.define('Ext.layout.component.Auto', {
     calculateOwnerWidthFromContentWidth: function (ownerContext, contentWidth) {
         return contentWidth + ownerContext.getFrameInfo().width;
     },
-    
-    onConstrainSize: function (ownerContext, options) {
-        var heightModel = options.heightModel,
-            widthModel = options.widthModel;
-
-        if (heightModel) {
-            ownerContext.heightModel = heightModel;
-        }
-        if (widthModel) {
-            ownerContext.widthModel = widthModel;
-        }
-    },
 
     publishOwnerHeight: function (ownerContext, contentHeight) {
         var me = this,
             owner = me.owner,
             height = me.calculateOwnerHeightFromContentHeight(ownerContext, contentHeight),
-            heightModel, constrainedHeight, dirty;
+            constrainedHeight, dirty, heightModel;
 
         if (isNaN(height)) {
             me.done = false;
@@ -169,14 +177,12 @@ Ext.define('Ext.layout.component.Auto', {
                 height = constrainedHeight;
 
                 if (ownerContext.heightModel.calculatedFromShrinkWrap) {
-                    // don't bother to invalidate since that will come soon from the
-                    // owner... but note that we are constrained...
+                    // Don't bother to invalidate since that will come soon... but we need
+                    // to signal our ownerLayout that we need an invalidate to actually
+                    // make good on the determined (constrained) size!
                     ownerContext.heightModel = heightModel;
                 } else {
-                    ownerContext.invalidate({
-                        before: me.onConstrainSize,
-                        heightModel: heightModel
-                    });
+                    ownerContext.invalidate({ heightModel: heightModel });
                 }
             }
             
@@ -188,7 +194,7 @@ Ext.define('Ext.layout.component.Auto', {
         var me = this,
             owner = me.owner,
             width = me.calculateOwnerWidthFromContentWidth(ownerContext, contentWidth),
-            widthModel, constrainedWidth, dirty;
+            constrainedWidth, dirty, widthModel;
 
         if (isNaN(width)) {
             me.done = false;
@@ -203,14 +209,12 @@ Ext.define('Ext.layout.component.Auto', {
                 width = constrainedWidth;
 
                 if (ownerContext.widthModel.calculatedFromShrinkWrap) {
-                    // don't bother to invalidate since that will come soon from the
-                    // owner... but note that we are constrained...
+                    // Don't bother to invalidate since that will come soon... but we need
+                    // to signal our ownerLayout that we need an invalidate to actually
+                    // make good on the determined (constrained) size!
                     ownerContext.widthModel = widthModel;
                 } else {
-                    ownerContext.invalidate({
-                        before: me.onConstrainSize,
-                        widthModel: widthModel
-                    });
+                    ownerContext.invalidate({ widthModel: widthModel });
                 }
             }
 

@@ -1,7 +1,24 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
- * @class Ext.chart.axis.Time
- * @extends Ext.chart.axis.Axis
- *
  * A type of axis whose units are measured in time values. Use this axis
  * for listing dates that you will want to group or dynamically change.
  * If you just want to display dates as categories then use the
@@ -15,8 +32,6 @@
  *         fields: 'date',
  *         title: 'Day',
  *         dateFormat: 'M d',
- *         groupBy: 'year,month,day',
- *         aggregateOp: 'sum',
  *
  *         constrain: true,
  *         fromDate: new Date('1/1/11'),
@@ -39,6 +54,8 @@ Ext.define('Ext.chart.axis.Time', {
     extend: 'Ext.chart.axis.Numeric',
 
     alternateClassName: 'Ext.chart.TimeAxis',
+
+    type: 'Time',
 
     alias: 'axis.time',
 
@@ -65,9 +82,19 @@ Ext.define('Ext.chart.axis.Time', {
     toDate: false,
 
     /**
-     * @cfg {Array/Boolean} step
-     * An array with two components: The first is the unit of the step (day, month, year, etc). The second one is the number of units for the step (1, 2, etc.).
-     * Default's [Ext.Date.DAY, 1]. If this is specified, {@link #steps} config is omitted.
+     * @cfg {Array} step
+     * An array with two components: The first is the unit of the step (day, month, year, etc). The second one is a number.
+     * If the number is an integer, it represents the number of units for the step ([Ext.Date.DAY, 2] means "Every other day").
+     * If the number is a fraction, it represents the number of steps per unit ([Ext.Date.DAY, 1/2] means "Twice a day").
+     * If the unit is the month, the steps may be adjusted depending on the month. For instance [Ext.Date.MONTH, 1/3], which means "Three times a month",
+     * generates steps on the 1st, the 10th and the 20th of every month regardless of whether a month has 28 days or 31 days. The steps are generated
+     * as follows:
+     * - [Ext.Date.MONTH, n]: on the current date every 'n' months, maxed to the number of days in the month.
+     * - [Ext.Date.MONTH, 1/2]: on the 1st and 15th of every month.
+     * - [Ext.Date.MONTH, 1/3]: on the 1st, 10th and 20th of every month.
+     * - [Ext.Date.MONTH, 1/4]: on the 1st, 8th, 15th and 22nd of every month.
+     *
+     * Defaults to: [Ext.Date.DAY, 1].
      */
     step: [Ext.Date.DAY, 1],
 
@@ -75,7 +102,6 @@ Ext.define('Ext.chart.axis.Time', {
      * @cfg {Boolean} constrain
      * If true, the values of the chart will be rendered only if they belong between the fromDate and toDate.
      * If false, the time axis will adapt to the new values by adding/removing steps.
-     * Default's false.
      */
     constrain: false,
 
@@ -125,7 +151,6 @@ Ext.define('Ext.chart.axis.Time', {
             if (me.maximum) {
                 range.to = me.maximum;
             }
-            range.step = (range.to - range.from) / range.steps;
             return range;
         } else {
             return me.callParent(arguments);

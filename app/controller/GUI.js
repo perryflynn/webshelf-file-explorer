@@ -16,11 +16,16 @@ Ext.define('DirectoryListing.controller.GUI', {
     ],
     
     
+    windowState: 'restored',
+    
+    
     init: function() {
        
         this.control({
             'window[xid=filewindow]': {
-               afterrender: this.onBodyRendered
+               afterrender: this.onBodyRendered,
+               maximize: this.onWindowMaximized,
+               restore: this.onWindowRestored,
             },
             'window[xid=filewindow] treepanel[xid=dirtree] toolbar button': {
                click: this.onTreePanelButtonClicked
@@ -65,6 +70,18 @@ Ext.define('DirectoryListing.controller.GUI', {
     
    onBodyRendered: function() {
       var me = this;
+      
+      var body = me.getViewport();
+      console.log(body);
+      var bwidth = body.getWidth();
+      var bheight = body.getHeight();
+      var win = me.getWindow();
+      var wwidth = win.getWidth();
+      var wheight = win.getHeight();
+      
+      body.on('resize', me.onViewportResized, me);
+      body.fireEvent('resize', {});
+      
       if(!me.initstatus) this.getDirtree().getSelectionModel().on('selectionchange', this.onTreeDirSelected, this);
       
       me.initstatus = true;
@@ -93,9 +110,38 @@ Ext.define('DirectoryListing.controller.GUI', {
       
    },
    
-   onViewportRendered: function() {
+   onWindowMaximized: function() {
+      this.windowState = "maximized";
+   },
+   
+   onWindowRestored: function() {
+      this.windowState = "restored";
+   },
+   
+   onViewportResized: function() {
       var me = this;
+      
       var body = me.getViewport();
+      var bwidth = body.getWidth();
+      var bheight = body.getHeight();
+      var win = me.getWindow();
+      var wwidth = Config.winWidth;
+      var wheight = Config.winHeight;
+      
+      if(me.windowState=="restored" && (wwidth>bwidth || wheight>bheight)) {
+         win.setPosition(0,0);
+         win.maximize();
+      } else if(me.windowState=="maximized" && wwidth<=bwidth && wheight<=bheight) {
+         win.restore();
+         win.center();
+      }
+      
+   },
+   
+   onViewportRendered: function() {
+      /*var me = this;
+      var body = me.getViewport();
+      console.log(body);
       var bwidth = body.getWidth();
       var bheight = body.getHeight();
       var win = me.getWindow();
@@ -104,7 +150,7 @@ Ext.define('DirectoryListing.controller.GUI', {
       
       if(wwidth>bwidth || wheight>bheight) {
          window.setTimeout(function() {win.maximize();}, 1000);
-      }
+      }*/
    },
    
    onTreePanelButtonClicked: function(btn) {

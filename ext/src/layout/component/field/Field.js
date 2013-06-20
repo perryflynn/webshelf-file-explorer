@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * Layout class for components with {@link Ext.form.Labelable field labeling}, handling the sizing and alignment of
  * the form control, label, and error message treatment.
@@ -16,12 +36,12 @@ Ext.define('Ext.layout.component.field.Field', {
     /* End Definitions */
 
     type: 'field',
+    
+    naturalSizingProp: 'size',
 
     beginLayout: function(ownerContext) {
         var me = this,
-            owner = me.owner,
-            widthModel = ownerContext.widthModel,
-            width;
+            owner = me.owner;
 
         me.callParent(arguments);
 
@@ -32,27 +52,35 @@ Ext.define('Ext.layout.component.field.Field', {
         ownerContext.bodyCellContext = ownerContext.getEl('bodyEl');
         ownerContext.inputContext = ownerContext.getEl('inputEl');
         ownerContext.errorContext = ownerContext.getEl('errorEl');
-        ownerContext.inputRow = ownerContext.getEl('inputRow');
 
         // width:100% on an element inside a table in IE6/7 "strict" sizes the content box.
         // store the input element's border and padding info so that subclasses can take it into consideration if needed
-        if ((Ext.isIE6 || Ext.isIE7) && Ext.isStrict && ownerContext.inputContext) {
+        if (Ext.isIE7m && Ext.isStrict && ownerContext.inputContext) {
             me.ieInputWidthAdjustment = ownerContext.inputContext.getPaddingInfo().width + ownerContext.inputContext.getBorderInfo().width;
         }
 
         // perform preparation on the label and error (setting css classes, qtips, etc.)
         ownerContext.labelStrategy.prepare(ownerContext, owner);
         ownerContext.errorStrategy.prepare(ownerContext, owner);
-
+    },
+    
+    beginLayoutCycle: function(ownerContext){
+        var me = this,
+            owner = me.owner,
+            widthModel = ownerContext.widthModel,
+            ownerNaturalSize = owner[me.naturalSizingProp],
+            width;
+            
+        me.callParent(arguments);
         // Body cell must stretch to use up available width unless the field is auto width
         if (widthModel.shrinkWrap) {
             // When the width needs to be auto, table-layout cannot be fixed
             me.beginLayoutShrinkWrap(ownerContext);
         } else if (widthModel.natural) {
 
-            // When a size specified, natural becomes fixed width
-            if (typeof owner.size == 'number') {
-                me.beginLayoutFixed(ownerContext, (width = owner.size * 6.5 + 20), 'px');
+            // When a size specified, natural becomes fixed width unless the inpiutWidth is specified - we shrinkwrap that
+            if (typeof ownerNaturalSize == 'number' && !owner.inputWidth) {
+                me.beginLayoutFixed(ownerContext, (width = ownerNaturalSize * 6.5 + 20), 'px');
             }
 
             // Otherwise it is the same as shrinkWrap
@@ -62,21 +90,38 @@ Ext.define('Ext.layout.component.field.Field', {
             ownerContext.setWidth(width, false);
         } else {
             me.beginLayoutFixed(ownerContext, '100', '%');
-        }
+        }    
     },
 
     beginLayoutFixed: function (ownerContext, width, suffix) {
-        var owner = ownerContext.target;
+        var owner = ownerContext.target,
+            inputEl = owner.inputEl,
+            inputWidth = owner.inputWidth;
 
         owner.el.setStyle('table-layout', 'fixed');
         owner.bodyEl.setStyle('width', width + suffix);
+        if (inputEl) {
+            if (inputWidth) {
+                inputEl.setStyle('width', inputWidth + 'px');
+            } else {
+                inputEl.setStyle('width', owner.stretchInputElFixed ? '100%' : '');
+            }
+        }
+        ownerContext.isFixed = true;
     },
 
     beginLayoutShrinkWrap: function (ownerContext) {
-        var owner = ownerContext.target;
+        var owner = ownerContext.target,
+            inputEl = owner.inputEl,
+            inputWidth = owner.inputWidth;
 
-        if (owner.inputEl && owner.inputEl.dom) {
-            owner.inputEl.dom.removeAttribute('size');
+        if (inputEl && inputEl.dom) {
+            inputEl.dom.removeAttribute('size');
+            if (inputWidth) {
+                inputEl.setStyle('width', inputWidth + 'px');
+            } else {
+                inputEl.setStyle('width', '');
+            }
         }
         owner.el.setStyle('table-layout', 'auto');
         owner.bodyEl.setStyle('width', '');
@@ -84,8 +129,8 @@ Ext.define('Ext.layout.component.field.Field', {
 
     finishedLayout: function(ownerContext){
         var owner = this.owner;
-        
-        this.callParent(arguments);
+
+        this.callParent(arguments);        
         ownerContext.labelStrategy.finishedLayout(ownerContext, owner);
         ownerContext.errorStrategy.finishedLayout(ownerContext, owner);
     },
@@ -164,37 +209,18 @@ Ext.define('Ext.layout.component.field.Field', {
             /**
              * Label displayed above the bodyEl
              */
-            top: Ext.applyIf({
-                prepare: function(ownerContext, owner){
-                    base.prepare(ownerContext, owner);
-                    var labelEl = owner.labelEl;
-                    ownerContext.hasHiddenLabel = labelEl && !owner.hideEmptyLabel && !owner.getFieldLabel(); 
-                    
-                    if (ownerContext.hasHiddenLabel) {
-                        labelEl.dom.innerHTML = '&#160;';
-                    }    
-                },
-                
+            top: Ext.applyIf({        
+                        
                 getHeight: function (ownerContext) {
                     var labelContext = ownerContext.labelContext,
-                        height = labelContext.getProp('height'),
-                        hasEmptyLabel = ownerContext.hasHiddenLabel;
-
-                    if (height === undefined || hasEmptyLabel) {
-                        height = labelContext.el.getHeight() + labelContext.getMarginInfo().height;
-                        if (hasEmptyLabel) {
-                            // only force the height if we'll be clearing it later
-                            labelContext.setHeight(height);
-                        }
+                        props = labelContext.props,
+                        height = props.height;
+                        
+                    if (height === undefined) {
+                        props.height = height = labelContext.el.getHeight();
                     }
 
                     return height;
-                },
-                
-                finishedLayout: function(ownerContext, owner) {
-                     if (ownerContext.hasHiddenLabel) {
-                        owner.labelEl.dom.innerHTML = '';
-                    }    
                 }
             }, base),
 
@@ -254,6 +280,8 @@ Ext.define('Ext.layout.component.field.Field', {
             side: applyIf({
                 prepare: function(ownerContext, owner) {
                     var errorEl = owner.errorEl,
+                        sideErrorCell = owner.sideErrorCell,
+                        displayError = owner.hasActiveError(),
                         tempEl;
 
                     // Capture error icon width once
@@ -264,7 +292,18 @@ Ext.define('Ext.layout.component.field.Field', {
 
                     errorEl.addCls(iconCls);
                     errorEl.set({'data-errorqtip': owner.getActiveError() || ''});
-                    errorEl.setDisplayed(owner.hasActiveError());
+                    if (owner.autoFitErrors) {
+                        errorEl.setDisplayed(displayError);
+                    }
+                    // Not autofitting, the space must still be allocated.
+                    else {
+                        errorEl.setVisible(displayError);
+                    }
+
+                    // If we are auto fitting, then hide and show the entire cell
+                    if (sideErrorCell && owner.autoFitErrors) {
+                        sideErrorCell.setDisplayed(displayError);
+                    }
                     owner.bodyEl.dom.colSpan = owner.getBodyColspan();
 
                     // TODO: defer the tip call until after the layout to avoid immediate DOM reads now
@@ -283,10 +322,6 @@ Ext.define('Ext.layout.component.field.Field', {
 
                     errorEl.addCls(cls);
                     errorEl.setDisplayed(owner.hasActiveError());
-                    if (owner.labelAlign == 'left') {
-                        // hide the under label placeholder td
-                        errorEl.prev().setDisplayed(owner.hasVisibleLabel() ? 'block' : 'none');
-                    }
                 },
                 getHeight: function (ownerContext) {
                     var height = 0,
@@ -312,7 +347,7 @@ Ext.define('Ext.layout.component.field.Field', {
             qtip: applyIf({
                 prepare: function(ownerContext, owner) {
                     Ext.layout.component.field.Field.initTip();
-                    owner.getActionEl().set({'data-errorqtip': owner.getActiveError() || ''});
+                    owner.getActionEl().dom.setAttribute('data-errorqtip', owner.getActiveError() || '');
                 },
                 onFocus: showTip
             }, base),
@@ -322,7 +357,7 @@ Ext.define('Ext.layout.component.field.Field', {
              */
             title: applyIf({
                 prepare: function(ownerContext, owner) {
-                    owner.el.set({'title': owner.getActiveError() || ''});
+                    owner.getActionEl().dom.setAttribute('title', owner.getActiveError() || '');
                 }
             }, base),
 
@@ -351,7 +386,7 @@ Ext.define('Ext.layout.component.field.Field', {
             var tip = this.tip;
             if (!tip) {
                 tip = this.tip = Ext.create('Ext.tip.QuickTip', {
-                    baseCls: Ext.baseCSSPrefix + 'form-invalid-tip'
+                    ui: 'form-invalid'
                 });
                 tip.tagConfig = Ext.apply({}, {attribute: 'errorqtip'}, tip.tagConfig);
             }

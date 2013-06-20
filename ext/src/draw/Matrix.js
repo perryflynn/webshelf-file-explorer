@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @private
  */
@@ -92,9 +112,7 @@ Ext.define('Ext.draw.Matrix', {
         if (y == null) {
             y = x;
         }
-        me.add(1, 0, 0, 1, cx, cy);
-        me.add(x, 0, 0, y, 0, 0);
-        me.add(1, 0, 0, 1, -cx, -cy);
+        me.add(x, 0, 0, y, cx * (1 - x), cy * (1 - y));
     },
 
     rotate: function(a, x, y) {
@@ -102,8 +120,7 @@ Ext.define('Ext.draw.Matrix', {
         var me = this,
             cos = +Math.cos(a).toFixed(9),
             sin = +Math.sin(a).toFixed(9);
-        me.add(cos, sin, -sin, cos, x, y);
-        me.add(1, 0, 0, 1, -x, -y);
+        me.add(cos, sin, -sin, cos, x - cos * x + sin * y, -(sin * x) + y - cos * y);
     },
 
     x: function(x, y) {

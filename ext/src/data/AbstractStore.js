@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @author Ed Spencer
  *
@@ -24,7 +44,7 @@
  * {@link Ext.data.Store#filter filter} methods.
  */
 Ext.define('Ext.data.AbstractStore', {
-	requires: [
+    requires: [
         'Ext.util.MixedCollection',
         'Ext.data.proxy.Proxy',
         'Ext.data.Operation',
@@ -37,6 +57,19 @@ Ext.define('Ext.data.AbstractStore', {
     },
 
     statics: {
+        /**
+         * Creates a store from config object.
+         * 
+         * @param {Object/Ext.data.AbstractStore} store A config for
+         * the store to be created.  It may contain a `type` field
+         * which defines the particular type of store to create.
+         * 
+         * Alteratively passing an actual store to this method will
+         * just return it, no changes made.
+         * 
+         * @return {Ext.data.AbstractStore} The created store.
+         * @static
+         */
         create: function(store) {
             if (!store.isStore) {
                 if (!store.type) {
@@ -48,20 +81,48 @@ Ext.define('Ext.data.AbstractStore', {
         }
     },
 
+    onClassExtended: function(cls, data, hooks) {
+        var model = data.model,
+            onBeforeClassCreated;
+
+        if (typeof model == 'string') {
+            onBeforeClassCreated = hooks.onBeforeCreated;
+
+            hooks.onBeforeCreated = function() {
+                var me = this,
+                    args = arguments;
+
+                Ext.require(model, function() {
+                    onBeforeClassCreated.apply(me, args);
+                });
+            };
+        }
+    },
+
+    /**
+     * @cfg {Boolean} remoteSort
+     * True to defer any sorting operation to the server. If false, sorting is done locally on the client.
+     */
     remoteSort  : false,
+
+    /**
+     * @cfg {Boolean} remoteFilter
+     * True to defer any filtering operation to the server. If false, filtering is done locally on the client.
+     */
     remoteFilter: false,
 
     /**
      * @cfg {String/Ext.data.proxy.Proxy/Object} proxy
      * The Proxy to use for this Store. This can be either a string, a config object or a Proxy instance -
      * see {@link #setProxy} for details.
+     * @since 1.1.0
      */
 
     /**
      * @cfg {Boolean/Object} autoLoad
      * If data is not specified, and if autoLoad is true or an Object, this store's load method is automatically called
      * after creation. If the value of autoLoad is an Object, this Object will be passed to the store's load method.
-     * Defaults to false.
+     * @since 2.3.0
      */
     autoLoad: undefined,
 
@@ -72,7 +133,7 @@ Ext.define('Ext.data.AbstractStore', {
     autoSync: false,
 
     /**
-     * @property {String} batchUpdateMode
+     * @cfg {String} batchUpdateMode
      * Sets the updating behavior based on batch synchronization. 'operation' (the default) will update the Store's
      * internal representation of the data after each operation of the batch has completed, 'complete' will wait until
      * the entire batch has been completed before updating the Store's data. 'complete' is a good choice for local
@@ -81,14 +142,14 @@ Ext.define('Ext.data.AbstractStore', {
     batchUpdateMode: 'operation',
 
     /**
-     * @property {Boolean} filterOnLoad
+     * @cfg {Boolean} filterOnLoad
      * If true, any filters attached to this Store will be run after loading data, before the datachanged event is fired.
      * Defaults to true, ignored if {@link Ext.data.Store#remoteFilter remoteFilter} is true
      */
     filterOnLoad: true,
 
     /**
-     * @property {Boolean} sortOnLoad
+     * @cfg {Boolean} sortOnLoad
      * If true, any sorters attached to this Store will be run after loading data, before the datachanged event is fired.
      * Defaults to true, igored if {@link Ext.data.Store#remoteSort remoteSort} is true
      */
@@ -113,6 +174,7 @@ Ext.define('Ext.data.AbstractStore', {
      * @property {Boolean} isDestroyed
      * True if the Store has already been destroyed. If this is true, the reference to Store should be deleted
      * as it will not function correctly any more.
+     * @since 3.4.0
      */
     isDestroyed: false,
 
@@ -134,10 +196,11 @@ Ext.define('Ext.data.AbstractStore', {
      * @cfg {Object[]} fields
      * This may be used in place of specifying a {@link #model} configuration. The fields should be a
      * set of {@link Ext.data.Field} configuration objects. The store will automatically create a {@link Ext.data.Model}
-     * with these fields. In general this configuration option should be avoided, it exists for the purposes of
-     * backwards compatibility. For anything more complicated, such as specifying a particular id property or
+     * with these fields. In general this configuration option should only be used for simple stores like
+     * a two-field store of ComboBox. For anything more complicated, such as specifying a particular id property or
      * associations, a {@link Ext.data.Model} should be defined and specified for the {@link #model}
      * config.
+     * @since 2.3.0
      */
 
     /**
@@ -147,8 +210,23 @@ Ext.define('Ext.data.AbstractStore', {
      */
 
     /**
-     * @cfg {Object[]} filters
-     * Array of {@link Ext.util.Filter Filters} for this store.
+     * @cfg {Object[]/Function[]} filters
+     * Array of {@link Ext.util.Filter Filters} for this store. Can also be passed array of
+     * functions which will be used as the {@link Ext.util.Filter#filterFn filterFn} config
+     * for filters:
+     * 
+     *     filters: [
+     *         function(item) {
+     *             return item.weight > 0;
+     *         }
+     *     ]
+     *
+     * To filter after the grid is loaded use the {@link Ext.data.Store#filterBy filterBy} function.
+     */
+
+    /**
+     * @cfg {Boolean} [statefulFilters=false]
+     * Configure as `true` to have the filters saved when a client {@link Ext.grid.Panel grid} saves its state.
      */
 
     sortRoot: 'data',
@@ -160,23 +238,41 @@ Ext.define('Ext.data.AbstractStore', {
 
         /**
          * @event add
-         * Fired when a Model instance has been added to this Store
+         * Fired when a Model instance has been added to this Store.
          * @param {Ext.data.Store} store The store
          * @param {Ext.data.Model[]} records The Model instances that were added
          * @param {Number} index The index at which the instances were inserted
+         * @since 1.1.0
          */
 
         /**
          * @event remove
-         * Fired when a Model instance has been removed from this Store
+         * Fired when a Model instance has been removed from this Store.
+         *
+         * **If many records may be removed in one go, then it is more efficient to listen for the {@link #event-bulkremove} event
+         * and perform any processing for a bulk remove than to listen for this {@link #event-remove} event.**
          * @param {Ext.data.Store} store The Store object
          * @param {Ext.data.Model} record The record that was removed
          * @param {Number} index The index of the record that was removed
+         * @param {Boolean} isMove `true` if the child node is being removed so it can be moved to another position in this Store.
+         * @since 1.1.0
+         */
+
+        /**
+         * @event bulkremove
+         * Fired at the *end* of the {@link Ext.data.Store#method-remove remove} method when all records in the passed array have been removed.
+         *
+         * If many records may be removed in one go, then it is more efficient to listen for this event
+         * and perform any processing for a bulk remove than to listen for many {@link #event-remove} events.
+         * @param {Ext.data.Store} store The Store object
+         * @param {Ext.data.Model[]} records The array of records that were removed (In the order they appear in the Store)
+         * @param {Number[]} indexes The indexes of the records that were removed
+         * @param {Boolean} isMove `true` if the child nodes are being removed so they can be moved to another position in this Store.
          */
 
         /**
          * @event update
-         * Fires when a Model instance has been updated
+         * Fires when a Model instance has been updated.
          * @param {Ext.data.Store} this
          * @param {Ext.data.Model} record The Model instance that was updated
          * @param {String} operation The update operation being performed. Value may be one of:
@@ -185,6 +281,7 @@ Ext.define('Ext.data.AbstractStore', {
          *     Ext.data.Model.REJECT
          *     Ext.data.Model.COMMIT
          * @param {String[]} modifiedFieldNames Array of field names changed during edit.
+         * @since 1.1.0
          */
 
         /**
@@ -192,6 +289,7 @@ Ext.define('Ext.data.AbstractStore', {
          * Fires whenever the records in the Store have changed in some way - this could include adding or removing
          * records, or updating the data in existing records
          * @param {Ext.data.Store} this The data store
+         * @since 1.1.0
          */
         
         /**
@@ -208,6 +306,7 @@ Ext.define('Ext.data.AbstractStore', {
          * @param {Ext.data.Store} store This Store
          * @param {Ext.data.Operation} operation The Ext.data.Operation object that will be passed to the Proxy to
          * load the Store
+         * @since 1.1.0
          */
 
         /**
@@ -216,6 +315,7 @@ Ext.define('Ext.data.AbstractStore', {
          * @param {Ext.data.Store} this
          * @param {Ext.data.Model[]} records An array of records
          * @param {Boolean} successful True if the operation was successful.
+         * @since 1.1.0
          */
 
         /**
@@ -224,6 +324,7 @@ Ext.define('Ext.data.AbstractStore', {
          * @param {Ext.data.Store} store This Store
          * @param {Ext.data.Operation} operation The {@link Ext.data.Operation Operation} object that was used in
          * the write
+         * @since 3.4.0
          */
 
         /**
@@ -235,6 +336,7 @@ Ext.define('Ext.data.AbstractStore', {
          * @event clear
          * Fired after the {@link #removeAll} method is called.
          * @param {Ext.data.Store} this
+         * @since 1.1.0
          */
         /**
          * @event metachange
@@ -244,6 +346,7 @@ Ext.define('Ext.data.AbstractStore', {
          * This event is currently only fired for JsonReaders.
          * @param {Ext.data.Store} this
          * @param {Object} meta The JSON metadata
+         * @since 1.1.0
          */
 
         Ext.apply(me, config);
@@ -258,17 +361,22 @@ Ext.define('Ext.data.AbstractStore', {
         me.removed = [];
 
         me.mixins.observable.constructor.apply(me, arguments);
+
+        // <debug>
+        var configModel = me.model;
+        // </debug>
+
         me.model = Ext.ModelManager.getModel(me.model);
 
         /**
          * @property {Object} modelDefaults
          * @private
-         * A set of default values to be applied to every model instance added via {@link #insert} or created via {@link #create}.
-         * This is used internally by associations to set foreign keys and other fields. See the Association classes source code
-         * for examples. This should not need to be used by application developers.
+         * A set of default values to be applied to every model instance added via {@link Ext.data.Store#insert insert} or created
+         * via {@link Ext.data.Store#createModel createModel}. This is used internally by associations to set foreign keys and
+         * other fields. See the Association classes source code for examples. This should not need to be used by application developers.
          */
         Ext.applyIf(me, {
-            modelDefaults: {}
+            modelDefaults: null
         });
 
         //Supports the 3.x style of simply passing an array of fields to the store, implicitly creating a model
@@ -286,16 +394,26 @@ Ext.define('Ext.data.AbstractStore', {
 
         // <debug>
         if (!me.model && me.useModelWarning !== false) {
-            if (Ext.isDefined(Ext.global.console)) {
-                Ext.global.console.warn('Store defined with no model. You may have mistyped the model name.');
+            // There are a number of ways things could have gone wrong, try to give as much information as possible
+            var logMsg = [
+                Ext.getClassName(me) || 'Store',
+                ' created with no model.'
+            ];
+
+            if (typeof configModel === 'string') {
+                logMsg.push(" The name '", configModel, "'", ' does not correspond to a valid model.');
             }
+
+            Ext.log.warn(logMsg.join(''));
         }
         // </debug>
 
         //ensures that the Proxy is instantiated correctly
         me.setProxy(me.proxy || me.model.getProxy());
 
-        me.proxy.on('metachange', me.onMetaChange, me);
+        if (!me.disableMetaChangeEvent) {
+            me.proxy.on('metachange', me.onMetaChange, me);
+        }
 
         if (me.id && !me.storeId) {
             me.storeId = me.id;
@@ -448,7 +566,8 @@ Ext.define('Ext.data.AbstractStore', {
         }
     },
 
-    //tells the attached proxy to destroy the given records
+    // tells the attached proxy to destroy the given records
+    // @since 3.4.0
     destroy: function(options) {
         var me = this,
             operation;
@@ -497,6 +616,9 @@ Ext.define('Ext.data.AbstractStore', {
         me.fireEvent('refresh', me);
     },
 
+    /**
+     * @private
+     */
     onBatchException: function(batch, operation) {
         // //decide what to do... could continue with the next operation
         // batch.start();
@@ -730,17 +852,19 @@ Ext.define('Ext.data.AbstractStore', {
      * object that is created and then sent to the proxy's {@link Ext.data.proxy.Proxy#read} function
      * 
      * @return {Ext.data.Store} this
+     * @since 1.1.0
      */
     load: function(options) {
         var me = this,
             operation;
 
-        options = options || {};
-        
-        options.action = options.action || 'read';
-        options.filters = options.filters || me.filters.items;
-        options.sorters = options.sorters || me.getSorters();
-        
+        options = Ext.apply({
+            action: 'read',
+            filters: me.filters.items,
+            sorters: me.getSorters()
+        }, options);
+        me.lastOptions = options;
+
         operation = new Ext.data.Operation(options);
 
         if (me.fireEvent('beforeload', me, operation) !== false) {
@@ -752,28 +876,37 @@ Ext.define('Ext.data.AbstractStore', {
     },
 
     /**
+     * Reloads the store using the last options passed to the {@link #method-load} method.
+     * @param {Object} options A config object which contains options which may override the options passed to the previous load call.
+     */
+    reload: function(options) {
+        return this.load(Ext.apply(this.lastOptions, options));
+    },
+
+    /**
      * @private
      * A model instance should call this method on the Store it has been {@link Ext.data.Model#join joined} to.
      * @param {Ext.data.Model} record The model instance that was edited
      * @param {String[]} modifiedFieldNames Array of field names changed during edit.
+     * @since 3.4.0
      */
     afterEdit : function(record, modifiedFieldNames) {
         var me = this,
             i, shouldSync;
 
         if (me.autoSync && !me.autoSyncSuspended) {
-            for(i = modifiedFieldNames.length; i--;) {
+            for (i = modifiedFieldNames.length; i--;) {
                 // only sync if persistent fields were modified
-                if(record.fields.get(modifiedFieldNames[i]).persist) {
+                if (record.fields.get(modifiedFieldNames[i]).persist) {
                     shouldSync = true;
                     break;
                 }
             }
-            if(shouldSync) {
+            if (shouldSync) {
                 me.sync();
             }
         }
-
+        me.onUpdate(record, Ext.data.Model.EDIT, modifiedFieldNames);
         me.fireEvent('update', me, record, Ext.data.Model.EDIT, modifiedFieldNames);
     },
 
@@ -781,6 +914,7 @@ Ext.define('Ext.data.AbstractStore', {
      * @private
      * A model instance should call this method on the Store it has been {@link Ext.data.Model#join joined} to..
      * @param {Ext.data.Model} record The model instance that was edited
+     * @since 3.4.0
      */
     afterReject : function(record) {
         // Must pass the 5th param (modifiedFieldNames) as null, otherwise the
@@ -788,6 +922,7 @@ Ext.define('Ext.data.AbstractStore', {
         // which may get used as the modified fields array by a handler.
         // This array is used for selective grid cell updating by Grid View.
         // Null will be treated as though all cells need updating.
+        this.onUpdate(record, Ext.data.Model.REJECT, null);
         this.fireEvent('update', this, record, Ext.data.Model.REJECT, null);
     },
 
@@ -795,21 +930,29 @@ Ext.define('Ext.data.AbstractStore', {
      * @private
      * A model instance should call this method on the Store it has been {@link Ext.data.Model#join joined} to.
      * @param {Ext.data.Model} record The model instance that was edited
+     * @since 3.4.0
      */
-    afterCommit : function(record) {
-        // Must pass the 5th param (modifiedFieldNames) as null, otherwise the
-        // event firing machinery appends the listeners "options" object to the arg list
-        // which may get used as the modified fields array by a handler.
-        // This array is used for selective grid cell updating by Grid View.
-        // Null will be treated as though all cells need updating.
-        this.fireEvent('update', this, record, Ext.data.Model.COMMIT, null);
+    afterCommit : function(record, modifiedFieldNames) {
+        if (!modifiedFieldNames) {
+            modifiedFieldNames = null;
+        }
+        this.onUpdate(record, Ext.data.Model.COMMIT, modifiedFieldNames);
+        this.fireEvent('update', this, record, Ext.data.Model.COMMIT, modifiedFieldNames);
+    },
+
+    onUpdate: Ext.emptyFn,
+
+    onIdChanged: function(model, oldId, newId, oldInternalId){
+        this.fireEvent('idchanged', this, model, oldId, newId, oldInternalId);
     },
 
     // private
     destroyStore: function() {
-        var me = this;
+        var implicitModelName,
+            me = this;
 
         if (!me.isDestroyed) {
+            me.clearListeners();
             if (me.storeId) {
                 Ext.data.StoreManager.unregister(me);
             }
@@ -819,14 +962,123 @@ Ext.define('Ext.data.AbstractStore', {
                 me.reader.destroyReader();
             }
             me.proxy = me.reader = me.writer = null;
-            me.clearListeners();
             me.isDestroyed = true;
 
             if (me.implicitModel) {
-                Ext.destroy(me.model);
+                implicitModelName = Ext.getClassName(me.model);
+                Ext.undefine(implicitModelName);
+                Ext.ModelManager.unregisterType(implicitModelName);
             } else {
                 me.model = null;
             }
+        }
+    },
+    
+    /**
+     * @private
+     * Returns the grouping, sorting and filtered state of this Store.
+     */
+    getState: function() {
+        var me = this,
+            hasState,
+            result,
+            hasGroupers = !!me.groupers,
+            groupers = [],
+            sorters = [],
+            filters = [];
+
+        if (hasGroupers) {
+            me.groupers.each(function(g) {
+                groupers[groupers.length] = g.serialize();
+                hasState = true;
+            });
+        }
+
+        if (me.sorters) {
+            // Create sorters config array.
+            me.sorters.each(function(s) {
+                // Sorters collection gets groupers prepended to it, so do not duplicate
+                if (hasGroupers && !me.groupers.contains(s)) {
+                    sorters[sorters.length] = s.serialize();
+                    hasState = true;
+                }
+            });
+        }
+
+        // Because we do not provide a filter changing mechanism, only statify the filters if they opt in.
+        // Otherwise filters would get "stuck".
+        if (me.filters && me.statefulFilters) {
+            me.filters.each(function(f) {
+                filters[filters.length] = f.serialize();
+                hasState = true;
+            });
+        }
+
+        // If there is any state to save, return it as an object
+        if (hasState) {
+            result = {};
+            if (groupers.length) {
+                result.groupers = groupers;
+            }
+            if (sorters.length) {
+                result.sorters = sorters;
+            }
+            if (filters.length) {
+                result.filters = filters;
+            }
+            return result;
+        }
+    },
+
+    /**
+     * @private
+     * Restores state to the passed state
+     */
+    applyState: function(state) {
+        var me = this,
+            hasSorters = !!me.sorters,
+            hasGroupers = !!me.groupers,
+            hasFilters = !!me.filters,
+            locallySorted;
+
+        if (hasGroupers && state.groupers) {
+            me.groupers.clear();
+            me.groupers.addAll(me.decodeGroupers(state.groupers));
+        }
+
+        if (hasSorters && state.sorters) {
+            me.sorters.clear();
+            me.sorters.addAll(me.decodeSorters(state.sorters));
+        }
+
+        if (hasFilters && state.filters) {
+            me.filters.clear();
+            me.filters.addAll(me.decodeFilters(state.filters));
+        }
+
+        if (hasSorters && hasGroupers) {
+            // Sorters collection gets groupers prepended to it
+            me.sorters.insert(0, me.groupers.getRange());
+        }
+
+        // Data manipulated by the server - reload 
+        if (me.autoLoad && (me.remoteSort || me.remoteGroup || me.remoteFilter)) {
+            if (me.autoLoad === true) {
+                me.reload();
+            } else {
+                me.reload(me.autoLoad);
+            }
+        }
+
+        // If we have local filters, filter the data
+        if (hasFilters && me.filters.length && !me.remoteFilter) {
+            me.filter();
+            locallySorted = me.sortOnFilter;
+        }
+
+        // If we have local sorters, and the data is not already sorted by a sortOnFilter operation, then sort.
+        if (hasSorters && me.sorters.length && !me.remoteSort && !locallySorted) {
+            me.sort();
         }
     },
 
@@ -841,6 +1093,7 @@ Ext.define('Ext.data.AbstractStore', {
             me.fireEvent('datachanged', me);
             me.fireEvent('refresh', me);
         }
+        me.fireEvent('sort', me, me.sorters.getRange());
     },
 
     // to be implemented by subclasses
@@ -857,6 +1110,7 @@ Ext.define('Ext.data.AbstractStore', {
      * individual remove events are not called. The {@link #clear} event is
      * fired upon completion.
      * @method
+     * @since 1.1.0
      */
     removeAll: Ext.emptyFn,
     // individual store subclasses should implement a "fast" remove

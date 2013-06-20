@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * Provides a convenient wrapper for TextFields that adds a clickable trigger button (looks like a combobox by default).
  * The trigger has no default action, so you must assign a function to implement the trigger click handler by overriding
@@ -35,7 +55,7 @@
 Ext.define('Ext.form.field.Trigger', {
     extend:'Ext.form.field.Text',
     alias: ['widget.triggerfield', 'widget.trigger'],
-    requires: ['Ext.DomHelper', 'Ext.util.ClickRepeater', 'Ext.layout.component.field.Trigger'],
+    requires: ['Ext.dom.Helper', 'Ext.util.ClickRepeater', 'Ext.layout.component.field.Trigger'],
     alternateClassName: ['Ext.form.TriggerField', 'Ext.form.TwinTriggerField', 'Ext.form.Trigger'],
 
     childEls: [
@@ -66,17 +86,23 @@ Ext.define('Ext.form.field.Trigger', {
      */
 
     /**
-     * @cfg {String} [triggerBaseCls='x-form-trigger']
+     * @cfg
      * The base CSS class that is always added to the trigger button. The {@link #triggerCls} will be appended in
      * addition to this class.
      */
     triggerBaseCls: Ext.baseCSSPrefix + 'form-trigger',
 
     /**
-     * @cfg {String} [triggerWrapCls='x-form-trigger-wrap']
+     * @cfg
      * The CSS class that is added to the div wrapping the trigger button(s).
      */
     triggerWrapCls: Ext.baseCSSPrefix + 'form-trigger-wrap',
+
+    /**
+     * @cfg
+     * The CSS class that is added to the text field when component is read-only or not editable.
+     */
+    triggerNoEditCls: Ext.baseCSSPrefix + 'trigger-noedit',
 
     /**
      * @cfg {Boolean} hideTrigger
@@ -116,12 +142,14 @@ Ext.define('Ext.form.field.Trigger', {
      * @private
      */
     autoSize: Ext.emptyFn,
-    // private
+    // @private
     monitorTab: true,
-    // private
+    // @private
     mimicing: false,
-    // private
+    // @private
     triggerIndexRe: /trigger-index-(\d+)/,
+    
+    extraTriggerCls: '',
 
     componentLayout: 'triggerfield',
 
@@ -130,12 +158,13 @@ Ext.define('Ext.form.field.Trigger', {
         this.callParent(arguments);
     },
 
-    getSubTplMarkup: function() {
+    getSubTplMarkup: function(values) {
         var me = this,
+            childElCls = values.childElCls, // either '' or ' x-foo'
             field = me.callParent(arguments);
 
-        return '<table id="' + me.id + '-triggerWrap" class="' + Ext.baseCSSPrefix + 'form-trigger-wrap" cellpadding="0" cellspacing="0"><tbody><tr>' +
-            '<td id="' + me.id + '-inputCell" class="' + Ext.baseCSSPrefix + 'form-trigger-input-cell">' + field + '</td>' +
+        return '<table id="' + me.id + '-triggerWrap" class="' + Ext.baseCSSPrefix + 'form-trigger-wrap' + childElCls + '" cellpadding="0" cellspacing="0"><tbody><tr>' +
+            '<td id="' + me.id + '-inputCell" class="' + Ext.baseCSSPrefix + 'form-trigger-input-cell' + childElCls + '">' + field + '</td>' +
             me.getTriggerMarkup() +
             '</tr></tbody></table>';
     },
@@ -147,7 +176,7 @@ Ext.define('Ext.form.field.Trigger', {
             editable = me.editable !== false;
         
         return Ext.apply(data, {
-            editableCls: (readOnly || !editable) ? ' ' + Ext.baseCSSPrefix + 'trigger-noedit' : '',
+            editableCls: (readOnly || !editable) ? ' ' + me.triggerNoEditCls : '',
             readOnly: !editable || readOnly
         });  
     },
@@ -169,7 +198,10 @@ Ext.define('Ext.form.field.Trigger', {
             hideTrigger = (me.readOnly || me.hideTrigger),
             triggerCls,
             triggerBaseCls = me.triggerBaseCls,
-            triggerConfigs = [];
+            triggerConfigs = [],
+            unselectableCls = Ext.dom.Element.unselectableCls,
+            style = 'width:' + me.triggerWidth + 'px;' + (hideTrigger ? 'display:none;' : ''),
+            cls = me.extraTriggerCls + ' ' + Ext.baseCSSPrefix + 'trigger-cell ' + unselectableCls;
 
         // TODO this trigger<n>Cls API design doesn't feel clean, especially where it butts up against the
         // single triggerCls config. Should rethink this, perhaps something more structured like a list of
@@ -184,15 +216,15 @@ Ext.define('Ext.form.field.Trigger', {
             triggerConfigs.push({
                 tag: 'td',
                 valign: 'top',
-                cls: Ext.baseCSSPrefix + 'trigger-cell',
-                style: 'width:' + me.triggerWidth + (hideTrigger ? 'px;display:none' : 'px'),
+                cls: cls,
+                style: style,
                 cn: {
                     cls: [Ext.baseCSSPrefix + 'trigger-index-' + i, triggerBaseCls, triggerCls].join(' '),
                     role: 'button'
                 }
             });
         }
-        triggerConfigs[i - 1].cn.cls += ' ' + triggerBaseCls + '-last';
+        triggerConfigs[0].cn.cls += ' ' + triggerBaseCls + '-first';
 
         return Ext.DomHelper.markup(triggerConfigs);
     },
@@ -201,13 +233,19 @@ Ext.define('Ext.form.field.Trigger', {
         return !this.disabled;    
     },
 
-    // private
+    // @private
     beforeRender: function() {
         var me = this,
             triggerBaseCls = me.triggerBaseCls,
             tempEl;
             
-        // Measure width of a trigger element.
+        /**
+         * @property {Number} triggerWidth
+         * Width of the trigger element. Unless set explicitly, it will be
+         * automatically calculated through creating a temporary element
+         * on page. (That will be done just once per app run.)
+         * @private
+         */
         if (!me.triggerWidth) {
             tempEl = Ext.getBody().createChild({
                 style: 'position: absolute;', 
@@ -236,7 +274,6 @@ Ext.define('Ext.form.field.Trigger', {
 
         me.doc = Ext.getDoc();
         me.initTrigger();
-        me.triggerEl.unselectable();
     },
 
     /**
@@ -282,13 +319,16 @@ Ext.define('Ext.form.field.Trigger', {
      * and hideTrigger.
      */
     setReadOnly: function(readOnly) {
-        if (readOnly != this.readOnly) {
-            this.readOnly = readOnly;
-            this.updateLayout();
+        var me = this,
+            old = me.readOnly;
+            
+        me.callParent(arguments);
+        if (readOnly != old) {
+            me.updateLayout();
         }
     },
 
-    // private
+    // @private
     initTrigger: function() {
         var me = this,
             triggerWrap = me.triggerWrap,
@@ -301,7 +341,7 @@ Ext.define('Ext.form.field.Trigger', {
                 preventDefault: true,
                 handler: me.onTriggerWrapClick,
                 listeners: {
-                    mouseup: me.onTriggerWrapMousup,
+                    mouseup: me.onTriggerWrapMouseup,
                     scope: me
                 },
                 scope: me
@@ -309,7 +349,7 @@ Ext.define('Ext.form.field.Trigger', {
         } else {
             me.mon(triggerWrap, {
                 click: me.onTriggerWrapClick,
-                mouseup: me.onTriggerWrapMousup,
+                mouseup: me.onTriggerWrapMouseup,
                 scope: me
             });
         }
@@ -331,7 +371,7 @@ Ext.define('Ext.form.field.Trigger', {
 
     },
 
-    // private
+    // @private
     onDestroy: function() {
         var me = this;
         Ext.destroyMembers(me, 'triggerRepeater', 'triggerWrap', 'triggerEl');
@@ -339,7 +379,7 @@ Ext.define('Ext.form.field.Trigger', {
         me.callParent();
     },
 
-    // private
+    // @private
     onFocus: function() {
         var me = this;
         me.callParent(arguments);
@@ -355,7 +395,7 @@ Ext.define('Ext.form.field.Trigger', {
         }
     },
 
-    // private
+    // @private
     checkTab: function(me, e) {
         if (!this.ignoreMonitorTab && e.getKey() == e.TAB) {
             this.triggerBlur();
@@ -390,14 +430,14 @@ Ext.define('Ext.form.field.Trigger', {
      */
     onBlur: Ext.emptyFn,
 
-    // private
+    // @private
     mimicBlur: function(e) {
         if (!this.isDestroyed && !this.bodyEl.contains(e.target) && this.validateBlur(e)) {
             this.triggerBlur(e);
         }
     },
 
-    // private
+    // @private
     triggerBlur: function(e) {
         var me = this;
         me.mimicing = false;
@@ -411,13 +451,13 @@ Ext.define('Ext.form.field.Trigger', {
         }
     },
 
-    // private
+    // @private
     // This should be overridden by any subclass that needs to check whether or not the field can be blurred.
     validateBlur: function(e) {
         return true;
     },
 
-    // private
+    // @private
     // process clicks upon triggers.
     // determine which trigger index, and dispatch to the appropriate click handler
     onTriggerWrapClick: function() {
@@ -440,10 +480,10 @@ Ext.define('Ext.form.field.Trigger', {
         }
     },
 
-    // private
+    // @private
     // Handle trigger mouse up gesture. To be implemented in subclasses.
     // Currently the Spinner subclass refocuses the input element upon end of spin.
-    onTriggerWrapMousup: Ext.emptyFn,
+    onTriggerWrapMouseup: Ext.emptyFn,
 
     /**
      * @method onTriggerClick

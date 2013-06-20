@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @author Ed Spencer
  *
@@ -92,41 +112,47 @@
 Ext.define('Ext.data.Field', {
     requires: ['Ext.data.Types', 'Ext.data.SortTypes'],
     alias: 'data.field',
+
+    isField: true,
     
     constructor : function(config) {
+        var me = this,
+            types = Ext.data.Types,
+            st;
+        
         if (Ext.isString(config)) {
             config = {name: config};
         }
-        Ext.apply(this, config);
-        
-        var types = Ext.data.Types,
-            st = this.sortType;
+        Ext.apply(me, config);
 
-        if (this.type) {
-            if (Ext.isString(this.type)) {
-                this.type = types[this.type.toUpperCase()] || types.AUTO;
+        st = me.sortType;
+
+        if (me.type) {
+            if (Ext.isString(me.type)) {
+                me.type = types[me.type.toUpperCase()] || types.AUTO;
             }
         } else {
-            this.type = types.AUTO;
+            me.type = types.AUTO;
         }
 
         // named sortTypes are supported, here we look them up
         if (Ext.isString(st)) {
-            this.sortType = Ext.data.SortTypes[st];
+            me.sortType = Ext.data.SortTypes[st];
         } else if(Ext.isEmpty(st)) {
-            this.sortType = this.type.sortType;
+            me.sortType = me.type.sortType;
         }
 
         // Reference this type's default converter if we did not recieve one in configuration.
         if (!config.hasOwnProperty('convert')) {
-            this.convert = this.type.convert;
+            me.convert = me.type.convert; // this may be undefined (e.g., AUTO)
+        } else if (!me.convert && me.type.convert && !config.hasOwnProperty('defaultValue')) {
+            // If the converter has been nulled out, and we have not been configured
+            // with a field-specific defaultValue, then coerce the inherited defaultValue into our data type.
+            me.defaultValue = me.type.convert(me.defaultValue);
         }
-        
-        
-        // If the converter has been nulled out, and we have not been configured
-        // with a field-specific defaultValue, then coerce the inherited defaultValue into our data type.
-        else if (!this.convert && !config.hasOwnProperty('defaultValue')) {
-            this.defaultValue = this.type.convert(this.defaultValue);
+
+        if (config.convert) {
+            me.hasCustomConvert = true;
         }
     },
     
@@ -159,7 +185,7 @@ Ext.define('Ext.data.Field', {
      * Developers may create their own application-specific data types by defining new members of the {@link
      * Ext.data.Types} class.
      */
-    
+
     /**
      * @cfg {Function} [convert]
      *
@@ -232,21 +258,89 @@ Ext.define('Ext.data.Field', {
      */
 
     /**
+     * @cfg {Function} [serialize]
+     * A function which converts the Model's value for this Field into a form which can be used by whatever {@link Ext.data.writer.Writer Writer}
+     * is being used to sync data with the server.
+     * 
+     * The function should return a string which represents the Field's value.
+     *
+     * It is passed the following parameters:
+     *
+     * - **v** : Mixed
+     *
+     *   The Field's value - the value to be serialized.
+     *
+     * - **rec** : Ext.data.Model
+     *
+     *   The record being serialized.
+     *
+     */
+
+    /**
      * @cfg {String} dateFormat
      *
-     * Used when converting received data into a Date when the {@link #type} is specified as `"date"`.
-     *
+     * Serves as a default for the {@link #dateReadFormat} and {@link #dateWriteFormat} config options. This
+     * will be used in place of those other configurations if not specified.
+     * 
      * A format string for the {@link Ext.Date#parse Ext.Date.parse} function, or "timestamp" if the value provided by
      * the Reader is a UNIX timestamp, or "time" if the value provided by the Reader is a javascript millisecond
      * timestamp. See {@link Ext.Date}.
+     * 
+     * It is quite important to note that while this config is optional, it will default to using the base
+     * JavaScript Date object's `parse` function if not specified, rather than {@link Ext.Date#parse Ext.Date.parse}.
+     * This can cause unexpected issues, especially when converting between timezones, or when converting dates that
+     * do not have a timezone specified. The behavior of the native `Date.parse` is implementation-specific, and
+     * depending on the value of the date string, it might return the UTC date or the local date. __For this reason
+     * it is strongly recommended that you always specify an explicit date format when parsing dates.__
      */
     dateFormat: null,
     
     /**
+     * @cfg {String} dateReadFormat
+     * Used when converting received data into a Date when the {@link #type} is specified as `"date"`.
+     * This configuration takes precedence over {@link #dateFormat}.
+     * See {@link #dateFormat} for more information.
+     */
+    dateReadFormat: null,
+    
+    /** 
+     * @cfg {String} dateWriteFormat
+     * Used to provide a custom format when serializing dates with a {@link Ext.data.writer.Writer}.
+     * If this is not specified, the {@link #dateFormat} will be used. See the {@link Ext.data.writer.Writer} 
+     * docs for more information on writing dates. 
+     *
+     * **Note that to use a {@link Ext.data.JsonWriter JsonWriter} to send Microsoft format "JSON" dates, which are in fact
+     * invalid JSON, it is not possible to use the standard date serialization pathway or
+     * {@link Ext#USE_NATIVE_JSON native browser JSON production}.**
+     *
+     * To use a {@link Ext.data.JsonWriter JsonWriter} to write dates in a JSON packet in the form `"\/Date(1357372800000)\/"`
+     * configure the field like this:
+     *
+     *    {
+     *        type: 'date',
+     *        dateFormat: 'MS',             // To parse incoming dates from server correctly
+     *        serialize: Ext.identityFn     // An ExtJS-supplied function which returns the arg unchanged
+     *    }
+     *
+     * Then override ExtJS's JSON date serialize function:
+     *
+     *    Ext.JSON.encodeDate = function (d) {
+     *        return '"' + Ext.Date.format(d, 'MS') + '"';
+     *    };
+     */
+    dateWriteFormat: null,
+    
+    /**
      * @cfg {Boolean} useNull
      *
-     * Use when converting received data into a Number type (either int or float). If the value cannot be
-     * parsed, null will be used if useNull is true, otherwise the value will be 0. Defaults to false.
+     * Use when converting received data into a INT, FLOAT, BOOL or STRING type. If the value cannot be
+     * parsed, `null` will be used if useNull is true, otherwise a default value for that type will be used:
+     *
+     * - for INT and FLOAT - `0`.
+     * - for STRING - `""`.
+     * - for BOOL - `false`.
+     *
+     * Note that when parsing of DATE type fails, the value will be `null` regardless of this setting.
      */
     useNull: false,
     
@@ -272,7 +366,7 @@ Ext.define('Ext.data.Field', {
      * - {@link Ext.data.reader.Json}
      *
      *   The mapping is a string containing the javascript expression to reference the data from an element of the data
-     *   item's {@link Ext.data.reader.Json#root root} Array. Defaults to the field name.
+     *   item's {@link Ext.data.reader.Json#cfg-root root} Array. Defaults to the field name.
      *
      * - {@link Ext.data.reader.Xml}
      *
@@ -291,7 +385,7 @@ Ext.define('Ext.data.Field', {
     mapping: null,
 
     /**
-     * @cfg {Function} sortType
+     * @cfg {Function/String} sortType
      *
      * A function which converts a Field's value to a comparable value in order to ensure correct sort ordering.
      * Predefined functions are provided in {@link Ext.data.SortTypes}. A custom sort example:
@@ -311,6 +405,8 @@ Ext.define('Ext.data.Field', {
      *           default: return 3;
      *        }
      *     }
+     *
+     * May also be set to a String value, corresponding to one of the named sort types in {@link Ext.data.SortTypes}.
      */
     sortType : null,
 

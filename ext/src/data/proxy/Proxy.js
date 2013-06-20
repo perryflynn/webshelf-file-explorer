@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @author Ed Spencer
  *
@@ -17,6 +37,7 @@
  *
  * - {@link Ext.data.proxy.Ajax Ajax} - sends requests to a server on the same domain
  * - {@link Ext.data.proxy.JsonP JsonP} - uses JSON-P to send requests to a server on a different domain
+ * - {@link Ext.data.proxy.Rest Rest} - uses RESTful HTTP methods (GET/PUT/POST/DELETE) to communicate with server
  * - {@link Ext.data.proxy.Direct Direct} - uses {@link Ext.direct.Manager} to send requests
  *
  * Proxies operate on the principle that all operations performed are either Create, Read, Update or Delete. These four
@@ -34,6 +55,11 @@
 Ext.define('Ext.data.proxy.Proxy', {
     alias: 'proxy.proxy',
     alternateClassName: ['Ext.data.DataProxy', 'Ext.data.Proxy'],
+
+    requires: [
+        'Ext.data.reader.Json',
+        'Ext.data.writer.Json'
+    ],
 
     uses: [
         'Ext.data.Batch',
@@ -97,22 +123,33 @@ Ext.define('Ext.data.proxy.Proxy', {
     isProxy: true,
 
     /**
+     * @property {Boolean} [isSynchronous=false]
+     * Identifies the proxy as (a)synchronous.
+     */
+     isSynchronous: false,
+
+    /**
      * Creates the Proxy
      * @param {Object} config (optional) Config object.
      */
     constructor: function(config) {
+        var me = this;
+
         config = config || {};
+        me.proxyConfig = config;
 
-        if (config.model === undefined) {
-            delete config.model;
-        }
+        me.mixins.observable.constructor.call(me, config);
 
-        Ext.apply(this, config);
-
-        this.mixins.observable.constructor.call(this);
-
-        if (this.model !== undefined && !(this.model instanceof Ext.data.Model)) {
-            this.setModel(this.model);
+        if (me.model !== undefined && !(me.model instanceof Ext.data.Model)) {
+            me.setModel(me.model);
+        } else {
+            if (me.reader) {
+                me.setReader(me.reader);
+            }
+            
+            if (me.writer) {
+                me.setWriter(me.writer);
+            }
         }
 
         /**
@@ -135,16 +172,15 @@ Ext.define('Ext.data.proxy.Proxy', {
      * @param {Boolean} setOnStore Sets the new model on the associated Store, if one is present
      */
     setModel: function(model, setOnStore) {
-        this.model = Ext.ModelManager.getModel(model);
+        var me = this;
+        
+        me.model = Ext.ModelManager.getModel(model);
 
-        var reader = this.reader,
-            writer = this.writer;
+        me.setReader(this.reader);
+        me.setWriter(this.writer);
 
-        this.setReader(reader);
-        this.setWriter(writer);
-
-        if (setOnStore && this.store) {
-            this.store.setModel(this.model);
+        if (setOnStore && me.store) {
+            me.store.setModel(me.model);
         }
     },
 
@@ -164,17 +200,23 @@ Ext.define('Ext.data.proxy.Proxy', {
      * @return {Ext.data.reader.Reader} The attached Reader object
      */
     setReader: function(reader) {
-        var me = this;
+        var me = this,
+            needsCopy = true,
+            current = me.reader;
 
         if (reader === undefined || typeof reader == 'string') {
             reader = {
                 type: reader
             };
+            needsCopy = false;
         }
 
         if (reader.isReader) {
             reader.setModel(me.model);
         } else {
+            if (needsCopy) {
+                reader = Ext.apply({}, reader);
+            }
             Ext.applyIf(reader, {
                 proxy: me,
                 model: me.model,
@@ -184,7 +226,7 @@ Ext.define('Ext.data.proxy.Proxy', {
             reader = Ext.createByAlias('reader.' + reader.type, reader);
         }
 
-        if (reader.onMetaChange) {
+        if (reader !== current && reader.onMetaChange) {
             reader.onMetaChange = Ext.Function.createSequence(reader.onMetaChange, this.onMetaChange, this);
         }
 
@@ -216,24 +258,31 @@ Ext.define('Ext.data.proxy.Proxy', {
      * @return {Ext.data.writer.Writer} The attached Writer object
      */
     setWriter: function(writer) {
+        var me = this,
+            needsCopy = true;
+            
         if (writer === undefined || typeof writer == 'string') {
             writer = {
                 type: writer
             };
+            needsCopy = false;
         }
 
         if (!writer.isWriter) {
+            if (needsCopy) {
+                writer = Ext.apply({}, writer);
+            }
             Ext.applyIf(writer, {
-                model: this.model,
-                type : this.defaultWriterType
+                model: me.model,
+                type : me.defaultWriterType
             });
 
             writer = Ext.createByAlias('writer.' + writer.type, writer);
         }
 
-        this.writer = writer;
+        me.writer = writer;
 
-        return this.writer;
+        return me.writer;
     },
 
     /**
@@ -426,8 +475,9 @@ Ext.define('Ext.data.proxy.Proxy', {
         if (Ext.isFunction(batchOptions.callback)) {
             Ext.callback(batchOptions.callback, scope, [batch, batchOptions]);
         }
+    },
+
+    clone: function() {
+        return new this.self(this.proxyConfig);
     }
-}, function() {
-    //backwards compatibility
-    Ext.data.DataProxy = this;
 });

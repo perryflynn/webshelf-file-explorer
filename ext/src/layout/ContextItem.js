@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * This class manages state information for a component or element during a layout.
  * 
@@ -22,19 +42,35 @@
  *
  * Triggers, once added, remain for the entire layout. Any changes to the property will
  * reschedule all unfinished layouts in their trigger set.
- * @protected
+ *
+ * @private
  */
 Ext.define('Ext.layout.ContextItem', {
-    
+
     requires: ['Ext.layout.ClassList'],
 
     heightModel: null,
     widthModel: null,
     sizeModel: null,
 
+    /**
+     * There are several cases that allow us to skip (opt out) of laying out a component
+     * and its children as long as its `lastBox` is not marked as `invalid`. If anything
+     * happens to change things, the `lastBox` is marked as `invalid` by `updateLayout`
+     * as it ascends the component hierarchy.
+     * 
+     * @property {Boolean} optOut
+     * @private
+     * @readonly
+     */
+    optOut: false,
+
+    ownerSizePolicy: null, // plaed here by AbstractComponent.getSizeModel
+
     boxChildren: null,
 
     boxParent: null,
+    isBorderBoxValue: null,
 
     children: [],
 
@@ -58,9 +94,16 @@ Ext.define('Ext.layout.ContextItem', {
 
     ownerCtContext: null,
 
-    remainingChildLayouts: 0,
-    remainingComponentChildLayouts: 0,
-    remainingContainerChildLayouts: 0,
+    remainingChildDimensions: 0,
+
+    // the current set of property values:
+    props: null,
+
+    /**
+     * @property {Object} state
+     * State variables that are cleared when invalidated. Only applies to component items.
+     */
+    state: null,
 
     /**
      * @property {Boolean} wrapsComponent
@@ -71,14 +114,16 @@ Ext.define('Ext.layout.ContextItem', {
 
     constructor: function (config) {
         var me = this,
-            target = config.target, // target must come in as a config
-            el, sizeModel;
+            sizeModels = Ext.layout.SizeModel.sizeModels,
+            configured = sizeModels.configured,
+            shrinkWrap = sizeModels.shrinkWrap,
+            el, lastBox, ownerCt, ownerCtContext, props, sizeModel, target,
+            lastWidth, lastHeight, sameWidth, sameHeight, widthModel, heightModel, optOut;
 
         Ext.apply(me, config);
 
         el = me.el;
         me.id = el.id;
-        me.lastBox = el.lastBox;
 
         // These hold collections of layouts that are either blocked or triggered by sets
         // to our properties (either ASAP or after flushing to the DOM). All of them have
@@ -94,50 +139,294 @@ Ext.define('Ext.layout.ContextItem', {
         // with the layout instance as the value. This prevents duplicate entries for one
         // layout and gives O(1) access to the layout instance when we need to iterate and
         // process them.
-        //
-        me.blocks = {};
-        me.domBlocks = {};
-        me.triggers = {};
-        me.domTriggers = {};
+        // 
+        // me.blocks = {};
+        // me.domBlocks = {};
+        // me.domTriggers = {};
+        // me.triggers = {};
 
         me.flushedProps = {};
-
-        // the current set of property values:
-        me.props = {};
-
-        /**
-         * @property {Object} state
-         * State variables that are cleared when invalidated.
-         */
-        me.state = {};
+        me.props = props = {};
 
         // the set of cached styles for the element:
         me.styles = {};
 
-        if (target.isComponent) {
+        target = me.target;
+
+        if (!target.isComponent) {
+            lastBox = el.lastBox;
+        } else {
             me.wrapsComponent = true;
-            me.sizeModel = sizeModel = target.getSizeModel(me.ownerCtContext && me.ownerCtContext.sizeModel);
-            me.widthModel = sizeModel.width;
-            me.heightModel = sizeModel.height;
-            me.frameBodyContext = me.getEl('frameBody');
+            me.framing = target.frameSize || null;
+            me.isComponentChild = target.ownerLayout && target.ownerLayout.isComponentLayout;
+
+            lastBox = target.lastBox;
+
+            // These items are created top-down, so the ContextItem of our ownerCt should
+            // be available (if it is part of this layout run).
+            ownerCt = target.ownerCt;
+            if (ownerCt && (ownerCtContext = ownerCt.el && me.context.items[ownerCt.el.id])) {
+                me.ownerCtContext = ownerCtContext;
+            }
+
+            // If our ownerCtContext is in the run, it will have a SizeModel that we use to
+            // optimize the determination of our sizeModel.
+            me.sizeModel = sizeModel = target.getSizeModel(ownerCtContext &&
+                ownerCtContext.widthModel.pairsByHeightOrdinal[ownerCtContext.heightModel.ordinal]);
+
+            // NOTE: The initial determination of sizeModel is valid (thankfully) and is
+            // needed to cope with adding components to a layout run on-the-fly (e.g., in
+            // the menu overflow handler of a box layout). Since this is the case, we do
+            // not need to recompute the sizeModel in init unless it is a "full" init (as
+            // our ownerCt's sizeModel could have changed in that case).
+
+            me.widthModel = widthModel = sizeModel.width;
+            me.heightModel = heightModel = sizeModel.height;
+
+            // The lastBox is populated early but does not get an "invalid" property
+            // until layout has occurred. The "false" value is placed in the lastBox
+            // by Component.finishedLayout.
+            if (lastBox && lastBox.invalid === false) {
+                sameWidth = (target.width === (lastWidth = lastBox.width));
+                sameHeight = (target.height === (lastHeight = lastBox.height));
+
+                if (widthModel === shrinkWrap && heightModel === shrinkWrap) {
+                    optOut = true;
+                } else if (widthModel === configured && sameWidth) {
+                    optOut = heightModel === shrinkWrap ||
+                            (heightModel === configured && sameHeight);
+                }
+
+                if (optOut) {
+                    // Flag this component and capture its last size...
+                    me.optOut = true;
+                    props.width = lastWidth;
+                    props.height = lastHeight;
+                }
+            }
         }
+
+        me.lastBox = lastBox;
     },
 
     /**
-     * Initializes ContextItem.
-     * @param ownerCtContext
+     * Clears all properties on this object except (perhaps) those not calculated by this
+     * component. This is more complex than it would seem because a layout can decide to
+     * invalidate its results and run the component's layouts again, but since some of the
+     * values may be calculated by the container, care must be taken to preserve those
+     * values.
+     *
+     * @param {Boolean} full True if all properties are to be invalidated, false to keep
+     * those calculated by the ownerCt.
+     * @return {Mixed} A value to pass as the first argument to {@link #initContinue}.
+     * @private
      */
-    init: function (ownerCtContext) {
+    init: function (full, options) {
         var me = this,
-            boxParent, widthModel;
+            oldProps = me.props,
+            oldDirty = me.dirty,
+            ownerCtContext = me.ownerCtContext,
+            ownerLayout = me.target.ownerLayout,
+            firstTime = !me.state,
+            ret = full || firstTime,
+            children, i, n, ownerCt, sizeModel, target,
+            oldHeightModel = me.heightModel,
+            oldWidthModel = me.widthModel,
+            newHeightModel, newWidthModel,
+            remainingCount = 0;
 
-        if (ownerCtContext) {
-            me.ownerCtContext = ownerCtContext;
-            me.isBoxParent = me.target.ownerLayout.isItemBoxParent(me);
+        me.dirty = me.invalid = false;
+        me.props = {};
 
-            widthModel = me.widthModel;
+        // Reset the number of child dimensions since the children will add their part:
+        me.remainingChildDimensions = 0;
 
-            if (widthModel.shrinkWrap) {
+        if (me.boxChildren) {
+            me.boxChildren.length = 0; // keep array (more GC friendly)
+        }
+
+        if (!firstTime) {
+            me.clearAllBlocks('blocks');
+            me.clearAllBlocks('domBlocks');
+        }
+
+        // For Element wrappers, we are done...
+        if (!me.wrapsComponent) {
+            return ret;
+        }
+
+        // From here on, we are only concerned with Component wrappers...
+        target = me.target;
+        me.state = {}; // only Component wrappers need a "state"
+
+        if (firstTime) {
+            // This must occur before we proceed since it can do many things (like add
+            // child items perhaps):
+            if (target.beforeLayout && target.beforeLayout !== Ext.emptyFn) {
+                target.beforeLayout();
+            }
+
+            // Determine the ownerCtContext if we aren't given one. Normally the firstTime
+            // we meet a component is before the context is run, but it is possible for
+            // components to be added to a run that is already in progress. If so, we have
+            // to lookup the ownerCtContext since the odds are very high that the new
+            // component is a child of something already in the run. It is currently
+            // unsupported to drag in the owner of a running component (needs testing).
+            if (!ownerCtContext && (ownerCt = target.ownerCt)) {
+                ownerCtContext = me.context.items[ownerCt.el.id];
+            }
+
+            if (ownerCtContext) {
+                me.ownerCtContext = ownerCtContext;
+                me.isBoxParent = target.ownerLayout.isItemBoxParent(me);
+            } else {
+                me.isTopLevel = true; // this is used by initAnimation...
+            }
+
+            me.frameBodyContext = me.getEl('frameBody');
+        } else {
+            ownerCtContext = me.ownerCtContext;
+
+            // In theory (though untested), this flag can change on-the-fly...
+            me.isTopLevel = !ownerCtContext;
+
+            // Init the children element items since they may have dirty state (no need to
+            // do this the firstTime).
+            children = me.children;
+            for (i = 0, n = children.length; i < n; ++i) {
+                children[i].init(true);
+            }
+        }
+
+        // We need to know how we will determine content size: containers can look at the
+        // results of their items but non-containers or item-less containers with just raw
+        // markup need to be measured in the DOM:
+        me.hasRawContent = !(target.isContainer && target.items.items.length > 0);
+
+        if (full) {
+            // We must null these out or getSizeModel will assume they are the correct,
+            // dynamic size model and return them (the previous dynamic sizeModel).
+            me.widthModel = me.heightModel = null;
+            sizeModel = target.getSizeModel(ownerCtContext && 
+                ownerCtContext.widthModel.pairsByHeightOrdinal[ownerCtContext.heightModel.ordinal]);
+
+            if (firstTime) {
+                me.sizeModel = sizeModel;
+            }
+
+            me.widthModel = sizeModel.width;
+            me.heightModel = sizeModel.height;
+
+            // if we are a container child (e.g., not a docked item), and this is a full
+            // init, that means our parent was invalidated, and therefore both our width
+            // and our height are included in remainingChildDimensions
+            if (ownerCtContext && !me.isComponentChild) {
+                ownerCtContext.remainingChildDimensions += 2;
+            }
+        } else if (oldProps) {
+            // these are almost always calculated by the ownerCt (we might need to track
+            // this at some point more carefully):
+            me.recoverProp('x', oldProps, oldDirty);
+            me.recoverProp('y', oldProps, oldDirty);
+            
+            // if these are calculated by the ownerCt, don't trash them:
+            if (me.widthModel.calculated) {
+                me.recoverProp('width', oldProps, oldDirty);
+            } else if ('width' in oldProps) {
+                ++remainingCount;
+            }
+            if (me.heightModel.calculated) {
+                me.recoverProp('height', oldProps, oldDirty);
+            } else if ('height' in oldProps) {
+                ++remainingCount;
+            }
+            
+            // if we are a container child and this is not a full init, that means our
+            // parent was not invalidated and therefore only the dimensions that were
+            // set last time and removed from remainingChildDimensions last time, need to
+            // be added back to remainingChildDimensions. This only needs to happen for
+            // properties that we don't recover above (model=calculated)
+            if (ownerCtContext && !me.isComponentChild) {
+                ownerCtContext.remainingChildDimensions += remainingCount;
+            }
+        }
+
+        if (oldProps && ownerLayout && ownerLayout.manageMargins) {
+            me.recoverProp('margin-top', oldProps, oldDirty);
+            me.recoverProp('margin-right', oldProps, oldDirty);
+            me.recoverProp('margin-bottom', oldProps, oldDirty);
+            me.recoverProp('margin-left', oldProps, oldDirty);
+        }
+
+        // Process any invalidate options present. These can only come from explicit calls
+        // to the invalidate() method.
+        if (options) {
+            // Consider a container box with wrapping text. If the box is made wider, the
+            // text will take up less height (until there is no more wrapping). Conversely,
+            // if the box is made narrower, the height starts to increase due to wrapping.
+            //
+            // Imposing a minWidth constraint would increase the width. This may decrease
+            // the height. If the box is shrinkWrap, however, the width will already be
+            // such that there is no wrapping, so the height will not further decrease.
+            // Since the height will also not increase if we widen the box, there is no
+            // problem simultaneously imposing a minHeight or maxHeight constraint.
+            //
+            // When we impose as maxWidth constraint, however, we are shrinking the box
+            // which may increase the height. If we are imposing a maxHeight constraint,
+            // that is fine because a further increased height will still need to be
+            // constrained. But if we are imposing a minHeight constraint, we cannot know
+            // whether the increase in height due to wrapping will be greater than the
+            // minHeight. If we impose a minHeight constraint at the same time, then, we
+            // could easily be locking in the wrong height.
+            //
+            // It is important to note that this logic applies to simultaneously *adding*
+            // both a maxWidth and a minHeight constraint. It is perfectly fine to have
+            // a state with both constraints, but we cannot add them both at once.
+            newHeightModel = options.heightModel;
+            newWidthModel = options.widthModel;
+            if (newWidthModel && newHeightModel && oldWidthModel && oldHeightModel) {
+                if (oldWidthModel.shrinkWrap && oldHeightModel.shrinkWrap) {
+                    if (newWidthModel.constrainedMax && newHeightModel.constrainedMin) {
+                        newHeightModel = null;
+                    }
+                }
+            }
+
+            // Apply size model updates (if any) and state updates (if any).
+            if (newWidthModel) {
+                me.widthModel = newWidthModel;
+            }
+            if (newHeightModel) {
+                me.heightModel = newHeightModel;
+            }
+
+            if (options.state) {
+                Ext.apply(me.state, options.state);
+            }
+        }
+
+        return ret;
+    },
+
+    /**
+     * @private
+     */
+    initContinue: function (full) {
+        var me = this,
+            ownerCtContext = me.ownerCtContext,
+            comp = me.target,
+            widthModel = me.widthModel,
+            hierarchyState = comp.getHierarchyState(),
+            boxParent;
+
+        if (widthModel.fixed) { // calculated or configured
+            hierarchyState.inShrinkWrapTable = false;
+        } else {
+            delete hierarchyState.inShrinkWrapTable;
+        }
+
+        if (full) {
+            if (ownerCtContext && widthModel.shrinkWrap) {
                 boxParent = ownerCtContext.isBoxParent ? ownerCtContext : ownerCtContext.boxParent;
                 if (boxParent) {
                     boxParent.addBoxChild(me);
@@ -145,12 +434,41 @@ Ext.define('Ext.layout.ContextItem', {
             } else if (widthModel.natural) {
                 me.boxParent = ownerCtContext;
             }
-        } else {
-            me.isTopLevel = true;
+        }
+
+        return full;
+    },
+
+    /**
+     * @private
+     */
+    initDone: function(containerLayoutDone) {
+        var me = this,
+            props = me.props,
+            state = me.state;
+
+        // These properties are only set when they are true:
+        if (me.remainingChildDimensions === 0) {
+            props.containerChildrenSizeDone = true;
+        }
+        if (containerLayoutDone) {
+            props.containerLayoutDone = true;
+        }
+
+        if (me.boxChildren && me.boxChildren.length && me.widthModel.shrinkWrap) {
+            // set a very large width to allow the children to measure their natural
+            // widths (this is cleared once all children have been measured):
+            me.el.setWidth(10000);
+
+            // don't run layouts for this component until we clear this width...
+            state.blocks = (state.blocks || 0) + 1;
         }
     },
 
-    initAnimatePolicy: function() {
+    /**
+     * @private
+     */
+    initAnimation: function() {
         var me = this,
             target = me.target,
             ownerCtContext = me.ownerCtContext;
@@ -159,11 +477,10 @@ Ext.define('Ext.layout.ContextItem', {
             // See which properties we are supposed to animate to their new state.
             // If there are any, queue ourself to be animated by the owning Context
             me.animatePolicy = target.ownerLayout.getAnimatePolicy(me);
-        }
-        // Collapsing/expnding a top level Panel with animation.
-        // We need to fabricate an animatePolicy depending on which dimension the collapse is using,
-        // isCollapsingOrExpanding is set during the collapse/expand process.
-        else if (!ownerCtContext && target.isCollapsingOrExpanding && target.animCollapse) {
+        } else if (!ownerCtContext && target.isCollapsingOrExpanding && target.animCollapse) {
+            // Collapsing/expnding a top level Panel with animation. We need to fabricate
+            // an animatePolicy depending on which dimension the collapse is using,
+            // isCollapsingOrExpanding is set during the collapse/expand process.
             me.animatePolicy = target.componentLayout.getAnimatePolicy(me);
         }
 
@@ -171,8 +488,6 @@ Ext.define('Ext.layout.ContextItem', {
             me.context.queueAnimation(me);
         }
     },
-
-    noFraming: { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 },
 
     /**
      * Queue the addition of a class name (or array of class names) to this ContextItem's target when next flushed.
@@ -198,7 +513,7 @@ Ext.define('Ext.layout.ContextItem', {
      */
     addBlock: function (name, layout, propName) {
         var me = this,
-            collection = me[name],
+            collection = me[name] || (me[name] = {}),
             blockedLayouts = collection[propName] || (collection[propName] = {});
 
         if (!blockedLayouts[layout.id]) {
@@ -235,6 +550,30 @@ Ext.define('Ext.layout.ContextItem', {
     },
 
     /**
+     * Adds x and y values from a props object to a styles object as "left" and "top" values.
+     * Overridden to add the x property as "right" in rtl mode.
+     * @property {Object} styles A styles object for an Element
+     * @property {Object} props A ContextItem props object
+     * @return {Number} count The number of styles that were set.
+     * @private
+     */
+    addPositionStyles: function(styles, props) {
+        var x = props.x,
+            y = props.y,
+            count = 0;
+
+        if (x !== undefined) {
+            styles.left = x + 'px';
+            ++count;
+        }
+        if (y !== undefined) {
+            styles.top = y + 'px';
+            ++count;
+        }
+        return count;
+    },
+
+    /**
      * Adds a trigger.
      * 
      * @param {String} propName The property name that triggers the layout (e.g., 'width').
@@ -243,7 +582,8 @@ Ext.define('Ext.layout.ContextItem', {
      */
     addTrigger: function (propName, inDom) {
         var me = this,
-            collection = inDom ? me.domTriggers : me.triggers,
+            name = inDom ? 'domTriggers' : 'triggers',
+            collection = me[name] || (me[name] = {}),
             context = me.context,
             layout = context.currentLayout,
             triggers = collection[propName] || (collection[propName] = {});
@@ -383,60 +723,6 @@ Ext.define('Ext.layout.ContextItem', {
     },
 
     /**
-     * Clears all properties on this object except (perhaps) those not calculated by this
-     * component. This is more complex than it would seem because a layout can decide to
-     * invalidate its results and run the component's layouts again, but since some of the
-     * values may be calculated by the container, care must be taken to preserve those
-     * values.
-     *
-     * @param {Boolean} full True if all properties are to be invalidated, false to keep
-     *  those calculated by the ownerCt.
-     */
-    doInvalidate: function (full) {
-        var me = this,
-            oldProps = me.props,
-            oldDirty = me.dirty,
-            ownerLayout = me.target.ownerLayout;
-
-        me.dirty = me.invalid = false;
-        me.props = {};
-        me.state = {};
-
-        me.clearAllBlocks('blocks');
-        me.clearAllBlocks('domBlocks');
-
-        // If we had dirty properties and we are not fully invalidating, we need to recover
-        // some of thos values...
-        if (me.wrapsComponent) {
-            if (!full) {
-                // these are almost always calculated by the ownerCt (we might need to track
-                // this at some point more carefully):
-                me.recoverProp('x', oldProps, oldDirty);
-                me.recoverProp('y', oldProps, oldDirty);
-
-                // if these are calculated by the ownerCt, don't trash them:
-                if (me.widthModel.calculated) {
-                    me.recoverProp('width', oldProps, oldDirty);
-                }
-                if (me.heightModel.calculated) {
-                    me.recoverProp('height', oldProps, oldDirty);
-                }
-            } else {
-                me.widthModel = me.sizeModel.width;
-                me.heightModel = me.sizeModel.height;
-            }
-
-        }
-
-        if (ownerLayout && ownerLayout.manageMargins) {
-            me.recoverProp('margin-top', oldProps, oldDirty);
-            me.recoverProp('margin-right', oldProps, oldDirty);
-            me.recoverProp('margin-bottom', oldProps, oldDirty);
-            me.recoverProp('margin-left', oldProps, oldDirty);
-        }
-    },
-
-    /**
      * Reschedules any layouts associated with a given trigger.
      * 
      * @param {String} name The name of the trigger list ('triggers' or 'domTriggers').
@@ -444,7 +730,8 @@ Ext.define('Ext.layout.ContextItem', {
      * @private
      */
     fireTriggers: function (name, propName) {
-        var triggers = this[name][propName],
+        var collection = this[name],
+            triggers = collection && collection[propName],
             context = this.context,
             layout, layoutId;
 
@@ -489,7 +776,7 @@ Ext.define('Ext.layout.ContextItem', {
             delete me.innerHTML;
         }
 
-        if (state.clearBoxWidth) {
+        if (state && state.clearBoxWidth) {
             state.clearBoxWidth = 0;
             me.el.setStyle('width', null);
 
@@ -504,9 +791,12 @@ Ext.define('Ext.layout.ContextItem', {
         }
     },
 
+    /**
+     * @private
+     */
     flushAnimations: function() {
         var me = this,
-            animateFrom = me.lastBox,
+            animateFrom = me.previousSize,
             target, targetAnim, duration, animateProps, anim,
             changeCount, j, propsLen, propName, oldValue, newValue;
 
@@ -551,7 +841,7 @@ Ext.define('Ext.layout.ContextItem', {
                     me.writeProps(anim.from);
                 }
                 me.el.animate(anim);
-                
+
                 Ext.fx.Manager.getFxQueue(me.el.id)[0].on({
                     afteranimate: function() {
                         if (me.isCollapsingOrExpanding === 1) {
@@ -591,9 +881,17 @@ Ext.define('Ext.layout.ContextItem', {
     },
 
     /**
+     * @member Ext.layout.ContextItem
      * Returns the context item for an owned element. This should only be called on a
      * component's item. The list of child items is used to manage invalidating calculated
      * results.
+     * @param {String/Ext.dom.Element} nameOrEl The element or the name of an owned element
+     * @param {Ext.layout.container.Container/Ext.Component} [owner] The owner of the
+     * named element if the passed "nameOrEl" parameter is a String. Defaults to this
+     * ContextItem's "target" property.  For more details on owned elements see
+     * {@link Ext.Component#cfg-childEls childEls} and
+     * {@link Ext.Component#renderSelectors renderSelectors}
+     * @return {Ext.layout.ContextItem}
      */
     getEl: function (nameOrEl, owner) {
         var me = this,
@@ -625,14 +923,6 @@ Ext.define('Ext.layout.ContextItem', {
         return elContext || null;
     },
 
-    getFraming: function () {
-        var me = this;
-        if (!me.framingInfo) {
-            me.framingInfo = me.target.frameSize || me.noFraming;
-        }
-        return me.framingInfo;
-    },
-
     /**
      * Gets the "frame" information for the element as an object with left, top, right and
      * bottom properties holding border+framing size in pixels. This object is calculated
@@ -642,20 +932,21 @@ Ext.define('Ext.layout.ContextItem', {
     getFrameInfo: function () {
         var me = this,
             info = me.frameInfo,
-            frame, border;
+            framing, border;
 
         if (!info) {
-            frame = me.getFraming();
+            framing = me.framing;
             border = me.getBorderInfo();
-            
-            me.frameInfo = info = {
-                top   : frame.top    + border.top,
-                right : frame.right  + border.right,
-                bottom: frame.bottom + border.bottom,
-                left  : frame.left   + border.left,
-                width : frame.width  + border.width,
-                height: frame.height + border.height
-            };
+
+            me.frameInfo = info = 
+                framing ? {
+                    top   : framing.top    + border.top,
+                    right : framing.right  + border.right,
+                    bottom: framing.bottom + border.bottom,
+                    left  : framing.left   + border.left,
+                    width : framing.width  + border.width,
+                    height: framing.height + border.height
+                } : border;
         }
 
         return info;
@@ -708,11 +999,11 @@ Ext.define('Ext.layout.ContextItem', {
 
                 if (!info) { // if (no cache)
                     // CSS margins are only checked if there isn't a margin property on the component
-                    info = me.parseMargins(comp.margin) || me.checkCache('marginInfo');
+                    info = me.parseMargins(comp, comp.margin) || me.checkCache('marginInfo');
 
                     // Some layouts also support margins and defaultMargins, e.g. Fit, Border, Box
                     if (manageMargins) {
-                        margins = me.parseMargins(comp.margins, ownerLayout.defaultMargins);
+                        margins = me.parseMargins(comp, comp.margins, ownerLayout.defaultMargins);
 
                         if (margins) { // if (using 'margins' and/or 'defaultMargins')
                             // margin and margins can both be present at the same time and must be combined
@@ -837,7 +1128,7 @@ Ext.define('Ext.layout.ContextItem', {
      *
      * @param {String[]} styleNames The CSS style names.
      * @param {String[]} [altNames] The alternate names for the returned styles. If given,
-     * these names must correspond one-for-one to the {@link #styleNames}.
+     * these names must correspond one-for-one to the `styleNames`.
      * @return {Object} The values of the DOM styles (parsed as necessary).
      */
     getStyles: function (styleNames, altNames) {
@@ -902,8 +1193,7 @@ Ext.define('Ext.layout.ContextItem', {
      * @return {Boolean}
      */
     hasProp: function (propName) {
-        var value = this.getProp(propName);
-        return typeof value != 'undefined';
+        return this.getProp(propName) != null;
     },
 
     /**
@@ -915,8 +1205,7 @@ Ext.define('Ext.layout.ContextItem', {
      * @return {Boolean}
      */
     hasDomProp: function (propName) {
-        var value = this.getDomProp(propName);
-        return typeof value != 'undefined';
+        return this.getDomProp(propName) != null;
     },
 
     /**
@@ -941,7 +1230,6 @@ Ext.define('Ext.layout.ContextItem', {
      * @param {Object} options.scope The scope to use when calling the callback functions.
      */
     invalidate: function (options) {
-        this.invalid = true;
         this.context.queueInvalidate(this, options);
     },
 
@@ -964,7 +1252,7 @@ Ext.define('Ext.layout.ContextItem', {
         }
     },
 
-    parseMargins: function (margins, defaultMargins) {
+    parseMargins: function (comp, margins, defaultMargins) {
         if (margins === true) {
             margins = 5;
         }
@@ -973,15 +1261,17 @@ Ext.define('Ext.layout.ContextItem', {
             ret;
 
         if (type == 'string' || type == 'number') {
-            ret = Ext.util.Format.parseBox(margins);
+            ret = comp.parseBox(margins);
         } else if (margins || defaultMargins) {
             ret = { top: 0, right: 0, bottom: 0, left: 0 }; // base defaults
 
             if (defaultMargins) {
-                Ext.apply(ret, this.parseMargins(defaultMargins)); // + layout defaults
+                Ext.apply(ret, this.parseMargins(comp, defaultMargins)); // + layout defaults
             }
 
-            Ext.apply(ret, margins); // + config
+            if (margins) {
+                margins = Ext.apply(ret, comp.parseBox(margins)); // + config
+            }
         }
 
         return ret;
@@ -1031,6 +1321,44 @@ Ext.define('Ext.layout.ContextItem', {
             // Rollback the state of child Elements
             for (i = 0, items = me.children, len = items.length; i < len; i++) {
                 items[i].redo();
+            }
+        }
+    },
+
+    /**
+     * Removes a cached ContextItem that was created using {@link #getEl}.  It may be
+     * necessary to call this method if the dom reference for owned element changes so 
+     * that {@link #getEl} can be called again to reinitialize the ContextItem with the
+     * new element.
+     * @param {String/Ext.dom.Element} nameOrEl The element or the name of an owned element
+     * @param {Ext.layout.container.Container/Ext.Component} [owner] The owner of the
+     * named element if the passed "nameOrEl" parameter is a String. Defaults to this
+     * ContextItem's "target" property.
+     */
+    removeEl: function(nameOrEl, owner) {
+        var me = this,
+            src, el;
+
+        if (nameOrEl) {
+            if (nameOrEl.dom) {
+                el = nameOrEl;
+            } else {
+                src = me.target;
+                if (owner) {
+                    src = owner;
+                }
+
+                el = src[nameOrEl];
+                if (typeof el == 'function') { // ex 'getTarget'
+                    el = el.call(src);
+                    if (el === me.el) {
+                        return this; // comp.getTarget() often returns comp.el
+                    }
+                }
+            }
+
+            if (el) {
+                me.context.removeEl(me, el);
             }
         }
     },
@@ -1172,7 +1500,7 @@ Ext.define('Ext.layout.ContextItem', {
 
                 if (propName == 'width' || propName == 'height') {
                     borderBox = me.isBorderBoxValue;
-                    if (borderBox == null) {
+                    if (borderBox === null) {
                         me.isBorderBoxValue = borderBox = !!me.el.isBorderBox();
                     }
 
@@ -1203,7 +1531,8 @@ Ext.define('Ext.layout.ContextItem', {
     setHeight: function (height, dirty /*, private {Boolean} force */) {
         var me = this,
             comp = me.target,
-            frameBody, frameInfo, padding;
+            ownerCtContext = me.ownerCtContext,
+            frameBody, frameInfo, min, oldHeight, rem;
 
         if (height < 0) {
             height = 0;
@@ -1213,9 +1542,23 @@ Ext.define('Ext.layout.ContextItem', {
                 return NaN;
             }
         } else {
-            height = Ext.Number.constrain(height, comp.minHeight || 0, comp.maxHeight);
+            min = me.collapsedVert ? 0 : (comp.minHeight || 0);
+            height = Ext.Number.constrain(height, min, comp.maxHeight);
+            oldHeight = me.props.height;
             if (!me.setProp('height', height, dirty)) {
                 return NaN;
+            }
+
+            // if we are a container child, since the height is now known we can decrement
+            // the number of remainingChildDimensions that the ownerCtContext is waiting on.
+            if (ownerCtContext && !me.isComponentChild && isNaN(oldHeight)) {
+                rem = --ownerCtContext.remainingChildDimensions;
+                if (!rem) {
+                    // if there are 0 remainingChildDimensions set containerChildrenSizeDone
+                    // on the ownerCtContext to indicate that all of its children's dimensions
+                    // are known
+                    ownerCtContext.setProp('containerChildrenSizeDone', true);
+                }
             }
 
             frameBody = me.frameBodyContext;
@@ -1239,7 +1582,8 @@ Ext.define('Ext.layout.ContextItem', {
     setWidth: function (width, dirty /*, private {Boolean} force */) {
         var me = this,
             comp = me.target,
-            frameBody, frameInfo, padding;
+            ownerCtContext = me.ownerCtContext,
+            frameBody, frameInfo, min, oldWidth, rem;
 
         if (width < 0) {
             width = 0;
@@ -1249,9 +1593,23 @@ Ext.define('Ext.layout.ContextItem', {
                 return NaN;
             }
         } else {
-            width = Ext.Number.constrain(width, comp.minWidth || 0, comp.maxWidth);
+            min = me.collapsedHorz ? 0 : (comp.minWidth || 0);
+            width = Ext.Number.constrain(width, min, comp.maxWidth);
+            oldWidth = me.props.width
             if (!me.setProp('width', width, dirty)) {
                 return NaN;
+            }
+
+            // if we are a container child, since the width is now known we can decrement
+            // the number of remainingChildDimensions that the ownerCtContext is waiting on.
+            if (ownerCtContext && !me.isComponentChild && isNaN(oldWidth)) {
+                rem = --ownerCtContext.remainingChildDimensions;
+                if (!rem) {
+                    // if there are 0 remainingChildDimensions set containerChildrenSizeDone
+                    // on the ownerCtContext to indicate that all of its children's dimensions
+                    // are known
+                    ownerCtContext.setProp('containerChildrenSizeDone', true);
+                }
             }
 
             //if ((frameBody = me.target.frameBody) && (frameBody = me.getEl(frameBody))){
@@ -1324,23 +1682,18 @@ Ext.define('Ext.layout.ContextItem', {
             styles = {},
             styleCount = 0, // used as a boolean, the exact count doesn't matter
             styleInfo = me.styleInfo,
-            
+
             info,
             propName,
             numericValue,
-            
-            dirtyX = 'x' in dirtyProps,
-            dirtyY = 'y' in dirtyProps,
-            x = dirtyProps.x,
-            y = dirtyProps.y,
-            
             width = dirtyProps.width,
             height = dirtyProps.height,
             isBorderBox = me.isBorderBoxValue,
             target = me.target,
             max = Math.max,
             paddingWidth = 0,
-            paddingHeight = 0;
+            paddingHeight = 0,
+            hasWidth, hasHeight, isAbsolute, scrollbarSize, style, targetEl;
 
         // Process non-style properties:
         if ('displayed' in dirtyProps) {
@@ -1370,24 +1723,16 @@ Ext.define('Ext.layout.ContextItem', {
         }
 
         // convert x/y into setPosition (for a component) or left/top styles (for an el)
-        if (dirtyX || dirtyY) {
+        if ('x' in dirtyProps || 'y' in dirtyProps) {
             if (target.isComponent) {
-                // Ensure we always pass the current coordinate in if one coordinate has not been dirtied by a calculation cycle.
-                target.setPosition(x||me.props.x, y||me.props.y);
+                target.setPosition(dirtyProps.x, dirtyProps.y);
             } else {
                 // we wrap an element, so convert x/y to styles:
-                if (dirtyX) {
-                    styles.left = x + 'px';
-                    ++styleCount;
-                }
-                if (dirtyY) {
-                    styles.top = y + 'px';
-                    ++styleCount;
-                }
+                styleCount += me.addPositionStyles(styles, dirtyProps);
             }
         }
 
-        // Support for the content-box box model
+        // Support for the content-box box model...
         if (!isBorderBox && (width > 0 || height > 0)) { // no need to subtract from 0
             // The width and height values assume the border-box box model,
             // so we must remove the padding & border to calculate the content-box.
@@ -1413,13 +1758,56 @@ Ext.define('Ext.layout.ContextItem', {
             }
         }
 
+        // IE9 strict subtracts the scrollbar size from the element size when the element
+        // is absolutely positioned and uses box-sizing: border-box. To workaround this
+        // issue we have to add the the scrollbar size.
+        // 
+        // See http://social.msdn.microsoft.com/Forums/da-DK/iewebdevelopment/thread/47c5148f-a142-4a99-9542-5f230c78cb3b
+        //
+        if (me.wrapsComponent && Ext.isIE9 && Ext.isStrict) {
+            // when we set a width and we have a vertical scrollbar (overflowY), we need
+            // to add the scrollbar width... conversely for the height and overflowX
+            if ((hasWidth = width !== undefined && me.hasOverflowY) ||
+                (hasHeight = height !== undefined && me.hasOverflowX)) {
+                // check that the component is absolute positioned and border-box:
+                isAbsolute = me.isAbsolute;
+                if (isAbsolute === undefined) {
+                    isAbsolute = false;
+                    targetEl = me.target.getTargetEl();
+                    style = targetEl.getStyle('position');
+
+                    if (style == 'absolute') {
+                        style = targetEl.getStyle('box-sizing');
+                        isAbsolute = (style == 'border-box');
+                    }
+
+                    me.isAbsolute = isAbsolute; // cache it
+                }
+
+                if (isAbsolute) {
+                    scrollbarSize = Ext.getScrollbarSize();
+
+                    if (hasWidth) {
+                        width = parseInt(width, 10) + scrollbarSize.width;
+                        styles.width = width + 'px';
+                        ++styleCount;
+                    }
+                    if (hasHeight) {
+                        height = parseInt(height, 10) + scrollbarSize.height;
+                        styles.height = height + 'px';
+                        ++styleCount;
+                    }
+                }
+            }
+        }
+
         // we make only one call to setStyle to allow it to optimize itself:
         if (styleCount) {
             el.setStyle(styles);
         }
     }
 }, function () {
-    
+
     var px =    { dom: true, parseInt: true, suffix: 'px' },
         isDom = { dom: true },
         faux =  { dom: false };
@@ -1433,14 +1821,15 @@ Ext.define('Ext.layout.ContextItem', {
     // decoding values read by getStyle and preparing values to pass to setStyle.
     //
     this.prototype.styleInfo = {
-        childrenDone:           faux,
-        componentChildrenDone:  faux,
-        containerChildrenDone:  faux,
+        containerChildrenSizeDone:  faux,
         containerLayoutDone:    faux,
         displayed:              faux,
         done:                   faux,
         x:                      faux,
         y:                      faux,
+
+        // For Ext.grid.ColumnLayout
+        columnWidthsDone:       faux,
 
         left:                   px,
         top:                    px,
