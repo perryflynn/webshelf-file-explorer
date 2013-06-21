@@ -75,7 +75,7 @@ Ext.define('DirectoryListing.controller.GUI', {
       if(!me.initstatus) this.getDirtree().getSelectionModel().on('selectionchange', this.onTreeDirSelected, this);
 
       me.initstatus = true;
-      me.expandPathArray = window.location.hash.split('/');
+      me.expandPathArray = HashManager.get('path').split('/');
       me.expandPathIndex = 0;
       me.expandPathString = "";
       me.expandPathArray.shift();
@@ -189,7 +189,7 @@ Ext.define('DirectoryListing.controller.GUI', {
       this.getOpenbutton().disable();
       this.getDirectlinkbutton().disable();
       this.getCurrentpath().setValue((me.currentpath=="root" ? "/" : me.currentpath));
-      window.location.hash = me.currentpath;
+      HashManager.set('path', me.currentpath);
 
    },
 

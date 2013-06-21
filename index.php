@@ -8,6 +8,7 @@
       <link rel='StyleSheet' type='text/css' href='ext/resources/css/ext-all-gray.css'>
       <link rel='StyleSheet' type='text/css' href='style.css'>
 
+      <script type="text/javascript" src="ext/ext-all-debug.js"></script>
       <script type="text/javascript" src="config.js"></script>
       <script type="text/javascript" src="app/hashmanager.js"></script>
 
@@ -16,7 +17,6 @@
          HashManager.init();
       </script>
 
-      <script type="text/javascript" src="ext/ext-all-debug.js"></script>
       <script type="text/javascript" src="app/app.js"></script>
 
    </head>
