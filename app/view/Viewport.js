@@ -8,11 +8,11 @@ Ext.define('DirectoryListing.view.Viewport', {
    ],
 
    defaults: {
-      
+
    },
-    
+
    initComponent: function() {
-       
+
       this.items = [
          {
             xtype:'window',
@@ -25,7 +25,46 @@ Ext.define('DirectoryListing.view.Viewport', {
             closable:false,
             autoShow:true,
             layout:'border',
-            
+
+            tbar: [
+               {
+                  text:'Refresh Tree',
+                  xid:'tree-reload'
+               },
+               {
+                  text:'Expand all',
+                  xid:'expandall'
+               },
+               {
+                  text:'Collapse all',
+                  xid:'collapseall'
+               },
+
+               '|',
+
+               {
+                  text:'Refresh Filelist',
+                  xid:'list-reload'
+               },
+               {
+                  text:'Open',
+                  xid:'file-open',
+                  disabled:true
+               },
+               {
+                  text:'Direct URL',
+                  xid:'direct-link',
+                  disabled:true
+               },
+               { xtype:'tbfill' },
+               {
+                  xtype:'button',
+                  text:'About',
+                  xid:'about'
+               }
+
+            ],
+
             items: [
                {
                   region:'west',
@@ -34,22 +73,7 @@ Ext.define('DirectoryListing.view.Viewport', {
                   xid:'dirtree',
                   rootVisible: false,
                   split: true,
-                  
-                  tbar: [
-                     {
-                        text:'Refresh',
-                        xid:'tree-reload'
-                     },
-                     {
-                        text:'Expand all',
-                        xid:'expandall'
-                     },
-                     {
-                        text:'Collapse all',
-                        xid:'collapseall'
-                     }
-                  ],
-                  
+
                   store: Ext.create('Ext.data.TreeStore', {
                      proxy: {
                         type: 'ajax',
@@ -60,13 +84,14 @@ Ext.define('DirectoryListing.view.Viewport', {
                         }
                      }
                   })
-                  
-                  
+
+
                },
                {
                   region:'north',
                   xtype:'panel',
                   bodyPadding:5,
+                  border:0,
                   layout:'anchor',
                   items: [
                      {
@@ -83,37 +108,14 @@ Ext.define('DirectoryListing.view.Viewport', {
                   region:'center',
                   xtype:'gridpanel',
                   xid:'filelist',
-                  
-                  tbar: [
-                     {
-                        text:'Refresh',
-                        xid:'list-reload'
-                     },
-                     {
-                        text:'Open',
-                        xid:'file-open',
-                        disabled:true
-                     },
-                     {
-                        text:'Direct URL',
-                        xid:'direct-link',
-                        disabled:true
-                     },
-                     { xtype:'tbfill' },
-                     {
-                        xtype:'button',
-                        text:'About',
-                        xid:'about'
-                     }
-                  ],
-                  
+
                   columns: [
                      { header:'', dataIndex:'metadata', width:32, renderer:this.fileIconRenderer },
-                     { header:'Filename', dataIndex:'text', flex:1 },
-                     { header:'Last modified', dataIndex:'metadata', renderer: function(value) { return value.mtime; } },
-                     { header:'Size', dataIndex:'metadata', renderer:this.filesizerenderer },
+                     { header:'Filename', dataIndex:'text', flex:4 },
+                     { header:'Last modified', dataIndex:'metadata', flex:1, renderer: function(value) { return value.mtime; } },
+                     { header:'Size', dataIndex:'metadata', flex:1, renderer:this.filesizerenderer },
                   ],
-                  
+
                   store: Ext.create('Ext.data.Store', {
                      fields:['text', 'children', 'metadata', 'qtip'],
                      proxy: {
@@ -125,52 +127,52 @@ Ext.define('DirectoryListing.view.Viewport', {
                         }
                      }
                   })
-                  
-                  
+
+
                }
             ]
-            
-            
+
+
          }
       ];
-        
+
       this.callParent();
-      
-      
+
+
    },
-   
+
    filesizerenderer: function(value) {
       var size = value.size;
       var unit = "Byte";
-      
+
       if(size>1024) {
          size = (size/1024);
          unit = "KByte";
       }
-      
+
       if(size>1024) {
          size = (size/1024);
          unit = "MByte";
       }
-      
+
       if(size>1024) {
          size = (size/1024);
          unit = "GByte";
       }
-      
+
       if(size>1024) {
          size = (size/1024);
          unit = "TByte";
       }
-      
+
       return (unit=='Byte' ? size : size.toFixed(2))+" "+unit;
    },
-   
+
    fileIconRenderer: function(value) {
       var ext = value.extension;
       var filename = "page_white";
       if(ext!=null && ext!="") {
-         
+
          switch(ext) {
             case 'pdf':
                filename='page_white_acrobat'; break;
@@ -250,12 +252,12 @@ Ext.define('DirectoryListing.view.Viewport', {
             case 'htm':
                filename='page_white_world'; break;
          }
-         
+
       }
-      
+
       return '<img src="fileicons/'+filename+'.png" alt="'+ext+'" title="'+ext+'">';
-      
+
    }
-   
-   
+
+
 });
