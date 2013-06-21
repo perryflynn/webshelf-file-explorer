@@ -4,7 +4,6 @@
       <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
       <title>File Explorer @ <?php echo $_SERVER['HTTP_HOST']; ?></title>
 
-      <!--link rel='StyleSheet' type='text/css' href='ext/resources/css/ext-all.css'-->
       <link rel='StyleSheet' type='text/css' href='ext/resources/css/ext-all-gray.css'>
       <link rel='StyleSheet' type='text/css' href='style.css'>
 

@@ -84,7 +84,7 @@ Ext.define('DirectoryListing.controller.GUI', {
       // Expand Dirtree via Hashtag
       this.getDirtree().getStore().load({
          params: {
-            path:'/'
+            'args[path]':'/'
          },
          callback: function() {
             me.getDirtree().getStore().getRootNode().getChildAt(0).expand(false, function() {
@@ -167,6 +167,9 @@ Ext.define('DirectoryListing.controller.GUI', {
       if(btn.xid=='list-reload') {
          this.onReloadFilelist(record);
       }
+      if(btn.xid=='login') {
+         // TODO: Login stuff...
+      }
    },
 
    currentpath: null,
@@ -178,7 +181,7 @@ Ext.define('DirectoryListing.controller.GUI', {
       this.getFilelist().setLoading(true);
       this.getFilelist().getStore().load({
          params: {
-            path:me.currentpath
+            'args[path]':me.currentpath
          },
          callback: function() {
             me.getFilelist().setLoading(false);

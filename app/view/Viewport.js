@@ -58,7 +58,10 @@ Ext.define('DirectoryListing.view.Viewport', {
                },
                { xtype:'tbfill' },
                {
-                  xtype:'button',
+                  text:'Login',
+                  xid:'login'
+               },
+               {
                   text:'About',
                   xid:'about'
                }
@@ -75,9 +78,10 @@ Ext.define('DirectoryListing.view.Viewport', {
                   split: true,
 
                   store: Ext.create('Ext.data.TreeStore', {
+                     nodeParam:'args[node]',
                      proxy: {
                         type: 'ajax',
-                        url: 'ajax.php?filter=folders',
+                        url: 'ajax.php?controller=filesystem&action=getfiles&args[filter]=folders',
                         reader: {
                            type: 'json',
                            root: 'result'
@@ -120,7 +124,7 @@ Ext.define('DirectoryListing.view.Viewport', {
                      fields:['text', 'children', 'metadata', 'qtip'],
                      proxy: {
                         type: 'ajax',
-                        url: 'ajax.php?filter=files',
+                        url: 'ajax.php?controller=filesystem&action=getfiles&args[filter]=files',
                         reader: {
                            type: 'json',
                            root: 'result'

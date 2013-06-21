@@ -2,120 +2,33 @@
 
 define('BASE', dirname(__FILE__)."/files/");
 
-function response($success, $message, $result=null) {
-   echo json_encode(array(
-       "success" => $success,
-       "message" => $message,
-       "result" => $result
-   ));
-   exit(0);
+//--> Autoloader
+include_once('lib/autoload.php');
+spl_autoload_register('\Autoloader::load');
+
+
+//--> Create Request
+$request = null;
+try {
+   $request = new \Controller\Request();
+} catch(Exception $ex) {
+   die("Could not create Request: ".$ex->getMessage());
 }
 
-function is_allowed($filter, $path) {
-   if($filter=="folders" && is_dir($path)) {
-      return true;
-   } elseif($filter=="files" && is_file($path)) {
-      return true;
-   } elseif($filter=="all" && (is_file($path) || is_dir($path))) {
-      return true;
-   } else {
-      return false;
-   }
+//--> Create Controller
+$controllerclass = '\Controller\\'.$request->getController()."Controller";
+if(!class_exists($controllerclass)) {
+   die("Controller not found.");
 }
 
-
-
-/**
- * Tree und Filelist ----------------------------------------------------------- 
- */
-if(isset($_GET['node']) && !empty($_GET['node']) && $_GET['node']!="root") {
-   $_GET['path'] = $_GET['node'];
+//--> Fire Action and print response
+$c = new $controllerclass($request);
+if(($c instanceof \Controller\BaseController)==false) {
+   throw new Exception("This is not a controller.");
 }
 
-if(isset($_GET['path']) && !empty($_GET['path'])) {
-   $path = $_GET['path'];
-   $path = BASE."/".$path;
-   $path = realpath($path);
-   $file = null;
-   
-   $filter = (isset($_GET['filter']) && ($_GET['filter']=="files" || $_GET['filter']=="folders") ? $_GET['filter'] : "all");
-   
-   if(is_dir($path)) {
-      $path = $path."/";
-   }
-   
-   if($path!==false && preg_match('/^'.preg_quote(BASE, '/').'/', $path)===1) {
-      if(is_file($path)) {
-         $path = dirname($path)."/";
-         $file = basename($path);
-      }
-      
-      $filebase = str_replace(BASE, "", $path);
-      $filebase = (empty($filebase) ? "/" : $filebase);
-      
-      $files = @scandir($path);
-      
-      $result = array();
-      if(is_array($files) && count($files)>0) {
-         foreach($files as $file) {
-            if($file!="." && $file!=".." && is_allowed($filter, $path."/".$file)) {
-               
-               $folders = -1;
-               $files = -1;
-               if(is_dir(BASE.$filebase.$file)) {
-                  $folders = 0;
-                  $files = 0;
-                  $childs = scandir(BASE.$filebase.$file);
-                  foreach($childs as $child) {
-                     $absfile = BASE.$filebase.$file."/".$child;
-                     if($child!="." && $child!="..") {
-                        if(is_file($absfile)) {
-                           $files++;
-                        } elseif(is_dir($absfile)) {
-                           $folders++;
-                        }
-                     }
-                  }
-               }
-               
-               $absfile = BASE.$filebase.$file;
-               $result[] = array(
-                   "id" => "/".trim($filebase.$file, "/")."/",
-                   "text" => $file,
-                   "leaf" => false,
-                   "children" => array(
-                      "folders" => $folders,
-                      "files" => $files
-                   ),
-                   "metadata" => array(
-                       "atime" => date("Y-m-d H:i", fileatime($absfile)),
-                       "ctime" => date("Y-m-d H:i", filectime($absfile)),
-                       "mtime" => date("Y-m-d H:i", filemtime($absfile)),
-                       "size" => filesize($absfile),
-                       "extension" => (is_array(explode(".", $file)) && count(explode(".", $file))>0 ? end(explode(".", $file)) : ""),
-                       "url" => "files/".$filebase.$file,
-                       "fqdnurl" => ($_SERVER['SERVER_PORT']==443 ? "https://" : "http://").str_replace("//", "/", trim($_SERVER['SERVER_NAME'], "/")."/".
-                           trim(dirname($_SERVER['PHP_SELF']), "/")."/files/".$filebase.$file),
-                   ),
-                   "qtip" => $folders." Folders, ".$files." Files"
-               );
-               
-            }
-         }
-      }
-      
-      if(isset($_GET['node']) && $_GET['node']=="root") {
-         $result = array(
-            "id" => "/",
-            "text" => "/",
-            "leaf" => false,
-            "children" => $result
-         );
-      }
-      
-      response(true, null, $result);
-      
-   }
+try {
+   echo $c->call($request->getAction());
+} catch(Exception $ex) {
+   die("Action not found.");
 }
-
-response(false, "Bad Request");
