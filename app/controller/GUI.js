@@ -44,10 +44,19 @@ Ext.define('DirectoryListing.controller.GUI', {
         });
 
         this.application.on({
-
-            scope: this
+           'loggedin': this.globalLoggedin,
+           'loggedout': this.globalLoggedout,
+           scope: this
         });
 
+   },
+
+   globalLoggedin: function() {
+      this.getWindow().child('toolbar[dock=top] button[xid=login]').setText("Logout");
+   },
+
+   globalLoggedout: function() {
+      this.getWindow().child('toolbar[dock=top] button[xid=login]').setText("Login");
    },
 
    expandPath: function(me, treenode) {
@@ -65,14 +74,18 @@ Ext.define('DirectoryListing.controller.GUI', {
 
    onBodyRendered: function() {
       var me = this;
-
-      // Window resize
       var body = me.getViewport();
-      body.on('resize', me.onViewportResized, me);
-      body.fireEvent('resize', {});
 
       // Hashtag Management
-      if(!me.initstatus) this.getDirtree().getSelectionModel().on('selectionchange', this.onTreeDirSelected, this);
+      if(!me.initstatus) {
+         body.on('resize', me.onViewportResized, me);
+         body.fireEvent('resize', {});
+         this.getDirtree().getSelectionModel().on('selectionchange', this.onTreeDirSelected, this);
+      }
+
+      if(typeof HashManager.get('path')!="string") {
+         HashManager.set('path', '/');
+      }
 
       me.initstatus = true;
       me.expandPathArray = HashManager.get('path').split('/');
@@ -88,7 +101,11 @@ Ext.define('DirectoryListing.controller.GUI', {
          },
          callback: function() {
             me.getDirtree().getStore().getRootNode().getChildAt(0).expand(false, function() {
-               me.expandPath(me, this);
+               if(me.expandPathArray.length>0) {
+                  me.expandPath(me, this);
+               } else {
+                  me.getDirtree().getSelectionModel().select(this);
+               }
             });
          }
       });
@@ -168,7 +185,22 @@ Ext.define('DirectoryListing.controller.GUI', {
          this.onReloadFilelist(record);
       }
       if(btn.xid=='login') {
-         // TODO: Login stuff...
+         this.onBtnLoginClicked(btn);
+      }
+   },
+
+   onBtnLoginClicked: function(btn) {
+      if(btn.getText()=="Login") {
+         Ext.require('DirectoryListing.view.LoginWindow', function() {
+            var loginwin = Ext.create('DirectoryListing.view.LoginWindow');
+            loginwin.show();
+         });
+      } else {
+         Ext.MessageBox.confirm('Logout', 'Are you sure you want to do that?', function(res) {
+            if(res=="yes") {
+               this.application.fireEvent('logout');
+            }
+         }, this);
       }
    },
 
@@ -176,6 +208,9 @@ Ext.define('DirectoryListing.controller.GUI', {
 
    onTreeDirSelected: function(tree, item) {
       var me = this;
+      if(item.length<1) {
+         return;
+      }
       me.currentpath = item[0].data.id;
 
       this.getFilelist().setLoading(true);

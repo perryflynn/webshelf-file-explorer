@@ -2,7 +2,7 @@
 if(!console) {
    var console = {
       log: function() {
-         
+
       }
    }
 }
@@ -11,13 +11,12 @@ Ext.Loader.setConfig({
     enabled : true,
     paths   : {
         DirectoryListing : 'app'
-    } 
+    }
 });
 Ext.require('*');
 
-
 Ext.onReady(function() {
-    
+
     /*Ext.Ajax.on('requestcomplete', function (conn, response, options) {
         var json = Ext.decode(response.responseText);
         if(json.success==false && !(json.globalerror && json.globalerror==false)) {
@@ -29,7 +28,7 @@ Ext.onReady(function() {
             });
         }
     });*/
-   
+
    Ext.getBody().setHTML("");
 
 
@@ -38,9 +37,9 @@ Ext.onReady(function() {
 
       autoCreateViewport: true,
 
-      models: [  ],    
+      models: [  ],
       stores: [  ],
-      controllers: [ 'GUI' ]
+      controllers: [ 'GUI', 'Authentication' ]
    });
 
 });

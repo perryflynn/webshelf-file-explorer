@@ -1,11 +1,18 @@
 <?php
 
-define('BASE', dirname(__FILE__)."/files/");
+session_start();
+
+define('ROOT', dirname(__FILE__)."/");
+define('BASE', ROOT."files/");
+define('JSONCONFIG', ROOT.'jsonconfig.php');
 
 //--> Autoloader
 include_once('lib/autoload.php');
 spl_autoload_register('\Autoloader::load');
 
+//--> Load config
+JsonConfig::instance()->setConfigName(JSONCONFIG);
+JsonConfig::instance()->setSessionUsername((isset($_SESSION[JsonConfig::SESSION_NAME]) ? $_SESSION[JsonConfig::SESSION_NAME] : null));
 
 //--> Create Request
 $request = null;
@@ -30,5 +37,5 @@ if(($c instanceof \Controller\BaseController)==false) {
 try {
    echo $c->call($request->getAction());
 } catch(Exception $ex) {
-   die("Action not found.");
+   echo json_encode(array("success"=>false, "message"=>"Exception: ".$ex->getMessage(), "result"=>null));
 }
