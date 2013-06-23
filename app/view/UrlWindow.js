@@ -2,16 +2,17 @@
 Ext.define('DirectoryListing.view.UrlWindow', {
    extend: 'Ext.window.Window',
    layout:'fit',
-   
+
    title:'Direct URL',
    width:600,
    height:120,
    modal:true,
-   
+   focusOnToFront:false,
+
    setURL: function(val) {
       this.child('form textfield').setValue(val);
    },
-   
+
    items: [{
          xtype:'form',
          bodyPadding:5,
@@ -25,7 +26,7 @@ Ext.define('DirectoryListing.view.UrlWindow', {
                editable:false,
                listeners: {
                   afterrender: function(txt) {
-                     window.setTimeout(function() {txt.selectText(); }, 1000);
+                     txt.focus(true, true);
                   }
                }
             }
@@ -35,14 +36,14 @@ Ext.define('DirectoryListing.view.UrlWindow', {
                xtype:'button',
                text:'Close',
                listeners: {
-                  
+
                   click: function(btn) {
                      btn.up('window').close();
                   }
-                  
+
                }
             }
          ]
    }]
-   
+
 });

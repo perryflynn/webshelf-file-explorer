@@ -25,6 +25,7 @@ Ext.define('DirectoryListing.view.LoginWindow', {
             {
                xtype:'textfield',
                name:'args[password]',
+               inputType: "password",
                fieldLabel:'Password'
             }
          ],

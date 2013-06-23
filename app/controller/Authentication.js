@@ -11,6 +11,8 @@ Ext.define('DirectoryListing.controller.Authentication', {
         { ref: 'form', selector: 'window[xid=loginwindow] form' }
     ],
 
+    cachedLoginStatus: null,
+
    init: function() {
 
         this.control({
@@ -25,6 +27,7 @@ Ext.define('DirectoryListing.controller.Authentication', {
 
         this.application.on({
            'logout': this.globalLogout,
+           'checkloginstatus': this.globalCheckLoginStatus,
            scope: this
         });
 
@@ -35,11 +38,33 @@ Ext.define('DirectoryListing.controller.Authentication', {
       Ext.Ajax.request({
           url: 'ajax.php?controller=authentication&action=logout',
           success: function(response, opts) {
-             me.application.fireEvent('loggedout');
+             me.application.fireEvent('checkloginstatus');
              Msg.show("Success", "Logout successfull.");
           },
           failure: function(response, opts) {
               Msg.show("Failure", "Logout failed.");
+          }
+      });
+   },
+
+   globalCheckLoginStatus: function() {
+      var me = this;
+      Ext.Ajax.request({
+          url: 'ajax.php?controller=authentication&action=getuserstatus',
+          success: function(response, opts) {
+             var json = Ext.decode(response.responseText);
+
+             if(json.result.loggedin==true && (me.cachedLoginStatus==false || me.cachedLoginStatus==null)) {
+                me.application.fireEvent('loggedin', json.result.username);
+             } else if(json.result.loggedin==false && (me.cachedLoginStatus==true || me.cachedLoginStatus==null)) {
+                me.application.fireEvent('loggedout');
+             }
+
+             me.cachedLoginStatus = json.result.loggedin;
+
+          },
+          failure: function(response, opts) {
+              Msg.show("Failure", "Could not check user status.");
           }
       });
    },
@@ -59,11 +84,12 @@ Ext.define('DirectoryListing.controller.Authentication', {
          url: 'ajax.php?controller=authentication&action=login',
          success: function(form, action) {
             Msg.show("Success", "Login successfull.");
-            me.application.fireEvent('loggedin');
+            me.application.fireEvent('checkloginstatus');
             win.close();
          },
          failure: function(form, action) {
             Msg.show("Failure", "Login failed.");
+            me.application.fireEvent('checkloginstatus');
          }
       });
 

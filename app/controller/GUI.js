@@ -8,6 +8,7 @@ Ext.define('DirectoryListing.controller.GUI', {
     refs: [
         { ref: 'viewport', selector: 'viewport' },
         { ref: 'window', selector: 'window[xid=filewindow]' },
+        { ref: 'toolbar', selector: 'window[xid=filewindow] toolbar[dock=top]' },
         { ref: 'dirtree', selector: 'window[xid=filewindow] treepanel[xid=dirtree]' },
         { ref: 'filelist', selector: 'window[xid=filewindow] gridpanel[xid=filelist]' },
         { ref: 'currentpath', selector: 'window[xid=filewindow] panel textfield[xid=current-path]' },
@@ -46,17 +47,38 @@ Ext.define('DirectoryListing.controller.GUI', {
         this.application.on({
            'loggedin': this.globalLoggedin,
            'loggedout': this.globalLoggedout,
+           'togglefilewindow': this.globalToggleFileWindow,
            scope: this
         });
 
    },
 
-   globalLoggedin: function() {
-      this.getWindow().child('toolbar[dock=top] button[xid=login]').setText("Logout");
+   globalLoggedin: function(username) {
+      var tb = this.getToolbar();
+      var il = tb.child('label[xid=logininfo]');
+      var lb = tb.child('button[xid=login]');
+      il.setText("Logged in as "+username);
+      lb.setText('Logout');
+      tb.child('button[xid=users]').setDisabled(false);
+      tb.child('button[xid=groups]').setDisabled(false);
    },
 
    globalLoggedout: function() {
-      this.getWindow().child('toolbar[dock=top] button[xid=login]').setText("Login");
+      var tb = this.getToolbar();
+      var il = tb.child('label[xid=logininfo]');
+      var lb = tb.child('button[xid=login]');
+      il.setText("Not logged in");
+      lb.setText('Login');
+      tb.child('button[xid=users]').setDisabled(true);
+      tb.child('button[xid=groups]').setDisabled(true);
+   },
+
+   globalToggleFileWindow: function(b) {
+      if(b) {
+         this.getWindow().show();
+      } else {
+         this.getWindow().hide();
+      }
    },
 
    expandPath: function(me, treenode) {

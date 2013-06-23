@@ -11,11 +11,15 @@ class AuthenticationController extends BaseController {
          $this->response->setResult(array(
              "username" => \JsonConfig::instance()->getSessionUsername(),
              "loggedin" => true,
+             "admin" => $user['admin'],
+             "groups" => $user['groups'],
          ));
-      } catch(Exception $ex) {
+      } catch(\Exception $ex) {
          $this->response->setResult(array(
              "username" => null,
              "loggedin" => false,
+             "admin" => false,
+             "groups" => array(),
          ));
       }
       $this->response->success();
@@ -35,7 +39,7 @@ class AuthenticationController extends BaseController {
          } else {
             throw new Exception("fail");
          }
-      } catch(Exception $ex) {
+      } catch(\Exception $ex) {
          $this->response->failure();
          $this->response->setResult(false);
       }

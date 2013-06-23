@@ -39,7 +39,15 @@ Ext.onReady(function() {
 
       models: [  ],
       stores: [  ],
-      controllers: [ 'GUI', 'Authentication' ]
+      controllers: [ 'GUI', 'Authentication' ],
+
+      launch: function() {
+         var me = this;
+         me.fireEvent('checkloginstatus');
+         window.setInterval(function() {
+            me.fireEvent('checkloginstatus');
+         }, 60000);
+      }
    });
 
 });

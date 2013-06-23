@@ -58,7 +58,21 @@ Ext.define('DirectoryListing.view.Viewport', {
                },
                { xtype:'tbfill' },
                {
-                  text:'Login',
+                  xtype:'label',
+                  xid:'logininfo'
+               },
+               {
+                  text:'Groups',
+                  disabled:true,
+                  xid:'groups'
+               },
+               {
+                  text:'Users',
+                  disabled:true,
+                  xid:'users'
+               },
+               {
+                  text:'Get Status...',
                   xid:'login'
                },
                {
