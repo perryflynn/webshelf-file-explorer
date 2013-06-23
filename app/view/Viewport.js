@@ -62,14 +62,9 @@ Ext.define('DirectoryListing.view.Viewport', {
                   xid:'logininfo'
                },
                {
-                  text:'Groups',
+                  text:'Manage',
                   disabled:true,
-                  xid:'groups'
-               },
-               {
-                  text:'Users',
-                  disabled:true,
-                  xid:'users'
+                  xid:'manage'
                },
                {
                   text:'Get Status...',

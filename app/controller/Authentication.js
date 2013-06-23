@@ -19,6 +19,9 @@ Ext.define('DirectoryListing.controller.Authentication', {
             'window[xid=loginwindow]': {
                afterrender: this.onWindowRendered
             },
+            'window[xid=loginwindow] form textfield': {
+               specialkey: this.onTextfieldSpecialKey
+            },
             'window[xid=loginwindow] toolbar button[xid=do-login]': {
                click: this.onLoginClicked
             },
@@ -70,11 +73,16 @@ Ext.define('DirectoryListing.controller.Authentication', {
    },
 
    onWindowRendered: function(win) {
-      console.log('focus!')
       win.child('form').getForm().findField('args[username]').focus(true, true);
    },
 
-   onLoginClicked: function(btn) {
+   onTextfieldSpecialKey: function(field, e) {
+      if (e.getKey() == e.ENTER) {
+         this.onLoginClicked();
+      }
+   },
+
+   onLoginClicked: function() {
       var me = this;
       var win = this.getLoginWindow();
       var form = this.getForm();

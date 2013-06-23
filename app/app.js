@@ -39,7 +39,7 @@ Ext.onReady(function() {
 
       models: [  ],
       stores: [  ],
-      controllers: [ 'GUI', 'Authentication' ],
+      controllers: [ 'GUI', 'Authentication', 'Manage' ],
 
       launch: function() {
          var me = this;

@@ -59,8 +59,7 @@ Ext.define('DirectoryListing.controller.GUI', {
       var lb = tb.child('button[xid=login]');
       il.setText("Logged in as "+username);
       lb.setText('Logout');
-      tb.child('button[xid=users]').setDisabled(false);
-      tb.child('button[xid=groups]').setDisabled(false);
+      tb.child('button[xid=manage]').setDisabled(false);
    },
 
    globalLoggedout: function() {
@@ -69,8 +68,7 @@ Ext.define('DirectoryListing.controller.GUI', {
       var lb = tb.child('button[xid=login]');
       il.setText("Not logged in");
       lb.setText('Login');
-      tb.child('button[xid=users]').setDisabled(true);
-      tb.child('button[xid=groups]').setDisabled(true);
+      tb.child('button[xid=manage]').setDisabled(true);
    },
 
    globalToggleFileWindow: function(b) {
@@ -208,6 +206,11 @@ Ext.define('DirectoryListing.controller.GUI', {
       }
       if(btn.xid=='login') {
          this.onBtnLoginClicked(btn);
+      }
+      if(btn.xid=='manage') {
+         this.application.fireEvent('openmanagewindow');
+         this.application.fireEvent('togglefilewindow', false);
+
       }
    },
 
