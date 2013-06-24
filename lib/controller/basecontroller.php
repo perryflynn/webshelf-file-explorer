@@ -21,8 +21,8 @@ abstract class BaseController {
       $this->init();
    }
 
-   public function init() {
-
+   protected function init() {
+      
    }
 
    public final function call($action)

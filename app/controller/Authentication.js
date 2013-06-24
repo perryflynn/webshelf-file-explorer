@@ -63,6 +63,7 @@ Ext.define('DirectoryListing.controller.Authentication', {
                 me.application.fireEvent('loggedout');
              }
 
+             Config.user = json.result;
              me.cachedLoginStatus = json.result.loggedin;
 
           },

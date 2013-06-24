@@ -40,6 +40,13 @@ Ext.define('DirectoryListing.view.ManageWindow', {
 
                      xtype:'gridpanel',
                      xid:'grouplist',
+                     listeners: {
+                        beforeedit:function(e, editor) {
+                           if(editor.record.data.name!="") {
+                              return false;
+                           }
+                        }
+                     },
                      columns:[
                         { text:'Group Name', dataIndex:'name', flex:1, editor: { allowBlank: false } },
                         { text:'Shares', dataIndex:'shares' },
@@ -50,11 +57,19 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                            sortable: false,
                            menuDisabled: true,
                            items: [{
-                               icon: 'fileicons/drive_delete.png',
+                               icon: 'fileicons/group_delete.png',
                                tooltip: 'Delete Group',
                                scope: this,
                                handler: function(grid, rowIndex, colIndex, item, e, record) {
-                                  grid.up('gridpanel[xid=grouplist]').fireEvent('deleterow', grid.up('gridpanel[xid=grouplist]'), record);
+                                 if(record.data.saved==false) {
+                                    Msg.show("Failure", "This record is not saved.");
+                                    return;
+                                 }
+                                 if(record.data.deletable==false) {
+                                    Msg.show("Failure", "This group is readonly.");
+                                    return;
+                                 }
+                                 grid.up('gridpanel').fireEvent('deleterow', grid.up('gridpanel'), record);
                                }
                            }]
                         }
@@ -65,7 +80,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                          })
                      ],
                      store: Ext.create('Ext.data.Store', {
-                        fields:['name', 'shares'],
+                        fields:['name', 'shares', 'deletable', 'saved'],
                         proxy: {
                            type: 'ajax',
                            url: 'ajax.php?controller=authentication&action=grouplist',
@@ -91,9 +106,66 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                      xid:'sharelist',
                      columns:[
                         { text:'Path', dataIndex:'path', flex:1, editor: { allowBlank: false } },
-                        { text:'Read', dataIndex:'read', xtype: 'checkcolumn' },
-                        { text:'Delete', dataIndex:'delete', xtype: 'checkcolumn' },
-                        { text:'Download', dataIndex:'download', xtype: 'checkcolumn' },
+                        {
+                           text:'Read',
+                           dataIndex:'read',
+                           xtype: 'checkcolumn',
+                           listeners: {
+                              beforecheckchange: function(col, rowidx) {
+                                 var grid = this.up('gridpanel');
+                                 var record = grid.getStore().getAt(rowidx);
+                                 if(record.data.path=="") {
+                                    Msg.show("Failure", "Please set a path first.");
+                                    return false;
+                                 }
+                              },
+                              checkchange: function(column, recordIndex, checked) {
+                                 var grid = this.up('gridpanel');
+                                 grid.getSelectionModel().select(recordIndex);
+                                 grid.fireEvent('edit', null, {record:grid.getStore().getAt(recordIndex), grid:grid});
+                              }
+                           }
+                        },
+                        {
+                           text:'Delete',
+                           dataIndex:'delete',
+                           xtype: 'checkcolumn',
+                           listeners: {
+                              beforecheckchange: function(col, rowidx) {
+                                 var grid = this.up('gridpanel');
+                                 var record = grid.getStore().getAt(rowidx);
+                                 if(record.data.path=="") {
+                                    Msg.show("Failure", "Please set a path first.");
+                                    return false;
+                                 }
+                              },
+                              checkchange: function(column, recordIndex, checked) {
+                                 var grid = this.up('gridpanel');
+                                 grid.getSelectionModel().select(recordIndex);
+                                 grid.fireEvent('edit', null, {record:grid.getStore().getAt(recordIndex), grid:grid});
+                              }
+                           }
+                        },
+                        {
+                           text:'Download',
+                           dataIndex:'download',
+                           xtype: 'checkcolumn',
+                           listeners: {
+                              beforecheckchange: function(col, rowidx) {
+                                 var grid = this.up('gridpanel');
+                                 var record = grid.getStore().getAt(rowidx);
+                                 if(record.data.path=="") {
+                                    Msg.show("Failure", "Please set a path first.");
+                                    return false;
+                                 }
+                              },
+                              checkchange: function(column, recordIndex, checked) {
+                                 var grid = this.up('gridpanel');
+                                 grid.getSelectionModel().select(recordIndex);
+                                 grid.fireEvent('edit', null, {record:grid.getStore().getAt(recordIndex), grid:grid});
+                              }
+                           }
+                        },
                         {
                            xtype: 'actioncolumn',
                            width: 30,
@@ -105,7 +177,11 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                                tooltip: 'Delete Share',
                                scope: this,
                                handler: function(grid, rowIndex, colIndex, item, e, record) {
-                                  grid.up('gridpanel[xid=sharelist]').fireEvent('deleterow', grid.up('gridpanel[xid=sharelist]'), record);
+                                  if(record.data.saved==false) {
+                                     Msg.show("Failure", "This record is not saved.");
+                                     return;
+                                  }
+                                  grid.up('gridpanel').fireEvent('deleterow', grid.up('gridpanel'), record);
                                }
                            }]
                         }
@@ -116,7 +192,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                          })
                      ],
                      store: Ext.create('Ext.data.Store', {
-                        fields:['path', 'read', 'delete', 'download'],
+                        fields:['path', 'read', 'delete', 'download', 'saved'],
                         proxy: {
                            type: 'ajax',
                            url: 'ajax.php?controller=authentication&action=groupsharelist',
@@ -134,11 +210,138 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                ]
 
             },
+
+/*   User Admin   ***********************************************************************************************/
+
             {
-               title:'Users'
+               title:'Users',
+               layout:{
+                  type:'hbox',
+                  align:'stretch'
+               },
+               defaults: {
+                  xtype:'panel'
+               },
+
+               items: [
+                  {
+                     flex:1,
+                     tbar: [
+                        { xtype:'tbfill' },
+                        {
+                           text:'New User',
+                           xid:'add-user'
+                        }
+                     ],
+
+                     listeners: {
+                        beforeedit: function(editor, e) {
+                           console.log(e);
+                           var record = e.record.data;
+                           if(record.name==Config.user.username) {
+                              return false;
+                           }
+                        }
+                     },
+
+                     xtype:'gridpanel',
+                     xid:'userlist',
+                     columns:[
+                        { text:'Username', dataIndex:'name', flex:1, editor: { allowBlank: false } },
+                        {
+                           text:'Admin',
+                           dataIndex:'admin',
+                           xtype: 'checkcolumn',
+                           listeners: {
+                              beforecheckchange: function(col, rowidx) {
+                                 var grid = this.up('gridpanel');
+                                 var record = grid.getStore().getAt(rowidx);
+                                 if(record.data.name==Config.user.username) {
+                                    return false;
+                                 }
+                                 if(record.data.path=="") {
+                                    Msg.show("Failure", "Please set a username first.");
+                                    return false;
+                                 }
+                              },
+                              checkchange: function(column, recordIndex, checked) {
+                                 var grid = this.up('gridpanel');
+                                 var record = grid.getStore().getAt(recordIndex);
+                                 grid.getSelectionModel().select(recordIndex);
+                                 grid.fireEvent('edit', null, {record:record, grid:grid});
+                              }
+                           }
+                        },
+                        {
+                           xtype: 'actioncolumn',
+                           width: 30,
+                           align:'center',
+                           sortable: false,
+                           menuDisabled: true,
+                           items: [
+                              {
+                                 icon: 'fileicons/key_go.png',
+                                 tooltip: 'Change Password',
+                                 scope: this,
+                                 handler: function(grid, rowIndex, colIndex, item, e, record) {
+                                    if(record.data.saved==false) {
+                                       Msg.show("Failure", "This record is not saved.");
+                                       return;
+                                    }
+                                   grid.up('gridpanel').fireEvent('changepw', grid.up('gridpanel'), record);
+                                 }
+                              }
+                           ]
+                        },
+                        {
+                           xtype: 'actioncolumn',
+                           width: 30,
+                           align:'center',
+                           sortable: false,
+                           menuDisabled: true,
+                           items: [
+                              {
+                                 icon: 'fileicons/user_delete.png',
+                                 tooltip: 'Delete User',
+                                 scope: this,
+                                 handler: function(grid, rowIndex, colIndex, item, e, record) {
+                                   if(record.data.deletable==false) {
+                                      Msg.show("Failure", "This user cant deleted.");
+                                      return;
+                                   }
+                                   grid.up('gridpanel').fireEvent('deleterow', grid.up('gridpanel'), record);
+                                 }
+                              }
+                           ]
+                        }
+                     ],
+                     plugins: [
+                        new Ext.grid.plugin.CellEditing({
+                           clicksToEdit: 1
+                         })
+                     ],
+                     store: Ext.create('Ext.data.Store', {
+                        fields:['name', 'admin', 'deletable', 'saved'],
+                        proxy: {
+                           type: 'ajax',
+                           url: 'ajax.php?controller=authentication&action=userlist',
+                           reader: {
+                              type: 'json',
+                              root: 'result'
+                           }
+                        }
+                    })
+
+
+                  },
+                  {
+                     flex:2
+                  }
+               ]
+
             }
          ]
       }
-   ]
+   ],
 
 });

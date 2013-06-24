@@ -26,6 +26,7 @@ class JsonConfig extends \Util\Singleton {
           ),
           "groups" => array(
               "anonymous" => array(
+                  "deletable" => false,
                   "shares" => array(
                       array(
                           "path" => "public",
@@ -120,6 +121,11 @@ class JsonConfig extends \Util\Singleton {
       } catch(Exception $ex) {
          return false;
       }
+   }
+
+   public function userExist($user) {
+      $config = $this->loadConfiguration();
+      return isset($config['users'][$user]);
    }
 
    public function isAdmin() {

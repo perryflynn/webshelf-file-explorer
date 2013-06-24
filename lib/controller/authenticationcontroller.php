@@ -68,6 +68,8 @@ class AuthenticationController extends BaseController {
          $result[] = array(
              "name" => $groupname,
              "shares" => count($groupdata['shares']),
+             "deletable" => (isset($groupdata['deletable']) && $groupdata['deletable']==false ? false : true),
+             "saved" => true,
          );
       }
 
@@ -86,8 +88,19 @@ class AuthenticationController extends BaseController {
       $groupname = $this->request->getGetArg("group");
       $cfg = \JsonConfig::instance()->loadConfiguration();
 
+      $result = array();
+      foreach($cfg['groups'][$groupname]['shares'] as $share) {
+         $result[] = array(
+            "path" => $share['path'],
+            "delete" => $share['delete'],
+            "read" => $share['read'],
+            "download" => $share['download'],
+            "saved" => true,
+         );
+      }
+
       $this->response->success();
-      $this->response->setResult($cfg['groups'][$groupname]['shares']);
+      $this->response->setResult($result);
    }
 
    protected function deleteshareAction()
@@ -151,6 +164,10 @@ class AuthenticationController extends BaseController {
          $cfg['groups'][$group]['shares'][] = $newshare;
       }
 
+      if(!(file_exists(BASE.$path) && is_dir(BASE.$path))) {
+         @mkdir(BASE.$path, 0775);
+      }
+
       \JsonConfig::instance()->createConfiguration($cfg);
       $this->response->success();
    }
@@ -205,6 +222,97 @@ class AuthenticationController extends BaseController {
       } else {
          $this->response->failure();
       }
+   }
+
+   protected function userlistAction()
+   {
+      if(!\JsonConfig::instance()->isAdmin()) {
+         $this->response->failure();
+         $this->response->setMessage("Forbidden.");
+         return;
+      }
+
+      $cfg = \JsonConfig::instance()->loadConfiguration();
+      $actuser = \JsonConfig::instance()->getSessionUsername();
+
+      $result = array();
+      foreach($cfg['users'] as $username => $userdata) {
+         $result[] = array(
+             "name" => $username,
+             "admin" => $userdata['admin'],
+             "deletable" => ($username==$actuser ? false : true),
+             "saved" => true,
+         );
+      }
+
+      $this->response->success();
+      $this->response->setResult($result);
+   }
+
+   protected function setpasswordAction()
+   {
+      $username = $this->request->getPostArg('username');
+      $password = $this->request->getPostArg('password');
+      $actuser = \JsonConfig::instance()->getSessionUsername();
+      $cfg = \JsonConfig::instance()->loadConfiguration();
+
+      if(($actuser==$username || \JsonConfig::instance()->isAdmin()) &&
+         \JsonConfig::instance()->userExist($username))
+      {
+         $cfg['users'][$username]['password'] = sha1($password);
+         \JsonConfig::instance()->createConfiguration($cfg);
+         $this->response->success();
+      }
+      else
+      {
+         $this->response->failure();
+      }
+
+   }
+
+   protected function updateuserAction()
+   {
+      if(!\JsonConfig::instance()->isAdmin()) {
+         $this->response->failure();
+         $this->response->setMessage("Forbidden.");
+         return;
+      }
+
+      $username = $this->request->getPostArg("username");
+      $admin = ($this->request->getPostArg("admin")=="true" ? true : false);
+      $cfg = \JsonConfig::instance()->loadConfiguration();
+
+      if(isset($cfg['users'][$username])) {
+         $cfg['users'][$username]['admin'] = $admin;
+      } else {
+         $cfg['users'][$username] = array("admin"=>$admin, "password"=>"", "groups"=>array());
+      }
+
+      \JsonConfig::instance()->createConfiguration($cfg);
+      $this->response->success();
+
+   }
+
+   protected function deleteuserAction()
+   {
+      if(!\JsonConfig::instance()->isAdmin()) {
+         $this->response->failure();
+         $this->response->setMessage("Forbidden.");
+         return;
+      }
+
+      $username = $this->request->getPostArg("username");
+      $actuser = \JsonConfig::instance()->getSessionUsername();
+      $cfg = \JsonConfig::instance()->loadConfiguration();
+
+      if($actuser==$username) {
+         $this->response->failure();
+      } else {
+         unset($cfg['users'][$username]);
+         \JsonConfig::instance()->createConfiguration($cfg);
+         $this->response->success();
+      }
+
    }
 
 

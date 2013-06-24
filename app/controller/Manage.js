@@ -2,13 +2,14 @@
 Ext.define('DirectoryListing.controller.Manage', {
     extend: 'Ext.app.Controller',
 
-    views: [ 'ManageWindow' ],
+    views: [ 'ManageWindow', 'ChangePasswordWindow' ],
     stores: [  ],
 
     refs: [
         { ref: 'mgWindow', selector: 'window[xid=managewindow]' },
         { ref: 'groupGrid', selector: 'window[xid=managewindow] gridpanel[xid=grouplist]' },
-        { ref: 'shareGrid', selector: 'window[xid=managewindow] gridpanel[xid=sharelist]' }
+        { ref: 'shareGrid', selector: 'window[xid=managewindow] gridpanel[xid=sharelist]' },
+        { ref: 'userGrid', selector: 'window[xid=managewindow] gridpanel[xid=userlist]' }
     ],
 
     cachedLoginStatus: null,
@@ -22,7 +23,6 @@ Ext.define('DirectoryListing.controller.Manage', {
            'window[xid=managewindow] gridpanel[xid=grouplist]': {
               afterrender: this.onGroupPanelRendered,
               select: this.onGroupPanelItemClicked,
-              beforeedit: this.onGroupPanelBeforeEdit,
               edit: this.onGroupEdited,
               deleterow: this.onGroupDelete
            },
@@ -35,6 +35,18 @@ Ext.define('DirectoryListing.controller.Manage', {
            },
            'window[xid=managewindow] gridpanel[xid=sharelist] toolbar button[xid=add-share]': {
               click: this.onAddShareClicked
+           },
+           'window[xid=managewindow] gridpanel[xid=userlist]': {
+              afterrender: this.onUserPanelRendered,
+              edit: this.onEditUser,
+              deleterow: this.onDeleteUser,
+              changepw: this.onChangeUserPassword
+           },
+           'window[xid=managewindow] gridpanel[xid=userlist] toolbar button[xid=add-user]': {
+              click: this.onAddUser
+           },
+           'window[xid=changepasswordwindow]': {
+              changepw: this.onChangePasswordClicked
            },
            scope:this
         });
@@ -66,7 +78,19 @@ Ext.define('DirectoryListing.controller.Manage', {
    },
 
    onGroupPanelRendered: function(v) {
-      v.getStore().load();
+      v.getStore().load({
+         callback: function() {
+            v.getSelectionModel().select(v.getStore().getAt(0));
+         }
+      });
+   },
+
+   onUserPanelRendered: function(v) {
+      v.getStore().load({
+         callback: function() {
+            v.getSelectionModel().select(v.getStore().getAt(0));
+         }
+      });
    },
 
    onGroupPanelItemClicked: function(panel, record) {
@@ -81,16 +105,11 @@ Ext.define('DirectoryListing.controller.Manage', {
       });
    },
 
-   onGroupPanelBeforeEdit: function(e, editor) {
-      if(editor.record.data.name!="") {
-         return false;
-      }
-   },
-
    onAddGroupClicked: function(btn) {
       this.getGroupGrid().getStore().add({
          name:'',
-         shares:0
+         shares:0,
+         saved:false
       });
    },
 
@@ -123,6 +142,12 @@ Ext.define('DirectoryListing.controller.Manage', {
       var me = this;
       var data = e.record.data;
 
+      if(data.saved==false && e.grid.getStore().findBy(function(record, id) { return (record.id!=e.record.id && record.data.name==data.name); })>=0) {
+         e.grid.getStore().remove(e.record);
+         Msg.show("Failure", "Group already exist!");
+         return;
+      }
+
       Ext.Ajax.request({
           url: 'ajax.php?controller=authentication&action=addgroup',
           method:'post',
@@ -148,7 +173,8 @@ Ext.define('DirectoryListing.controller.Manage', {
          path:'',
          read:'',
          'delete':'',
-         download:''
+         download:'',
+         saved:false
       });
    },
 
@@ -156,6 +182,12 @@ Ext.define('DirectoryListing.controller.Manage', {
       var me = this;
       var data = e.record.data;
       var groupname = me.getGroupGrid().getSelectionModel().getSelection()[0].data.name;
+
+      if(data.saved==false && e.grid.getStore().findBy(function(record, id) { return (record.id!=e.record.id && record.data.path==data.path); })>=0) {
+         e.grid.getStore().remove(e.record);
+         Msg.show("Failure", "Share already exist!");
+         return;
+      }
 
       Ext.Ajax.request({
           url: 'ajax.php?controller=authentication&action=updateshare',
@@ -197,7 +229,7 @@ Ext.define('DirectoryListing.controller.Manage', {
              Msg.show("Success", "Share deleted successfull.");
              me.getGroupGrid().getStore().load({
                 callback: function() {
-                   me.getGroupGrid().getSelectionModel().select(me.getGroupGrid().getStore().find('name', groupname));
+                   me.getGroupGrid().getSelectionModel().select(me.getGroupGrid().getStore().getAt(0));
                 }
              });
           },
@@ -206,6 +238,99 @@ Ext.define('DirectoryListing.controller.Manage', {
           }
       });
 
+   },
+
+   onEditUser: function(editor, e) {
+      var me = this;
+      var data = e.record.data;
+
+      if(data.saved==false && e.grid.getStore().findBy(function(record, id) { return (record.id!=e.record.id && record.data.name==data.name); })>=0) {
+         e.grid.getStore().remove(e.record);
+         Msg.show("Failure", "User already exist!");
+         return;
+      }
+
+      Ext.Ajax.request({
+          url: 'ajax.php?controller=authentication&action=updateuser',
+          method:'post',
+          params: {
+             'args[username]': data.name,
+             'args[admin]': data.admin
+          },
+          success: function(response, opts) {
+             Msg.show("Success", "User edited successfull.");
+             me.getGroupGrid().getStore().load({
+                callback: function() {
+                   me.getUserGrid().getSelectionModel().select(me.getUserGrid().getStore().find('name', data.name));
+                }
+             });
+          },
+          failure: function(response, opts) {
+             Msg.show("Failure", "Could not delete share.");
+          }
+      });
+
+   },
+
+   onDeleteUser: function(grid, record) {
+      var me = this;
+      grid.getStore().remove(record);
+      var username = record.data.name;
+      Ext.Ajax.request({
+          url: 'ajax.php?controller=authentication&action=deleteuser',
+          method:'post',
+          params: {
+             'args[username]': username
+          },
+          success: function(response, opts) {
+             Msg.show("Success", "User deleted successfull.");
+             me.getUserGrid().getStore().load({
+                callback: function() {
+                   me.getUserGrid().getSelectionModel().select(me.getUserGrid().getStore().getAt(0));
+                }
+             });
+          },
+          failure: function(response, opts) {
+             Msg.show("Failure", "Could not delete share.");
+          }
+      });
+   },
+
+   onChangeUserPassword: function(grid, record) {
+      var me = this;
+      var username = record.data.name;
+      Ext.require('DirectoryListing.view.ChangePasswordWindow', function() {
+         var win = Ext.create('DirectoryListing.view.ChangePasswordWindow', {
+            targetusername: username
+         });
+         win.show();
+      });
+   },
+
+   onChangePasswordClicked: function(name, password) {
+      Ext.Ajax.request({
+          url: 'ajax.php?controller=authentication&action=setpassword',
+          method:'post',
+          params: {
+             'args[username]': name,
+             'args[password]': password
+          },
+          success: function(response, opts) {
+             Msg.show("Success", "Password changed.");
+          },
+          failure: function(response, opts) {
+             Msg.show("Failure", "Could not change password.");
+          }
+      });
+   },
+
+   onAddUser: function(btn) {
+      this.getUserGrid().getStore().add({
+         name:'',
+         admin:false,
+         deletable:true,
+         saved:false
+      });
    }
 
 

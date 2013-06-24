@@ -32,7 +32,6 @@ Ext.define('DirectoryListing.view.LoginWindow', {
          buttons: [
             {
                text:'Login',
-               name:'args[password]',
                xid:'do-login'
             }
          ]

@@ -4,6 +4,26 @@ namespace Controller;
 
 class FilesystemController extends BaseController {
 
+   protected function init() 
+   {
+      $cfg = \JsonConfig::instance()->loadConfiguration();
+      $sharelist = array();
+      foreach($cfg['groups'] as $group) {
+         foreach($group['shares'] as $share) {
+            if(!in_array($share['path'], $sharelist)) {
+               $sharelist[] = $share['path'];
+            }
+         }
+      }
+      
+      foreach($sharelist as $share) {
+         if(!(file_exists($share) && is_dir($share))) {
+            @mkdir(BASE.$share, 0775);
+         }
+      }
+      
+   }
+
    private function is_allowed($filter, $path) {
       if($filter=="folders" && is_dir($path)) {
          return true;
@@ -31,7 +51,7 @@ class FilesystemController extends BaseController {
          $path = $this->request->getGetArg("path");
       }
 
-      $path = BASE."/".$path;
+      $path = BASE.DIRECTORY_SEPARATOR.$path;
       $path = realpath($path);
       $file = null;
 
@@ -41,24 +61,24 @@ class FilesystemController extends BaseController {
       }
 
       if(is_dir($path)) {
-         $path = $path."/";
+         $path = $path.DIRECTORY_SEPARATOR;
       }
-
+      
       if($path!==false && preg_match('/^'.preg_quote(BASE, '/').'/', $path)===1) {
          if(is_file($path)) {
-            $path = dirname($path)."/";
+            $path = dirname($path).DIRECTORY_SEPARATOR;
             $file = basename($path);
          }
-
+         
          $filebase = str_replace(BASE, "", $path);
-         $filebase = (empty($filebase) ? "/" : $filebase);
+         $filebase = (empty($filebase) ? DIRECTORY_SEPARATOR : $filebase);
 
          $files = @scandir($path);
 
          $result = array();
          if(is_array($files) && count($files)>0) {
             foreach($files as $file) {
-               if($file!="." && $file!=".." && $this->is_allowed($filter, $path."/".$file)) {
+               if($file!="." && $file!=".." && $this->is_allowed($filter, $path.DIRECTORY_SEPARATOR.$file)) {
 
                   $folders = -1;
                   $files = -1;
@@ -67,7 +87,7 @@ class FilesystemController extends BaseController {
                      $files = 0;
                      $childs = scandir(BASE.$filebase.$file);
                      foreach($childs as $child) {
-                        $absfile = BASE.$filebase.$file."/".$child;
+                        $absfile = BASE.$filebase.$file.DIRECTORY_SEPARATOR.$child;
                         if($child!="." && $child!="..") {
                            if(is_file($absfile)) {
                               $files++;
@@ -80,7 +100,7 @@ class FilesystemController extends BaseController {
 
                   $absfile = BASE.$filebase.$file;
                   $result[] = array(
-                      "id" => "/".trim($filebase.$file, "/")."/",
+                      "id" => DIRECTORY_SEPARATOR.trim($filebase.$file, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR,
                       "text" => $file,
                       "leaf" => false,
                       "children" => array(
@@ -106,7 +126,7 @@ class FilesystemController extends BaseController {
 
          if($node=="root") {
             $result = array(
-               "id" => "/",
+               "id" => DIRECTORY_SEPARATOR,
                "text" => "/",
                "leaf" => false,
                "children" => $result

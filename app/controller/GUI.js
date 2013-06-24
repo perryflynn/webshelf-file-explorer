@@ -120,13 +120,16 @@ Ext.define('DirectoryListing.controller.GUI', {
             'args[path]':'/'
          },
          callback: function() {
-            me.getDirtree().getStore().getRootNode().getChildAt(0).expand(false, function() {
-               if(me.expandPathArray.length>0) {
-                  me.expandPath(me, this);
-               } else {
-                  me.getDirtree().getSelectionModel().select(this);
-               }
-            });
+            var child = me.getDirtree().getStore().getRootNode().getChildAt(0);
+            if(child) {
+               child.expand(false, function() {
+                  if(me.expandPathArray.length>0) {
+                     me.expandPath(me, this);
+                  } else {
+                     me.getDirtree().getSelectionModel().select(this);
+                  }
+               });
+            }
          }
       });
 
