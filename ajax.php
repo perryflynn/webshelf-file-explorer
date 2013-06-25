@@ -11,6 +11,14 @@ if(!(file_exists(BASE) && is_dir(BASE))) {
    if(@mkdir(BASE, 0775)!==true) {
       echo json_encode(array("success"=>false, "message"=>"Could not create ".BASE, "result"=>null));
       exit();
+   } 
+}
+
+if(!(file_exists(BASE.".htaccess") && is_file(BASE.".htaccess"))) {
+   $result = file_put_contents(BASE.".htaccess", "deny from all\n");
+   if($result===false) {
+      echo json_encode(array("success"=>false, "message"=>"Could not create .htaccess in ".BASE, "result"=>null));
+      exit();
    }
 }
 

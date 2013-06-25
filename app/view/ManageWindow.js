@@ -17,8 +17,11 @@ Ext.define('DirectoryListing.view.ManageWindow', {
             layout:'fit'
          },
          items:[
+         
+            /*** Group Tab ***/
             {
                title:'Groups',
+               xid:'grouptab',
                layout:{
                   type:'hbox',
                   align:'stretch'
@@ -28,6 +31,9 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                },
 
                items: [
+               
+                  /*** Group Gridpanel ***/
+               
                   {
                      flex:1,
                      tbar: [
@@ -92,6 +98,11 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                     })
 
                   },
+                  
+                  /*** Group Gridpanel END ***/
+                  
+                  /*** Share Gridpanel ***/
+                  
                   {
                      flex:2,
                      tbar: [
@@ -129,6 +140,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                         {
                            text:'Delete',
                            dataIndex:'delete',
+                           hidden:true,
                            xtype: 'checkcolumn',
                            listeners: {
                               beforecheckchange: function(col, rowidx) {
@@ -150,6 +162,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                            text:'Download',
                            dataIndex:'download',
                            xtype: 'checkcolumn',
+                           hidden:true,
                            listeners: {
                               beforecheckchange: function(col, rowidx) {
                                  var grid = this.up('gridpanel');
@@ -199,22 +212,27 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                            reader: {
                               type: 'json',
                               root: 'result'
-                           },
-                           writer: {
-                              type:'json'
                            }
                         }
                     })
 
                   }
+                  
+                  /*** Share Gridpanel ***/
+                  
                ]
 
             },
+            
+            /*** Group Tab END ***/
 
 /*   User Admin   ***********************************************************************************************/
 
+            /*** User Tab ***/
+
             {
                title:'Users',
+               xid:'usertab',
                layout:{
                   type:'hbox',
                   align:'stretch'
@@ -224,6 +242,9 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                },
 
                items: [
+               
+                  /*** User Gridpanel ***/
+               
                   {
                      flex:1,
                      tbar: [
@@ -236,7 +257,6 @@ Ext.define('DirectoryListing.view.ManageWindow', {
 
                      listeners: {
                         beforeedit: function(editor, e) {
-                           console.log(e);
                            var record = e.record.data;
                            if(record.name==Config.user.username) {
                               return false;
@@ -334,12 +354,61 @@ Ext.define('DirectoryListing.view.ManageWindow', {
 
 
                   },
+                  
+                  /*** User Gridpanel END ***/
+                  
+                  /*** Group Membership Gridpanel ***/
+                  
                   {
-                     flex:2
+                     flex:2,
+                     
+                     xtype:'gridpanel',
+                     xid:'groupmemberlist',
+                     columns:[
+                        {
+                           text:'Is Member',
+                           dataIndex:'member',
+                           xtype: 'checkcolumn',
+                           listeners: {
+                              checkchange: function(column, recordIndex, checked) {
+                                 var grid = this.up('gridpanel');
+                                 grid.getSelectionModel().select(recordIndex);
+                                 grid.fireEvent('edit', null, {record:grid.getStore().getAt(recordIndex), grid:grid});
+                              }
+                           }
+                        },
+                        { text:'Group', dataIndex:'name', flex:1 }
+                     ],
+                     plugins: [
+                        new Ext.grid.plugin.CellEditing({
+                           clicksToEdit: 1
+                         })
+                     ],
+                     store: Ext.create('Ext.data.Store', {
+                        fields:['name', 'member'],
+                        proxy: {
+                           type: 'ajax',
+                           url: 'ajax.php?controller=authentication&action=usergrouplist',
+                           reader: {
+                              type: 'json',
+                              root: 'result'
+                           },
+                           writer: {
+                              type:'json'
+                           }
+                        }
+                    })
+                     
                   }
+                  
+                  /*** Group Membership Gridpanel END ***/
+                  
                ]
 
             }
+            
+            /*** User Tab END ***/
+            
          ]
       }
    ],

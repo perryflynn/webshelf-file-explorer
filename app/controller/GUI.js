@@ -34,12 +34,17 @@ Ext.define('DirectoryListing.controller.GUI', {
             'window[xid=filewindow] toolbar button': {
                click: this.onButtonClicked
             },
+            'window[xid=filewindow] treepanel[xid=dirtree]': {
+               selectionchange: this.onTreeDirSelected,
+               load:this.onDirTreeLoad
+            },
             'window[xid=filewindow] gridpanel[xid=filelist]': {
                itemclick: this.onFilelistSelected,
                itemdblclick: this.onOpenFile
             },
             'viewport': {
-               afterrender: this.onViewportRendered
+               afterrender: this.onViewportRendered,
+               resize: this.onViewportResized
             },
             scope:this
         });
@@ -48,6 +53,7 @@ Ext.define('DirectoryListing.controller.GUI', {
            'loggedin': this.globalLoggedin,
            'loggedout': this.globalLoggedout,
            'togglefilewindow': this.globalToggleFileWindow,
+           'reloadfiletree': this.onReloadTree,
            scope: this
         });
 
@@ -81,8 +87,8 @@ Ext.define('DirectoryListing.controller.GUI', {
 
    expandPath: function(me, treenode) {
       if(me.expandPathArray[me.expandPathIndex]) {
-         if(me.expandPathString=='') me.expandPathString="/";
-         me.expandPathString += me.expandPathArray[me.expandPathIndex]+"/";
+         if(me.expandPathString=='') me.expandPathString=separator;
+         me.expandPathString += me.expandPathArray[me.expandPathIndex]+separator;
          treenode.findChild('id', me.expandPathString).expand(false, function() {
             me.expandPath(me, this);
             me.getDirtree().getSelectionModel().select(this);
@@ -98,9 +104,9 @@ Ext.define('DirectoryListing.controller.GUI', {
 
       // Hashtag Management
       if(!me.initstatus) {
-         body.on('resize', me.onViewportResized, me);
+         //body.on('resize', me.onViewportResized, me);
          body.fireEvent('resize', {});
-         this.getDirtree().getSelectionModel().on('selectionchange', this.onTreeDirSelected, this);
+         //this.getDirtree().getSelectionModel().on('selectionchange', this.onTreeDirSelected, this);
       }
 
       if(typeof HashManager.get('path')!="string") {
@@ -108,17 +114,9 @@ Ext.define('DirectoryListing.controller.GUI', {
       }
 
       me.initstatus = true;
-      me.expandPathArray = HashManager.get('path').split('/');
-      me.expandPathIndex = 0;
-      me.expandPathString = "";
-      me.expandPathArray.shift();
-      me.expandPathArray.pop();
 
       // Expand Dirtree via Hashtag
-      this.getDirtree().getStore().load({
-         params: {
-            'args[path]':'/'
-         },
+      /*this.getDirtree().getStore().load({
          callback: function() {
             var child = me.getDirtree().getStore().getRootNode().getChildAt(0);
             if(child) {
@@ -131,8 +129,27 @@ Ext.define('DirectoryListing.controller.GUI', {
                });
             }
          }
-      });
+      });*/
 
+   },
+   
+   onDirTreeLoad: function(store, node, records) {
+      var me = this;
+      
+      if(node.data.id=="root") {
+         me.expandPathArray = HashManager.get('path').split(separator);
+         me.expandPathIndex = 0;
+         me.expandPathString = separator;
+         me.expandPathArray.shift();
+         me.expandPathArray.pop();
+      
+         if(me.expandPathArray.length>0 && node.findChild('id', separator+me.expandPathArray[0]+separator)!=null) {
+            me.expandPath(me, node);
+         } else {
+            me.getDirtree().getSelectionModel().select(node.getChildAt(0));
+         }
+         
+      }
    },
 
    onWindowMaximized: function() {
@@ -188,7 +205,7 @@ Ext.define('DirectoryListing.controller.GUI', {
          dirtree.collapseAll();
       }
       if(btn.xid=="tree-reload") {
-         this.onBodyRendered();
+         this.onReloadTree();
       }
 
       // Grid
@@ -236,15 +253,16 @@ Ext.define('DirectoryListing.controller.GUI', {
 
    onTreeDirSelected: function(tree, item) {
       var me = this;
-      if(item.length<1) {
+      if(item.length<1 || !item[0].data) {
          return;
       }
+      console.log(item);
       me.currentpath = item[0].data.id;
 
       this.getFilelist().setLoading(true);
       this.getFilelist().getStore().load({
          params: {
-            'args[path]':me.currentpath
+            'args[node]':me.currentpath
          },
          callback: function() {
             me.getFilelist().setLoading(false);
@@ -255,7 +273,9 @@ Ext.define('DirectoryListing.controller.GUI', {
       this.getOpenbutton().disable();
       this.getDirectlinkbutton().disable();
       this.getCurrentpath().setValue((me.currentpath=="root" ? "/" : me.currentpath));
-      HashManager.set('path', me.currentpath);
+      if(me.currentpath!="root") {
+         HashManager.set('path', me.currentpath);
+      }
 
    },
 
@@ -276,13 +296,17 @@ Ext.define('DirectoryListing.controller.GUI', {
          win.show();
       });
    },
+   
+   onReloadTree: function() {
+      this.getDirtree().getStore().load();
+   },
 
    onReloadFilelist: function() {
       var me = this;
       this.getFilelist().setLoading(true);
       this.getFilelist().getStore().load({
          params: {
-            path:me.currentpath
+            'args[node]':me.currentpath
          },
          callback: function() {
             me.getFilelist().setLoading(false);

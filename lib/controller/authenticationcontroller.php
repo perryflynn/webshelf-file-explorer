@@ -88,6 +88,11 @@ class AuthenticationController extends BaseController {
       $groupname = $this->request->getGetArg("group");
       $cfg = \JsonConfig::instance()->loadConfiguration();
 
+      if(!\JsonConfig::instance()->groupExist($groupname)) {
+         $this->response->failure();
+         return;
+      }
+      
       $result = array();
       foreach($cfg['groups'][$groupname]['shares'] as $share) {
          $result[] = array(
@@ -108,6 +113,12 @@ class AuthenticationController extends BaseController {
       $share = $this->request->getPostArg("share");
       $group = $this->request->getPostArg("group");
 
+      if(!\JsonConfig::instance()->groupExist($group))
+      {
+         $this->response->failure();
+         return;
+      }
+      
       $cfg = \JsonConfig::instance()->loadConfiguration();
       $delindex = -1;
       foreach($cfg['groups'][$group]['shares'] as $index => $cshare) {
@@ -142,6 +153,11 @@ class AuthenticationController extends BaseController {
       $download = $this->request->getPostArg("download");
       $delete = $this->request->getPostArg("delete");
 
+      if(!\JsonConfig::instance()->groupExist($group)) {
+         $this->response->failure();
+         return;
+      }
+      
       $cfg = \JsonConfig::instance()->loadConfiguration();
       $delindex = -1;
       foreach($cfg['groups'][$group]['shares'] as $index => $cshare) {
@@ -204,6 +220,11 @@ class AuthenticationController extends BaseController {
       $group = $this->request->getPostArg("group");
       $cfg = \JsonConfig::instance()->loadConfiguration();
 
+      if(!\JsonConfig::instance()->groupExist($group)) {
+         $this->response->failure();
+         return;
+      }
+      
       $hitcount = 0;
       foreach($cfg['users'] as $username => &$userdata) {
          $index = array_search($group, $userdata['groups']);
@@ -256,6 +277,11 @@ class AuthenticationController extends BaseController {
       $actuser = \JsonConfig::instance()->getSessionUsername();
       $cfg = \JsonConfig::instance()->loadConfiguration();
 
+      if(!\JsonConfig::instance()->userExist($username)) {
+         $this->response->failure();
+         return;
+      }
+      
       if(($actuser==$username || \JsonConfig::instance()->isAdmin()) &&
          \JsonConfig::instance()->userExist($username))
       {
@@ -305,6 +331,11 @@ class AuthenticationController extends BaseController {
       $actuser = \JsonConfig::instance()->getSessionUsername();
       $cfg = \JsonConfig::instance()->loadConfiguration();
 
+      if(!\JsonConfig::instance()->userExist($username)) {
+         $this->response->failure();
+         return;
+      }
+      
       if($actuser==$username) {
          $this->response->failure();
       } else {
@@ -313,6 +344,70 @@ class AuthenticationController extends BaseController {
          $this->response->success();
       }
 
+   }
+   
+   protected function usergrouplistAction() 
+   {
+      if(!\JsonConfig::instance()->isAdmin()) {
+         $this->response->failure();
+         $this->response->setMessage("Forbidden.");
+         return;
+      }
+
+      $username = $this->request->getGetArg("username");
+      $cfg = \JsonConfig::instance()->loadConfiguration();
+      
+      if(!\JsonConfig::instance()->userExist($username)) {
+         $this->response->failure();
+         return;
+      }
+      
+      $result = array();
+      foreach($cfg['groups'] as $name => $data) 
+      {
+         $result[] = array(
+            "name" => $name,
+            "member" => (in_array($name, $cfg['users'][$username]['groups'])),
+         );
+      }
+      
+      $this->response->setResult($result);
+      $this->response->success();
+   
+   }
+   
+   protected function changegroupmembershipAction() 
+   {
+      if(!\JsonConfig::instance()->isAdmin()) {
+         $this->response->failure();
+         $this->response->setMessage("Forbidden.");
+         return;
+      }
+
+      $username = $this->request->getPostArg("username");
+      $group = $this->request->getPostArg("group");
+      $memberof = ($this->request->getPostArg("memberof")=="true" ? true : false);
+      $cfg = \JsonConfig::instance()->loadConfiguration();
+   
+      if(!\JsonConfig::instance()->groupExist($group) ||
+         !\JsonConfig::instance()->userExist($username)) 
+      {
+         $this->response->failure();
+         return;
+      }
+   
+      $groupidx = array_search($group, $cfg['users'][$username]['groups']);
+      if($memberof && $groupidx===false) {
+         $cfg['users'][$username]['groups'][] = $group;
+      }
+      else if($memberof==false && $groupidx!==false)
+      {
+         unset($cfg['users'][$username]['groups'][$groupidx]);
+      }
+      
+      \JsonConfig::instance()->createConfiguration($cfg);
+      $this->response->success();
+   
    }
 
 

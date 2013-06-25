@@ -42,6 +42,7 @@ Ext.define('DirectoryListing.controller.Authentication', {
           url: 'ajax.php?controller=authentication&action=logout',
           success: function(response, opts) {
              me.application.fireEvent('checkloginstatus');
+             me.application.fireEvent('reloadfiletree');
              Msg.show("Success", "Logout successfull.");
           },
           failure: function(response, opts) {
@@ -94,6 +95,7 @@ Ext.define('DirectoryListing.controller.Authentication', {
          success: function(form, action) {
             Msg.show("Success", "Login successfull.");
             me.application.fireEvent('checkloginstatus');
+            me.application.fireEvent('reloadfiletree');
             win.close();
          },
          failure: function(form, action) {

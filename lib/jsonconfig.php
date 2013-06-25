@@ -20,7 +20,7 @@ class JsonConfig extends \Util\Singleton {
                   "admin" => true,
                   "password" => "d033e22ae348aeb5660fc2140aec35850c4da997",
                   "groups" => array(
-                      "admins"
+                      "admins", "anonymous"
                   )
               ),
           ),
@@ -127,6 +127,11 @@ class JsonConfig extends \Util\Singleton {
       $config = $this->loadConfiguration();
       return isset($config['users'][$user]);
    }
+   
+   public function groupExist($group) {
+      $config = $this->loadConfiguration();
+      return isset($config['groups'][$group]);
+   }
 
    public function isAdmin() {
       try {
@@ -135,6 +140,32 @@ class JsonConfig extends \Util\Singleton {
       } catch(Exception $ex) {
          return false;
       }
+   }
+   
+   public function getUserShares($username=null) {
+      $cfg = \JsonConfig::instance()->loadConfiguration();
+      if($username==null) {
+         $username = \JsonConfig::instance()->getSessionUsername();
+      }
+      
+      $groups = array();
+      if(isset($cfg['users'][$username]['groups'])) {
+         $groups = $cfg['users'][$username]['groups'];
+      } else {
+         $groups = array($cfg['public_group']);
+      }
+      
+      $shares = array();
+      foreach($groups as $group) {
+         foreach($cfg['groups'][$group]['shares'] as $share) {
+            if(!in_array($share['path'], $shares) && $share['read']===true) 
+            {
+               $shares[] = $share['path'];
+            }
+         }
+      }
+      
+      return $shares;
    }
 
 }
