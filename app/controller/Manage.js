@@ -85,8 +85,8 @@ Ext.define('DirectoryListing.controller.Manage', {
       this.application.fireEvent('togglefilewindow', true);
       this.application.fireEvent('reloadfiletree', true);
    },
-   
-   onTabChange: function(panel, newtab) 
+
+   onTabChange: function(panel, newtab)
    {
       var me = this;
       if(newtab.xid=="usertab") {
@@ -96,7 +96,7 @@ Ext.define('DirectoryListing.controller.Manage', {
             }
          });
       }
-      
+
       if(newtab.xid=="grouptab") {
          me.getGroupGrid().getStore().load({
             callback: function() {
@@ -225,6 +225,7 @@ Ext.define('DirectoryListing.controller.Manage', {
              'args[group]': groupname,
              'args[path]': data.path,
              'args[read]': data.read,
+             'args[protected]': data['protected'],
              'args[download]': data.download,
              'args[delete]': data['delete']
           },
@@ -361,7 +362,7 @@ Ext.define('DirectoryListing.controller.Manage', {
          saved:false
       });
    },
-   
+
    onUserSelected: function(panel, record) {
       if(record.data.name=="") {
          return;
@@ -373,15 +374,15 @@ Ext.define('DirectoryListing.controller.Manage', {
          }
       });
    },
-   
+
    onGroupMemberShipChanged: function(editor, e) {
       var me = this;
       var data = e.record.data;
-      
+
       var username = me.getUserGrid().getSelectionModel().getSelection()[0].data.name;
       var groupname = data.name;
       var memberof = data.member;
-      
+
       Ext.Ajax.request({
           url: 'ajax.php?controller=authentication&action=changegroupmembership',
           method:'post',
@@ -402,7 +403,7 @@ Ext.define('DirectoryListing.controller.Manage', {
              Msg.show("Failure", "Could not change membership.");
           }
       });
-   
+
    }
 
 

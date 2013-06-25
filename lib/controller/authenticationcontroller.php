@@ -92,13 +92,14 @@ class AuthenticationController extends BaseController {
          $this->response->failure();
          return;
       }
-      
+
       $result = array();
       foreach($cfg['groups'][$groupname]['shares'] as $share) {
          $result[] = array(
             "path" => $share['path'],
             "delete" => $share['delete'],
             "read" => $share['read'],
+            "protected" => (isset($share['protected']) ? $share['protected'] : true),
             "download" => $share['download'],
             "saved" => true,
          );
@@ -118,7 +119,7 @@ class AuthenticationController extends BaseController {
          $this->response->failure();
          return;
       }
-      
+
       $cfg = \JsonConfig::instance()->loadConfiguration();
       $delindex = -1;
       foreach($cfg['groups'][$group]['shares'] as $index => $cshare) {
@@ -150,15 +151,34 @@ class AuthenticationController extends BaseController {
       $group = $this->request->getPostArg("group");
       $path = $this->request->getPostArg("path");
       $read = $this->request->getPostArg("read");
+      $protected = $this->request->getPostArg("protected");
       $download = $this->request->getPostArg("download");
       $delete = $this->request->getPostArg("delete");
+
+      $cfg = \JsonConfig::instance()->loadConfiguration();
 
       if(!\JsonConfig::instance()->groupExist($group)) {
          $this->response->failure();
          return;
       }
-      
-      $cfg = \JsonConfig::instance()->loadConfiguration();
+
+      // Protection settings
+      $accessfile = BASE.$path.DIRECTORY_SEPARATOR.".htaccess";
+      if($protected!="true" && is_file($accessfile)) {
+         @rename($accessfile, dirname($accessfile).DIRECTORY_SEPARATOR."htaccess-".date("Y-m-d-H-i-s").".txt");
+      } else if($protected=="true" && !is_file($accessfile)) {
+         @file_put_contents($accessfile, "\ndeny from all\n", FILE_APPEND);
+      }
+
+      foreach($cfg['groups'] as $groupname => $groupdata) {
+         foreach($groupdata['shares'] as $sharename => $sharesettings) {
+            if($sharesettings['path']==$path) {
+               $cfg['groups'][$groupname]['shares'][$sharename]['protected'] = ($protected=="true");
+            }
+         }
+      }
+
+      // Find share index
       $delindex = -1;
       foreach($cfg['groups'][$group]['shares'] as $index => $cshare) {
          if($cshare['path']==$path) {
@@ -170,6 +190,7 @@ class AuthenticationController extends BaseController {
       $newshare = array(
          "path" => $path,
          "read" => ($read=="true" ? true : false),
+         "protected" => ($protected=="true" ? true : false),
          "delete" => ($delete=="true" ? true : false),
          "download" => ($download=="true" ? true : false),
       );
@@ -224,7 +245,7 @@ class AuthenticationController extends BaseController {
          $this->response->failure();
          return;
       }
-      
+
       $hitcount = 0;
       foreach($cfg['users'] as $username => &$userdata) {
          $index = array_search($group, $userdata['groups']);
@@ -281,7 +302,7 @@ class AuthenticationController extends BaseController {
          $this->response->failure();
          return;
       }
-      
+
       if(($actuser==$username || \JsonConfig::instance()->isAdmin()) &&
          \JsonConfig::instance()->userExist($username))
       {
@@ -335,7 +356,7 @@ class AuthenticationController extends BaseController {
          $this->response->failure();
          return;
       }
-      
+
       if($actuser==$username) {
          $this->response->failure();
       } else {
@@ -345,8 +366,8 @@ class AuthenticationController extends BaseController {
       }
 
    }
-   
-   protected function usergrouplistAction() 
+
+   protected function usergrouplistAction()
    {
       if(!\JsonConfig::instance()->isAdmin()) {
          $this->response->failure();
@@ -356,27 +377,27 @@ class AuthenticationController extends BaseController {
 
       $username = $this->request->getGetArg("username");
       $cfg = \JsonConfig::instance()->loadConfiguration();
-      
+
       if(!\JsonConfig::instance()->userExist($username)) {
          $this->response->failure();
          return;
       }
-      
+
       $result = array();
-      foreach($cfg['groups'] as $name => $data) 
+      foreach($cfg['groups'] as $name => $data)
       {
          $result[] = array(
             "name" => $name,
             "member" => (in_array($name, $cfg['users'][$username]['groups'])),
          );
       }
-      
+
       $this->response->setResult($result);
       $this->response->success();
-   
+
    }
-   
-   protected function changegroupmembershipAction() 
+
+   protected function changegroupmembershipAction()
    {
       if(!\JsonConfig::instance()->isAdmin()) {
          $this->response->failure();
@@ -388,14 +409,14 @@ class AuthenticationController extends BaseController {
       $group = $this->request->getPostArg("group");
       $memberof = ($this->request->getPostArg("memberof")=="true" ? true : false);
       $cfg = \JsonConfig::instance()->loadConfiguration();
-   
+
       if(!\JsonConfig::instance()->groupExist($group) ||
-         !\JsonConfig::instance()->userExist($username)) 
+         !\JsonConfig::instance()->userExist($username))
       {
          $this->response->failure();
          return;
       }
-   
+
       $groupidx = array_search($group, $cfg['users'][$username]['groups']);
       if($memberof && $groupidx===false) {
          $cfg['users'][$username]['groups'][] = $group;
@@ -404,10 +425,10 @@ class AuthenticationController extends BaseController {
       {
          unset($cfg['users'][$username]['groups'][$groupidx]);
       }
-      
+
       \JsonConfig::instance()->createConfiguration($cfg);
       $this->response->success();
-   
+
    }
 
 

@@ -161,6 +161,26 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                            }
                         },
                         {
+                           text:'Protected',
+                           dataIndex:'protected',
+                           xtype: 'checkcolumn',
+                           listeners: {
+                              beforecheckchange: function(col, rowidx) {
+                                 var grid = this.up('gridpanel');
+                                 var record = grid.getStore().getAt(rowidx);
+                                 if(record.data.path=="") {
+                                    Msg.show("Failure", "Please set a path first.");
+                                    return false;
+                                 }
+                              },
+                              checkchange: function(column, recordIndex, checked) {
+                                 var grid = this.up('gridpanel');
+                                 grid.getSelectionModel().select(recordIndex);
+                                 grid.fireEvent('edit', null, {record:grid.getStore().getAt(recordIndex), grid:grid});
+                              }
+                           }
+                        },
+                        {
                            text:'Delete',
                            dataIndex:'delete',
                            hidden:true,
@@ -228,7 +248,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                          })
                      ],
                      store: Ext.create('Ext.data.Store', {
-                        fields:['path', 'read', 'delete', 'download', 'saved'],
+                        fields:['path', 'read', 'protected', 'delete', 'download', 'saved'],
                         proxy: {
                            type: 'ajax',
                            url: 'ajax.php?controller=authentication&action=groupsharelist',

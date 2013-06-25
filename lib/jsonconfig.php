@@ -31,6 +31,7 @@ class JsonConfig extends \Util\Singleton {
                       array(
                           "path" => "public",
                           "read" => true,
+                          "protected" => true,
                           "delete" => false,
                           "download" => true
                       ),
@@ -41,6 +42,7 @@ class JsonConfig extends \Util\Singleton {
                       array(
                           "path" => "admin",
                           "read" => true,
+                          "protected" => true,
                           "delete" => true,
                           "download" => true
                       ),
@@ -127,7 +129,7 @@ class JsonConfig extends \Util\Singleton {
       $config = $this->loadConfiguration();
       return isset($config['users'][$user]);
    }
-   
+
    public function groupExist($group) {
       $config = $this->loadConfiguration();
       return isset($config['groups'][$group]);
@@ -141,31 +143,49 @@ class JsonConfig extends \Util\Singleton {
          return false;
       }
    }
-   
+
    public function getUserShares($username=null) {
       $cfg = \JsonConfig::instance()->loadConfiguration();
       if($username==null) {
          $username = \JsonConfig::instance()->getSessionUsername();
       }
-      
+
       $groups = array();
       if(isset($cfg['users'][$username]['groups'])) {
          $groups = $cfg['users'][$username]['groups'];
       } else {
          $groups = array($cfg['public_group']);
       }
-      
+
       $shares = array();
       foreach($groups as $group) {
          foreach($cfg['groups'][$group]['shares'] as $share) {
-            if(!in_array($share['path'], $shares) && $share['read']===true) 
+            if(!in_array($share['path'], $shares) && $share['read']===true)
             {
                $shares[] = $share['path'];
             }
          }
       }
-      
+
       return $shares;
+   }
+
+   public function isShareProtected($share)
+   {
+      $cfg = \JsonConfig::instance()->loadConfiguration();
+
+      foreach($cfg['groups'] as $groupname => $groupdata) {
+         foreach($groupdata['shares'] as $sharename => $sharesettings) {
+            if(isset($sharesettings['protected']) &&
+               $sharesettings['protected']==true &&
+               $sharesettings['path']==$share)
+            {
+               return true;
+            }
+         }
+      }
+
+      return false;
    }
 
 }

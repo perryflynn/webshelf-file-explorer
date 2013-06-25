@@ -80,10 +80,17 @@ class FilesystemController extends BaseController {
          }
 
          header("Content-Type: ".$mime, true);
+         header("Content-Length: ".filesize(BASE.$file), true);
          if($download) {
             header('Content-Disposition: attachment; filename="'.basename($file).'"');
          }
-         readfile(BASE.$file);
+
+         $handle = fopen(BASE.$file, "r");
+         while (!feof($handle)) {
+            echo fread($handle, 1024);
+         }
+         fclose($handle);
+
          exit();
 
       }
@@ -92,8 +99,17 @@ class FilesystemController extends BaseController {
    protected function getfilesAction()
    {
       $node = $this->request->getGetArg("node");
-      $path = BASE.DIRECTORY_SEPARATOR.$node;
+      $path = BASE.trim($node, "/")."/";
 
+      // Check Protection
+      $ifprotected = false;
+      $rgx = "/^".preg_quote(BASE, "/")."(.*?)".preg_quote(DIRECTORY_SEPARATOR, "/")."/";
+      $result = preg_match($rgx, $path, $match);
+      if($result===1) {
+         $ifprotected = \JsonConfig::instance()->isShareProtected($match[1]);
+      }
+
+      // Build tree
       if($node=="root") {
          $shares = \JsonConfig::instance()->getUserShares();
          asort($shares);
@@ -162,6 +178,23 @@ class FilesystemController extends BaseController {
                         }
                      }
 
+                     // Protection
+                     if($ifprotected==true)
+                     {
+                        $url = "ajax.php?controller=filesystem&action=download&args[file]=".urlencode($filebase.$file);
+                        $fqdnurl = ($_SERVER['SERVER_PORT']==443 ? "https://" : "http://").
+                              str_replace("//", "/", str_replace(DIRECTORY_SEPARATOR, "/", trim($_SERVER['SERVER_NAME'], "/").
+                              trim(dirname($_SERVER['PHP_SELF'])."/", "/")."/ajax.php?controller=filesystem&action=download&args[file]=".urlencode($filebase.$file)));
+                     }
+                     else
+                     {
+                        $url = basename(BASE)."/".$filebase.$file;
+                        $fqdnurl = ($_SERVER['SERVER_PORT']==443 ? "https://" : "http://").
+                              str_replace("//", "/", str_replace(DIRECTORY_SEPARATOR, "/", trim($_SERVER['SERVER_NAME'], "/").
+                              dirname($_SERVER['PHP_SELF'])."/".basename(BASE)."/".$filebase.$file));
+                     }
+
+                     // Result
                      $absfile = BASE.$filebase.$file;
                      $result[] = array(
                          "id" => DIRECTORY_SEPARATOR.trim($filebase.$file, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR,
@@ -178,10 +211,8 @@ class FilesystemController extends BaseController {
                              "mtime" => date("Y-m-d H:i", filemtime($absfile)),
                              "size" => filesize($absfile),
                              "extension" => (is_array(explode(".", $file)) && count(explode(".", $file))>0 ? end(explode(".", $file)) : ""),
-                             "url" => "ajax.php?controller=filesystem&action=download&args[file]=".urlencode($filebase.$file),
-                             "fqdnurl" => ($_SERVER['SERVER_PORT']==443 ? "https://" : "http://").
-                                 str_replace("//", "/", str_replace(DIRECTORY_SEPARATOR, "/", trim($_SERVER['SERVER_NAME'], "/")."/".
-                                 dirname($_SERVER['PHP_SELF'])."/ajax.php?controller=filesystem&action=download&args[file]=".urlencode($filebase.$file))),
+                             "url" => $url,
+                             "fqdnurl" => $fqdnurl,
                          ),
                          "qtip" => $folders." Folders, ".$files." Files"
                      );
