@@ -16,7 +16,6 @@ Ext.define('DirectoryListing.controller.GUI', {
         { ref: 'directlinkbutton', selector: 'window[xid=filewindow] toolbar button[xid=direct-link]' }
     ],
 
-   initstatus: false,
    expandPathArray: [],
    expandPathIndex: 0,
    expandPathString:'',
@@ -86,69 +85,46 @@ Ext.define('DirectoryListing.controller.GUI', {
    },
 
    expandPath: function(me, treenode) {
-      if(me.expandPathArray[me.expandPathIndex]) {
+      if(typeof me.expandPathArray[me.expandPathIndex]!="undefined") {
          if(me.expandPathString=='') me.expandPathString=separator;
          me.expandPathString += me.expandPathArray[me.expandPathIndex]+separator;
-         treenode.findChild('id', me.expandPathString).expand(false, function() {
-            me.expandPath(me, this);
-            me.getDirtree().getSelectionModel().select(this);
-
-         });
          me.expandPathIndex++;
+
+         treenode.findChild('id', me.expandPathString).expand(false, function() {
+            me.getDirtree().getSelectionModel().select(this);
+            me.expandPath(me, this);
+         });
+
       }
    },
 
    onBodyRendered: function() {
       var me = this;
       var body = me.getViewport();
-
-      // Hashtag Management
-      if(!me.initstatus) {
-         //body.on('resize', me.onViewportResized, me);
-         body.fireEvent('resize', {});
-         //this.getDirtree().getSelectionModel().on('selectionchange', this.onTreeDirSelected, this);
-      }
+      body.fireEvent('resize', {});
 
       if(typeof HashManager.get('path')!="string") {
          HashManager.set('path', '/');
       }
 
-      me.initstatus = true;
-
-      // Expand Dirtree via Hashtag
-      /*this.getDirtree().getStore().load({
-         callback: function() {
-            var child = me.getDirtree().getStore().getRootNode().getChildAt(0);
-            if(child) {
-               child.expand(false, function() {
-                  if(me.expandPathArray.length>0) {
-                     me.expandPath(me, this);
-                  } else {
-                     me.getDirtree().getSelectionModel().select(this);
-                  }
-               });
-            }
-         }
-      });*/
-
    },
-   
+
    onDirTreeLoad: function(store, node, records) {
       var me = this;
-      
+
       if(node.data.id=="root") {
          me.expandPathArray = HashManager.get('path').split(separator);
          me.expandPathIndex = 0;
          me.expandPathString = separator;
          me.expandPathArray.shift();
          me.expandPathArray.pop();
-      
+
          if(me.expandPathArray.length>0 && node.findChild('id', separator+me.expandPathArray[0]+separator)!=null) {
             me.expandPath(me, node);
          } else {
             me.getDirtree().getSelectionModel().select(node.getChildAt(0));
          }
-         
+
       }
    },
 
@@ -296,7 +272,7 @@ Ext.define('DirectoryListing.controller.GUI', {
          win.show();
       });
    },
-   
+
    onReloadTree: function() {
       this.getDirtree().getStore().load();
    },

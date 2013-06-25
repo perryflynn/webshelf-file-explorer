@@ -4,7 +4,7 @@ namespace Controller;
 
 class FilesystemController extends BaseController {
 
-   protected function init() 
+   protected function init()
    {
       $cfg = \JsonConfig::instance()->loadConfiguration();
       $sharelist = array();
@@ -15,18 +15,18 @@ class FilesystemController extends BaseController {
             }
          }
       }
-      
+
       foreach($sharelist as $share) {
          if(!(file_exists($share) && is_dir($share))) {
             @mkdir(BASE.$share, 0775);
          }
       }
-      
+
    }
 
    private function is_allowed($filter, $path) {
       $path = realpath($path);
-   
+
       // Filetype allowed?
       $typefilter = false;
       if($filter=="folders" && is_dir($path)) {
@@ -36,56 +36,56 @@ class FilesystemController extends BaseController {
       } elseif($filter=="all" && (is_file($path) || is_dir($path))) {
          $typefilter = true;
       }
-      
+
       // Share allowed?
       $shares = \JsonConfig::instance()->getUserShares();
       $rgx = "/^".preg_quote(BASE, "/")."(.*?)".preg_quote(DIRECTORY_SEPARATOR, "/")."/";
       $result = preg_match($rgx, $path, $match);
-      
+
       $final = ($typefilter && $result===1 && in_array($match[1], $shares));
       return $final;
-      
+
    }
-   
-   protected function downloadAction() 
+
+   protected function downloadAction()
    {
       $file = $this->request->getGetArg("file");
       if($this->is_allowed("files", BASE.$file)) {
-         
+
          $download = false;
          $ext = end(explode(".", $file));
          $mime = null;
          switch($ext) {
-            case "png": 
+            case "png":
                $mime = "image/png"; break;
-            case "jpg": 
+            case "jpg":
                $mime = "image/jpg"; break;
-            case "gif": 
+            case "gif":
                $mime = "image/gif"; break;
-            case "html": 
+            case "html":
                $mime = "text/html"; break;
-            case "txt": 
-            case "css": 
-            case "js": 
-            case "cs": 
-            case "c": 
-            case "cpp": 
-            case "java": 
+            case "txt":
+            case "css":
+            case "js":
+            case "cs":
+            case "c":
+            case "cpp":
+            case "java":
                $mime = "text/plain"; break;
-            case "pdf": 
+            case "pdf":
                $mime = "application/pdf"; break;
-            default: 
+            default:
                $download = true;
                $mime = "application/octet-stream"; break;
          }
-         
+
          header("Content-Type: ".$mime, true);
          if($download) {
             header('Content-Disposition: attachment; filename="'.basename($file).'"');
          }
          readfile(BASE.$file);
          exit();
-         
+
       }
    }
 
@@ -93,11 +93,11 @@ class FilesystemController extends BaseController {
    {
       $node = $this->request->getGetArg("node");
       $path = BASE.DIRECTORY_SEPARATOR.$node;
-      
+
       if($node=="root") {
          $shares = \JsonConfig::instance()->getUserShares();
          asort($shares);
-         
+
          $result = array();
          foreach($shares as $share) {
             $result[] = array(
@@ -108,14 +108,14 @@ class FilesystemController extends BaseController {
                "iconCls" => "iconcls-share",
             );
          }
-         
+
          $this->response->setResult($result);
          $this->response->success();
-         
+
       }
-      
+
       else if(is_dir($path)) {
-      
+
          $result = array();
          $path = realpath($path);
          $file = null;
@@ -128,13 +128,13 @@ class FilesystemController extends BaseController {
          if(is_dir($path)) {
             $path = $path.DIRECTORY_SEPARATOR;
          }
-         
+
          if($path!==false && preg_match('/^'.preg_quote(BASE, '/').'/', $path)===1) {
             if(is_file($path)) {
                $path = dirname($path).DIRECTORY_SEPARATOR;
                $file = basename($path);
             }
-            
+
             $filebase = str_replace(BASE, "", $path);
             $filebase = (empty($filebase) ? DIRECTORY_SEPARATOR : $filebase);
 
@@ -166,7 +166,8 @@ class FilesystemController extends BaseController {
                      $result[] = array(
                          "id" => DIRECTORY_SEPARATOR.trim($filebase.$file, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR,
                          "text" => $file,
-                         "leaf" => false,
+                         "leaf" => ($folders>0 ? false : true),
+                         "iconCls" => "iconcls-folder",
                          "children" => array(
                             "folders" => $folders,
                             "files" => $files
@@ -189,7 +190,7 @@ class FilesystemController extends BaseController {
                }
             }
          }
-         
+
          $this->response->success();
          $this->response->setResult($result);
 
@@ -197,6 +198,22 @@ class FilesystemController extends BaseController {
          $this->response->failure();
       }
 
+   }
+
+   protected function sharelistAction()
+   {
+      $files = glob(BASE."*");
+      $result = array();
+      foreach($files as $file) {
+         if($file!="." && $file!=".." && is_dir($file)) {
+            $result[] = array(
+                "name" => basename($file),
+            );
+         }
+      }
+
+      $this->response->success();
+      $this->response->setResult($result);
    }
 
 }

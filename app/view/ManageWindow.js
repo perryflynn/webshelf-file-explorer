@@ -17,7 +17,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
             layout:'fit'
          },
          items:[
-         
+
             /*** Group Tab ***/
             {
                title:'Groups',
@@ -31,9 +31,9 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                },
 
                items: [
-               
+
                   /*** Group Gridpanel ***/
-               
+
                   {
                      flex:1,
                      tbar: [
@@ -98,11 +98,11 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                     })
 
                   },
-                  
+
                   /*** Group Gridpanel END ***/
-                  
+
                   /*** Share Gridpanel ***/
-                  
+
                   {
                      flex:2,
                      tbar: [
@@ -116,7 +116,30 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                      xtype:'gridpanel',
                      xid:'sharelist',
                      columns:[
-                        { text:'Path', dataIndex:'path', flex:1, editor: { allowBlank: false } },
+                        {
+                           text:'Path',
+                           dataIndex:'path',
+                           flex:1,
+                           editor: new Ext.form.field.ComboBox({
+                               typeAhead: false,
+                               autoSelect:false,
+                               triggerAction: 'all',
+                               displayField: 'name',
+                               valueField: 'name',
+                               store: Ext.create('Ext.data.Store', {
+                                  fields:['name'],
+                                  proxy: {
+                                     type: 'ajax',
+                                     url: 'ajax.php?controller=filesystem&action=sharelist',
+                                     reader: {
+                                        type: 'json',
+                                        root: 'result'
+                                     }
+                                  }
+                               })
+                           })
+
+                        },
                         {
                            text:'Read',
                            dataIndex:'read',
@@ -217,13 +240,13 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                     })
 
                   }
-                  
+
                   /*** Share Gridpanel ***/
-                  
+
                ]
 
             },
-            
+
             /*** Group Tab END ***/
 
 /*   User Admin   ***********************************************************************************************/
@@ -242,9 +265,9 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                },
 
                items: [
-               
+
                   /*** User Gridpanel ***/
-               
+
                   {
                      flex:1,
                      tbar: [
@@ -354,14 +377,14 @@ Ext.define('DirectoryListing.view.ManageWindow', {
 
 
                   },
-                  
+
                   /*** User Gridpanel END ***/
-                  
+
                   /*** Group Membership Gridpanel ***/
-                  
+
                   {
                      flex:2,
-                     
+
                      xtype:'gridpanel',
                      xid:'groupmemberlist',
                      columns:[
@@ -398,17 +421,17 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                            }
                         }
                     })
-                     
+
                   }
-                  
+
                   /*** Group Membership Gridpanel END ***/
-                  
+
                ]
 
             }
-            
+
             /*** User Tab END ***/
-            
+
          ]
       }
    ],
