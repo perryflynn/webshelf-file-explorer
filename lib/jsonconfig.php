@@ -31,7 +31,7 @@ class JsonConfig extends \Util\Singleton {
                       array(
                           "path" => "public",
                           "read" => true,
-                          "protected" => true,
+                          "protected" => false,
                           "delete" => false,
                           "download" => true
                       ),
