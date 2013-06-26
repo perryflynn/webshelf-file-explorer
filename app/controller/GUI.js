@@ -232,7 +232,6 @@ Ext.define('DirectoryListing.controller.GUI', {
       if(item.length<1 || !item[0].data) {
          return;
       }
-      console.log(item);
       me.currentpath = item[0].data.id;
 
       this.getFilelist().setLoading(true);

@@ -165,7 +165,11 @@ class AuthenticationController extends BaseController {
       // Protection settings
       $accessfile = BASE.$path.DIRECTORY_SEPARATOR.".htaccess";
       if($protected!="true" && is_file($accessfile)) {
-         @rename($accessfile, dirname($accessfile).DIRECTORY_SEPARATOR."htaccess-".date("Y-m-d-H-i-s").".txt");
+         if(trim(file_get_contents($accessfile))=="deny from all") {
+            @unlink($accessfile);
+         } else {
+            @rename($accessfile, dirname($accessfile).DIRECTORY_SEPARATOR."htaccess-".date("Y-m-d-H-i-s").".txt");
+         }
       } else if($protected=="true" && !is_file($accessfile)) {
          @file_put_contents($accessfile, "\ndeny from all\n", FILE_APPEND);
       }
