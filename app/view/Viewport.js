@@ -18,7 +18,7 @@ Ext.define('DirectoryListing.view.Viewport', {
             xtype:'window',
             xid:'filewindow',
 
-            title:'File Explorer @ '+hostname,
+            title:'webshelf file explorer @ '+hostname,
             width:Config.winWidth,
             height:Config.winHeight,
             maximizable:true,
@@ -28,33 +28,56 @@ Ext.define('DirectoryListing.view.Viewport', {
 
             tbar: [
                {
-                  text:'Refresh Tree',
+                  text:'Refresh',
+                  tooltip:'Refresh Tree',
+                  icon:'fileicons/arrow_refresh.png',
                   xid:'tree-reload'
                },
                {
-                  text:'Expand all',
+                  text:'Expand',
+                  tooltip:'Expand all',
+                  icon:'fileicons/arrow_out.png',
                   xid:'expandall'
                },
                {
-                  text:'Collapse all',
+                  text:'Collapse',
+                  tooltip:'Collapse all',
+                  icon:'fileicons/arrow_in.png',
                   xid:'collapseall'
-               },
-
-               '|',
-
-               {
-                  text:'Refresh Filelist',
-                  xid:'list-reload'
                },
                {
                   text:'Open',
+                  tooltip:'Open',
+                  icon:'fileicons/application_go.png',
                   xid:'file-open',
                   disabled:true
                },
                {
-                  text:'Direct URL',
+                  text:'URL',
+                  tooltip:'Direct URL',
+                  icon:'fileicons/application_link.png',
                   xid:'direct-link',
                   disabled:true
+               },
+               {
+                  text:'Show',
+                  tooltip:'Show hidden files',
+                  icon:'fileicons/flag_red.png',
+                  xid:'hidden-files',
+                  enableToggle: true,
+                  listeners: {
+                     toggle: function(btn, pressed) {
+                        if(pressed) {
+                           this.setIcon("fileicons/flag_green.png");
+                           this.setTooltip("Hide hidden files");
+                           this.setText("Hide");
+                        } else {
+                           this.setIcon("fileicons/flag_red.png");
+                           this.setTooltip("Show hidden files");
+                           this.setText("Show");
+                        }
+                     }
+                  }
                },
                { xtype:'tbfill' },
                {

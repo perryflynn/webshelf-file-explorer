@@ -101,6 +101,13 @@ class FilesystemController extends BaseController {
       $node = $this->request->getGetArg("node");
       $path = BASE.trim($node, "/")."/";
 
+      $showhidden = null;
+      try {
+         $showhidden = ($this->request->getGetArg("showhidden")=="true");
+      } catch(\Exception $ex) {
+         $showhidden = false;
+      }
+
       // Check Protection
       $ifprotected = false;
       $rgx = "/^".preg_quote(BASE, "/")."(.*?)".preg_quote(DIRECTORY_SEPARATOR, "/")."/";
@@ -194,28 +201,32 @@ class FilesystemController extends BaseController {
                               dirname($_SERVER['PHP_SELF'])."/".basename(BASE)."/".$filebase.$file));
                      }
 
-                     // Result
-                     $absfile = BASE.$filebase.$file;
-                     $result[] = array(
-                         "id" => DIRECTORY_SEPARATOR.trim($filebase.$file, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR,
-                         "text" => $file,
-                         "leaf" => ($folders>0 ? false : true),
-                         "iconCls" => "iconcls-folder",
-                         "children" => array(
-                            "folders" => $folders,
-                            "files" => $files
-                         ),
-                         "metadata" => array(
-                             "atime" => date("Y-m-d H:i", fileatime($absfile)),
-                             "ctime" => date("Y-m-d H:i", filectime($absfile)),
-                             "mtime" => date("Y-m-d H:i", filemtime($absfile)),
-                             "size" => filesize($absfile),
-                             "extension" => (is_array(explode(".", $file)) && count(explode(".", $file))>0 ? end(explode(".", $file)) : ""),
-                             "url" => $url,
-                             "fqdnurl" => $fqdnurl,
-                         ),
-                         "qtip" => $folders." Folders, ".$files." Files"
-                     );
+                     if(substr(basename($file), 0, 1)!="." || $showhidden==true) {
+
+                        // Result
+                        $absfile = BASE.$filebase.$file;
+                        $result[] = array(
+                            "id" => DIRECTORY_SEPARATOR.trim($filebase.$file, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR,
+                            "text" => $file,
+                            "leaf" => ($folders>0 ? false : true),
+                            "iconCls" => "iconcls-folder",
+                            "children" => array(
+                               "folders" => $folders,
+                               "files" => $files
+                            ),
+                            "metadata" => array(
+                                "atime" => date("Y-m-d H:i", fileatime($absfile)),
+                                "ctime" => date("Y-m-d H:i", filectime($absfile)),
+                                "mtime" => date("Y-m-d H:i", filemtime($absfile)),
+                                "size" => filesize($absfile),
+                                "extension" => (is_array(explode(".", $file)) && count(explode(".", $file))>0 ? end(explode(".", $file)) : ""),
+                                "url" => $url,
+                                "fqdnurl" => $fqdnurl,
+                            ),
+                            "qtip" => $folders." Folders, ".$files." Files"
+                        );
+
+                     }
 
                   }
                }

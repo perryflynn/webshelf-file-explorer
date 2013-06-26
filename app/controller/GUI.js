@@ -16,6 +16,7 @@ Ext.define('DirectoryListing.controller.GUI', {
         { ref: 'directlinkbutton', selector: 'window[xid=filewindow] toolbar button[xid=direct-link]' }
     ],
 
+   showHiddenFiles:false,
    expandPathArray: [],
    expandPathIndex: 0,
    expandPathString:'',
@@ -32,6 +33,9 @@ Ext.define('DirectoryListing.controller.GUI', {
             },
             'window[xid=filewindow] toolbar button': {
                click: this.onButtonClicked
+            },
+            'window[xid=filewindow] toolbar button[xid=hidden-files]': {
+               toggle: this.onShowHiddenFilesToggled
             },
             'window[xid=filewindow] treepanel[xid=dirtree]': {
                selectionchange: this.onTreeDirSelected,
@@ -206,8 +210,12 @@ Ext.define('DirectoryListing.controller.GUI', {
       if(btn.xid=='manage') {
          this.application.fireEvent('openmanagewindow');
          this.application.fireEvent('togglefilewindow', false);
-
       }
+   },
+
+   onShowHiddenFilesToggled: function(btn, pressed) {
+      this.showHiddenFiles = pressed;
+      this.onReloadFilelist();
    },
 
    onBtnLoginClicked: function(btn) {
@@ -281,7 +289,8 @@ Ext.define('DirectoryListing.controller.GUI', {
       this.getFilelist().setLoading(true);
       this.getFilelist().getStore().load({
          params: {
-            'args[node]':me.currentpath
+            'args[node]':me.currentpath,
+            'args[showhidden]': me.showHiddenFiles
          },
          callback: function() {
             me.getFilelist().setLoading(false);
