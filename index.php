@@ -2,7 +2,7 @@
 <html>
    <head>
       <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-      <title>File Explorer @ <?php echo $_SERVER['HTTP_HOST']; ?></title>
+      <title>webshelf file explorer @ <?php echo $_SERVER['HTTP_HOST']; ?></title>
 
       <link rel='StyleSheet' type='text/css' href='ext/resources/css/ext-all-neptune.css'>
       <link rel='StyleSheet' type='text/css' href='style.css'>

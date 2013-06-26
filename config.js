@@ -1,11 +1,11 @@
 
 Config = {
-   
+
    //--> Extend the About window
-   about:'',
-   
+   about:'Please edit this in config.js',
+
    winWidth:1024,
    winHeight:600
-   
-   
+
+
 };
