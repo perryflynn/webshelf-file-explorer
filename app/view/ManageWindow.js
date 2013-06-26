@@ -82,7 +82,8 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                      ],
                      plugins: [
                         new Ext.grid.plugin.CellEditing({
-                           clicksToEdit: 1
+                           clicksToEdit: 1,
+                           pluginId:'cellplugin'
                          })
                      ],
                      store: Ext.create('Ext.data.Store', {
@@ -244,7 +245,8 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                      ],
                      plugins: [
                         new Ext.grid.plugin.CellEditing({
-                           clicksToEdit: 1
+                           clicksToEdit: 1,
+                           pluginId:'cellplugin'
                          })
                      ],
                      store: Ext.create('Ext.data.Store', {
@@ -380,7 +382,8 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                      ],
                      plugins: [
                         new Ext.grid.plugin.CellEditing({
-                           clicksToEdit: 1
+                           clicksToEdit: 1,
+                           pluginId:'cellplugin'
                          })
                      ],
                      store: Ext.create('Ext.data.Store', {
@@ -424,7 +427,8 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                      ],
                      plugins: [
                         new Ext.grid.plugin.CellEditing({
-                           clicksToEdit: 1
+                           clicksToEdit: 1,
+                           pluginId:'cellplugin'
                          })
                      ],
                      store: Ext.create('Ext.data.Store', {
@@ -454,6 +458,6 @@ Ext.define('DirectoryListing.view.ManageWindow', {
 
          ]
       }
-   ],
+   ]
 
 });

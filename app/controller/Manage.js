@@ -135,11 +135,12 @@ Ext.define('DirectoryListing.controller.Manage', {
    },
 
    onAddGroupClicked: function(btn) {
-      this.getGroupGrid().getStore().add({
+      var r = this.getGroupGrid().getStore().add({
          name:'',
          shares:0,
          saved:false
       });
+      this.getGroupGrid().getPlugin('cellplugin').startEdit(r[0], 0);
    },
 
    onGroupDelete: function(grid, record) {
@@ -198,13 +199,14 @@ Ext.define('DirectoryListing.controller.Manage', {
    },
 
    onAddShareClicked: function(btn) {
-      this.getShareGrid().getStore().add({
+      var r = this.getShareGrid().getStore().add({
          path:'',
          read:'',
          'delete':'',
          download:'',
          saved:false
       });
+      this.getShareGrid().getPlugin('cellplugin').startEdit(r[0], 0);
    },
 
    onShareEdited: function(editor, e) {
@@ -355,12 +357,13 @@ Ext.define('DirectoryListing.controller.Manage', {
    },
 
    onAddUser: function(btn) {
-      this.getUserGrid().getStore().add({
+      var r = this.getUserGrid().getStore().add({
          name:'',
          admin:false,
          deletable:true,
          saved:false
       });
+      this.getUserGrid().getPlugin('cellplugin').startEdit(r[0], 0);
    },
 
    onUserSelected: function(panel, record) {

@@ -157,7 +157,7 @@ class AuthenticationController extends BaseController {
 
       $cfg = \JsonConfig::instance()->loadConfiguration();
 
-      if(!\JsonConfig::instance()->groupExist($group)) {
+      if(!\JsonConfig::instance()->groupExist($group) || empty($group) || empty($path)) {
          $this->response->failure();
          return;
       }
@@ -223,6 +223,11 @@ class AuthenticationController extends BaseController {
 
       $group = $this->request->getPostArg("group");
       $cfg = \JsonConfig::instance()->loadConfiguration();
+
+      if(empty($group)) {
+         $this->response->failure();
+         return;
+      }
 
       if(isset($cfg['groups'][$group])) {
          $this->response->failure();
@@ -332,6 +337,11 @@ class AuthenticationController extends BaseController {
       $username = $this->request->getPostArg("username");
       $admin = ($this->request->getPostArg("admin")=="true" ? true : false);
       $cfg = \JsonConfig::instance()->loadConfiguration();
+
+      if(empty($username)) {
+         $this->response->failure();
+         return;
+      }
 
       if(isset($cfg['users'][$username])) {
          $cfg['users'][$username]['admin'] = $admin;
