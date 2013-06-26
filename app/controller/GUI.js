@@ -245,7 +245,8 @@ Ext.define('DirectoryListing.controller.GUI', {
       this.getFilelist().setLoading(true);
       this.getFilelist().getStore().load({
          params: {
-            'args[node]':me.currentpath
+            'args[node]':me.currentpath,
+            'args[showhidden]': me.showHiddenFiles
          },
          callback: function() {
             me.getFilelist().setLoading(false);
