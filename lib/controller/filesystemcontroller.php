@@ -121,7 +121,7 @@ class FilesystemController extends BaseController {
                "text" => $share,
                "leaf" => false,
                "children" => $result,
-               "iconCls" => "iconcls-share",
+               "iconCls" => (\JsonConfig::instance()->isSharePublic($share) ? "iconcls-share" : "iconcls-usershare"),
             );
          }
 

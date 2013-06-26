@@ -188,4 +188,17 @@ class JsonConfig extends \Util\Singleton {
       return false;
    }
 
+   public function isSharePublic($share)
+   {
+      $cfg = \JsonConfig::instance()->loadConfiguration();
+
+      foreach($cfg['groups'][$cfg['public_group']]['shares'] as $ishare) {
+         if($ishare['path']==$share) {
+            return true;
+         }
+      }
+
+      return false;
+   }
+
 }
