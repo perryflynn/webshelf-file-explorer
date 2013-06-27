@@ -22,9 +22,15 @@ abstract class BaseController {
    }
 
    protected function init() {
-      
+
    }
 
+   /**
+    * Call controller
+    * @param string $action
+    * @return \Controller\Response
+    * @throws \Controller\Exception
+    */
    public final function call($action)
    {
       $method = $action."Action";
@@ -40,7 +46,7 @@ abstract class BaseController {
          $this->response->setResult(null);
       }
 
-      return $this->response->toString();
+      return $this->response;
    }
 
 }

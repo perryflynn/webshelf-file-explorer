@@ -14,14 +14,6 @@ if(!(file_exists(BASE) && is_dir(BASE))) {
    }
 }
 
-/*if(!(file_exists(BASE.".htaccess") && is_file(BASE.".htaccess"))) {
-   $result = file_put_contents(BASE.".htaccess", "deny from all\n");
-   if($result===false) {
-      echo json_encode(array("success"=>false, "message"=>"Could not create .htaccess in ".BASE, "result"=>null));
-      exit();
-   }
-}*/
-
 //--> Autoloader
 include_once('lib/autoload.php');
 spl_autoload_register('\Autoloader::load');
@@ -35,23 +27,26 @@ $request = null;
 try {
    $request = new \Controller\Request();
 } catch(Exception $ex) {
-   die("Could not create Request: ".$ex->getMessage());
+   echo json_encode(array("success"=>false, "message"=>"Could not create Request: ".$ex->getMessage(), "result"=>null));
+   exit();
 }
 
 //--> Create Controller
 $controllerclass = '\Controller\\'.$request->getController()."Controller";
 if(!class_exists($controllerclass)) {
-   die("Controller not found.");
+   echo json_encode(array("success"=>false, "message"=>"Controller not found.", "result"=>null));
+   exit();
 }
 
 //--> Fire Action and print response
 $c = new $controllerclass($request);
 if(($c instanceof \Controller\BaseController)==false) {
-   throw new Exception("This is not a controller.");
+   echo json_encode(array("success"=>false, "message"=>"Not a controller.", "result"=>null));
+   exit();
 }
 
 try {
-   echo $c->call($request->getAction());
+   echo $c->call($request->getAction())->toString();
 } catch(Exception $ex) {
    echo json_encode(array("success"=>false, "message"=>"Exception: ".$ex->getMessage(), "result"=>null));
 }
