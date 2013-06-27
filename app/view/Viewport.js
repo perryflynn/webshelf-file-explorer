@@ -82,11 +82,13 @@ Ext.define('DirectoryListing.view.Viewport', {
                { xtype:'tbfill' },
                {
                   xtype:'label',
+                  hidden:true,
                   xid:'logininfo'
                },
                {
                   text:'Manage',
                   disabled:true,
+                  hidden:true,
                   xid:'manage'
                },
                {

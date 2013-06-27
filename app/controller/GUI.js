@@ -62,22 +62,31 @@ Ext.define('DirectoryListing.controller.GUI', {
 
    },
 
-   globalLoggedin: function(username) {
+   globalLoggedin: function(user) {
       var tb = this.getToolbar();
       var il = tb.child('label[xid=logininfo]');
       var lb = tb.child('button[xid=login]');
-      il.setText("Logged in as "+username);
+      var m = tb.child('button[xid=manage]');
+      il.setText("Logged in as "+user.username);
+      il.show();
       lb.setText('Logout');
-      tb.child('button[xid=manage]').setDisabled(false);
+
+      if(Config.user && Config.user.admin && Config.user.admin==true) {
+         m.setDisabled(false);
+         m.show();
+      }
    },
 
    globalLoggedout: function() {
       var tb = this.getToolbar();
       var il = tb.child('label[xid=logininfo]');
       var lb = tb.child('button[xid=login]');
+      var m = tb.child('button[xid=manage]');
       il.setText("Not logged in");
+      il.hide();
       lb.setText('Login');
-      tb.child('button[xid=manage]').setDisabled(true);
+      m.setDisabled(true);
+      m.hide();
    },
 
    globalToggleFileWindow: function(b) {

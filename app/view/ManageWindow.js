@@ -114,6 +114,15 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                         }
                      ],
 
+                     listeners: {
+                        beforeedit: function(editor, e) {
+                           if(e.record.data.saved==true && e.column.dataIndex=="path")
+                           {
+                              return false;
+                           }
+                        }
+                     },
+
                      xtype:'gridpanel',
                      xid:'sharelist',
                      columns:[
@@ -302,8 +311,9 @@ Ext.define('DirectoryListing.view.ManageWindow', {
 
                      listeners: {
                         beforeedit: function(editor, e) {
-                           var record = e.record.data;
-                           if(record.name==Config.user.username) {
+                           if((e.record.data.saved==true && e.column.dataIndex=="name") ||
+                              Config.user.username==e.record.data.name)
+                           {
                               return false;
                            }
                         }

@@ -89,21 +89,35 @@ Ext.define('DirectoryListing.controller.Manage', {
    onTabChange: function(panel, newtab)
    {
       var me = this;
+      var ugrid = null;
       if(newtab.xid=="usertab") {
-         me.getUserGrid().getStore().load({
-            callback: function() {
-               me.getUserGrid().getSelectionModel().select(me.getUserGrid().getStore().getAt(0));
-            }
-         });
+         ugrid = me.getUserGrid();
+      }
+      if(newtab.xid=="grouptab") {
+         ugrid = me.getGroupGrid();
+      }
+      if(!ugrid) {
+         return;
       }
 
-      if(newtab.xid=="grouptab") {
-         me.getGroupGrid().getStore().load({
-            callback: function() {
-               me.getGroupGrid().getSelectionModel().select(me.getGroupGrid().getStore().getAt(0));
-            }
-         });
+      var ustore = ugrid.getStore();
+      var usm = ugrid.getSelectionModel();
+      var ur = usm.getSelection()[0];
+      var uidx = -1;
+      if(ur) {
+         uidx = ustore.find('name', ur.data.name);
       }
+
+      ustore.load({
+         callback: function() {
+            if(uidx>-1) {
+               usm.select(uidx);
+            } else {
+               usm.select(ustore.getAt(0));
+            }
+         }
+      });
+
    },
 
    onGroupPanelRendered: function(v) {
@@ -395,10 +409,21 @@ Ext.define('DirectoryListing.controller.Manage', {
              'args[memberof]': memberof
           },
           success: function(response, opts) {
+             var grid = me.getUserGrid();
+             var sm = grid.getSelectionModel();
+             var r = null;
+             if(sm.getCount()>0) {
+                r = sm.getSelection()[0];
+             }
+
              Msg.show("Success", "Membership changed.");
              me.getUserGrid().getStore().load({
                 callback: function() {
-                   me.getUserGrid().getSelectionModel().select(me.getUserGrid().getStore().getAt(0));
+                   if(r==null) {
+                      sm.select(me.getUserGrid().getStore().getAt(0));
+                   } else {
+                      sm.select(grid.getStore().getAt(grid.getStore().find('name', r.data.name)));
+                   }
                 }
              });
           },
