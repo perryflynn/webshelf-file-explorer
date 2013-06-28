@@ -1,7 +1,7 @@
 <?php
    include('init.php');
    $cfg = \JsonConfig::instance()->loadConfiguration();
-   
+
    $uitheme = "-".$cfg['settings']['uitheme'];
    if($uitheme=="-classic") $uitheme = "";
 ?>
@@ -15,7 +15,6 @@
       <link rel='StyleSheet' type='text/css' href='style.css'>
 
       <script type="text/javascript" src="ext/ext-all<?php echo ($_SERVER['HTTP_HOST']=="raspberrypi" ? "-debug" : "") ?>.js"></script>
-      <script type="text/javascript" src="config.js"></script>
       <script type="text/javascript" src="app/msg.js"></script>
       <script type="text/javascript" src="app/hashmanager.js"></script>
 
@@ -27,7 +26,11 @@
 <?php
    $varlist = array();
    foreach($cfg['settings'] as $key => $value) {
-      $varlist[] = "            setting_".$key.": \"".str_replace('"', "\\\"", $value)."\"";
+      if(is_int($value)) {
+         $varlist[] = "            ".$key.": ".$value;
+      } else {
+         $varlist[] = "            ".$key.": \"".str_replace('"', "\\\"", $value)."\"";
+      }
    }
    echo implode(",\n", $varlist);
 ?>

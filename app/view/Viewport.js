@@ -20,8 +20,8 @@ Ext.define('DirectoryListing.view.Viewport', {
 
             title:'webshelf file explorer @ '+hostname,
             icon:'fileicons/folder_explore.png',
-            width:Config.winWidth,
-            height:Config.winHeight,
+            width:Settings.windowwidth,
+            height:Settings.windowheight,
             maximizable:true,
             closable:false,
             autoShow:true,

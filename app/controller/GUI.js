@@ -46,8 +46,8 @@ Ext.define('DirectoryListing.controller.GUI', {
                itemdblclick: this.onOpenFile
             },
             'viewport': {
-               afterrender: this.onViewportRendered,
-               resize: this.onViewportResized
+               afterrender: this.onViewportRendered/*,
+               resize: this.onViewportResized*/
             },
             scope:this
         });
@@ -71,7 +71,7 @@ Ext.define('DirectoryListing.controller.GUI', {
       il.show();
       lb.setText('Logout');
 
-      if(Config.user && Config.user.admin && Config.user.admin==true) {
+      if(Settings.user && Settings.user.admin && Settings.user.admin==true) {
          m.setDisabled(false);
          m.show();
       }
@@ -114,7 +114,8 @@ Ext.define('DirectoryListing.controller.GUI', {
    onBodyRendered: function() {
       var me = this;
       var body = me.getViewport();
-      body.fireEvent('resize', {});
+
+      me.getWindow().on('resize', me.onViewportResized, me);
 
       if(typeof HashManager.get('path')!="string") {
          HashManager.set('path', '/');
@@ -156,8 +157,8 @@ Ext.define('DirectoryListing.controller.GUI', {
       var bwidth = body.getWidth();
       var bheight = body.getHeight();
       var win = me.getWindow();
-      var wwidth = Config.winWidth;
-      var wheight = Config.winHeight;
+      var wwidth = Settings.windowwidth;
+      var wheight = Settings.windowheight;
 
       if(me.windowState=="restored" && (wwidth>bwidth || wheight>bheight)) {
          win.setPosition(0,0);

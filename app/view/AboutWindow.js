@@ -13,7 +13,7 @@ Ext.define('DirectoryListing.view.AboutWindow', {
          items: [
             {
                xtype:'container',
-               html:(Config.about && Config.about.length>0 ? Config.about+"<br>&nbsp;<br><hr>&nbsp;<br>" : "")
+               html:(Settings.about_content && Settings.about_content.length>0 ? Settings.about_content+"<br>&nbsp;<br><hr>&nbsp;<br>" : "")
             },
             {
                xtype:'container',

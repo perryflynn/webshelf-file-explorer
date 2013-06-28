@@ -8,8 +8,8 @@ Ext.define('DirectoryListing.view.ManageWindow', {
 
    title:'Manage Shares, Groups and Users',
    icon:'fileicons/cog.png',
-   width:Config.winWidth,
-   height:Config.winHeight,
+   width:Settings.windowwidth,
+   height:Settings.windowheight,
 
    items: [
       {
@@ -47,6 +47,40 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                         layout:'fit'
                      },
                      items: [
+
+                        // Window width / height
+                        {
+                           title:'Window width / height',
+                           layout:'anchor',
+                           bodyPadding:5,
+                           defaults: {
+                              anchor:'100%'
+                           },
+                           items: [
+                              {
+                                 xtype:'numberfield',
+                                 name:'args[windowwidth]',
+                                 fieldLabel:'Width',
+                                 minValue:500,
+                                 listeners: {
+                                    change: function(field) {
+                                       field.up('form').fireEvent('dosubmit');
+                                    }
+                                 }
+                              },
+                              {
+                                 xtype:'numberfield',
+                                 name:'args[windowheight]',
+                                 fieldLabel:'Height',
+                                 minValue:100,
+                                 listeners: {
+                                    change: function(field) {
+                                       field.up('form').fireEvent('dosubmit');
+                                    }
+                                 }
+                              }
+                           ]
+                        },
 
                         // UI Theme
                         {
@@ -429,7 +463,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                      listeners: {
                         beforeedit: function(editor, e) {
                            if((e.record.data.saved==true && e.column.dataIndex=="name") ||
-                              Config.user.username==e.record.data.name)
+                              Settings.user.username==e.record.data.name)
                            {
                               return false;
                            }
@@ -448,7 +482,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                               beforecheckchange: function(col, rowidx) {
                                  var grid = this.up('gridpanel');
                                  var record = grid.getStore().getAt(rowidx);
-                                 if(record.data.name==Config.user.username) {
+                                 if(record.data.name==Settings.user.username) {
                                     return false;
                                  }
                                  if(record.data.path=="") {

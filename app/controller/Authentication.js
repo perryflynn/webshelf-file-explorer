@@ -57,10 +57,10 @@ Ext.define('DirectoryListing.controller.Authentication', {
           url: 'ajax.php?controller=authentication&action=getuserstatus',
           success: function(response, opts) {
              var json = Ext.decode(response.responseText);
-             Config.user = json.result;
+             Settings.user = json.result;
 
              if(json.result.loggedin==true && (me.cachedLoginStatus==false || me.cachedLoginStatus==null)) {
-                me.application.fireEvent('loggedin', Config.user);
+                me.application.fireEvent('loggedin', Settings.user);
              } else if(json.result.loggedin==false && (me.cachedLoginStatus==true || me.cachedLoginStatus==null)) {
                 me.application.fireEvent('loggedout');
              }

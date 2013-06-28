@@ -5,6 +5,8 @@ namespace Controller;
 class ManagementController extends BaseController {
 
    private $defaults = array(
+      "windowwidth" => 1024,
+      "windowheight" => 600,
       "uitheme" => "gray",
       "upload" => false,
       "copy" => false,
@@ -33,6 +35,8 @@ class ManagementController extends BaseController {
          $settings['uitheme'] = $this->request->getPostArg("uitheme");
       } catch(Exception $ex) {  }
 
+      try { $settings['windowwidth'] = ((int)$this->request->getPostArg("windowwidth")); } catch(Exception $ex) {  }
+      try { $settings['windowheight'] = ((int)$this->request->getPostArg("windowheight")); } catch(Exception $ex) {  }
       try { $settings['upload'] = ($this->request->getPostArg("upload")=="true"); } catch(Exception $ex) {  }
       try { $settings['copy'] = ($this->request->getPostArg("copy")=="true"); } catch(Exception $ex) {  }
       try { $settings['delete'] = ($this->request->getPostArg("delete")=="true"); } catch(Exception $ex) {  }
