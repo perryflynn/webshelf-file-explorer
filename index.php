@@ -1,8 +1,14 @@
 <?php
    include('init.php');
+   $skel = \JsonConfig::instance()->getSkeleton();
    $cfg = \JsonConfig::instance()->loadConfiguration();
 
-   $uitheme = "-".$cfg['settings']['uitheme'];
+   $settings = $skel['settings'];
+   if(isset($cfg['settings'])) {
+      $settings = $cfg['settings'];
+   }
+
+   $uitheme = "-".$settings['uitheme'];
    if($uitheme=="-classic") $uitheme = "";
 ?>
 <!DOCTYPE html>
@@ -25,7 +31,7 @@
          Settings = {
 <?php
    $varlist = array();
-   foreach($cfg['settings'] as $key => $value) {
+   foreach($settings as $key => $value) {
       if(is_int($value)) {
          $varlist[] = "            ".$key.": ".$value;
       } else {

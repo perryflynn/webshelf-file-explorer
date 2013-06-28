@@ -4,17 +4,6 @@ namespace Controller;
 
 class ManagementController extends BaseController {
 
-   private $defaults = array(
-      "windowwidth" => 1024,
-      "windowheight" => 600,
-      "uitheme" => "gray",
-      "upload" => false,
-      "copy" => false,
-      "delete" => false,
-      "move_rename" => false,
-      "about_content" => "Please modify this text in settigs.",
-   );
-
    protected function savesettingsAction()
    {
       if(!\JsonConfig::instance()->isAdmin()) {
@@ -24,7 +13,8 @@ class ManagementController extends BaseController {
       }
 
       $cfg = \JsonConfig::instance()->loadConfiguration();
-      $settings = $this->defaults;
+      $skel = \JsonConfig::instance()->getSkeleton();
+      $settings = $skel['settings'];
 
       //--> UI Theme
       try {
@@ -52,8 +42,9 @@ class ManagementController extends BaseController {
 
    protected function getsettingsAction()
    {
+      $skel = \JsonConfig::instance()->getSkeleton();
       $cfg = \JsonConfig::instance()->loadConfiguration();
-      $settings = $this->defaults;
+      $settings = $skel['settings'];
       if(isset($cfg['settings'])) {
          $settings = $cfg['settings'];
       }

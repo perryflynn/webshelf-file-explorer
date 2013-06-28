@@ -11,10 +11,20 @@ class JsonConfig extends \Util\Singleton {
 
    }
 
-   private function getSkeleton() {
+   public function getSkeleton() {
       $stdclass = array(
           "filebase" => "files/",
           "public_group" => "anonymous",
+          "settings" => array(
+               "windowwidth" => 1024,
+               "windowheight" => 600,
+               "uitheme" => "gray",
+               "upload" => false,
+               "copy" => false,
+               "delete" => false,
+               "move_rename" => false,
+               "about_content" => "Please modify this text in settigs.",
+          ),
           "users" => array(
               "admin" => array(
                   "admin" => true,
