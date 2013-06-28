@@ -4,6 +4,7 @@ Ext.define('DirectoryListing.view.AboutWindow', {
    layout:'fit',
 
    title:'About',
+   icon:'fileicons/information.png',
    width:400,
 
    items: [{

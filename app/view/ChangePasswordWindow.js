@@ -6,8 +6,8 @@ Ext.define('DirectoryListing.view.ChangePasswordWindow', {
    focusOnToFront:false,
    xid:'changepasswordwindow',
 
-   title:'Login',
    width:400,
+   icon:'fileicons/key_go.png',
 
    targetusername: null,
 

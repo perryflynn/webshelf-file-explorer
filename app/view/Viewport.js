@@ -19,6 +19,7 @@ Ext.define('DirectoryListing.view.Viewport', {
             xid:'filewindow',
 
             title:'webshelf file explorer @ '+hostname,
+            icon:'fileicons/folder_explore.png',
             width:Config.winWidth,
             height:Config.winHeight,
             maximizable:true,
@@ -83,20 +84,24 @@ Ext.define('DirectoryListing.view.Viewport', {
                {
                   xtype:'label',
                   hidden:true,
-                  xid:'logininfo'
+                  xid:'logininfo',
+                  style: 'padding-right:10px;'
                },
                {
                   text:'Manage',
+                  icon:'fileicons/cog.png',
                   disabled:true,
                   hidden:true,
                   xid:'manage'
                },
                {
                   text:'Get Status...',
+                  icon:'fileicons/user_go.png',
                   xid:'login'
                },
                {
                   text:'About',
+                  icon:'fileicons/information.png',
                   xid:'about'
                }
 

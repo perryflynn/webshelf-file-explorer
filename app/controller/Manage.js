@@ -7,6 +7,7 @@ Ext.define('DirectoryListing.controller.Manage', {
 
     refs: [
         { ref: 'mgWindow', selector: 'window[xid=managewindow]' },
+        { ref: 'settingsForm', selector: 'window[xid=managewindow] form[xid=settingstab]' },
         { ref: 'groupGrid', selector: 'window[xid=managewindow] gridpanel[xid=grouplist]' },
         { ref: 'shareGrid', selector: 'window[xid=managewindow] gridpanel[xid=sharelist]' },
         { ref: 'userGrid', selector: 'window[xid=managewindow] gridpanel[xid=userlist]' },
@@ -23,6 +24,10 @@ Ext.define('DirectoryListing.controller.Manage', {
            },
            'window[xid=managewindow] tabpanel': {
               tabchange: this.onTabChange
+           },
+           'window[xid=managewindow] form[xid=settingstab]': {
+              afterrender: this.settingsFormRendered,
+              dosubmit: this.onSubmitSettings
            },
            'window[xid=managewindow] gridpanel[xid=grouplist]': {
               afterrender: this.onGroupPanelRendered,
@@ -89,35 +94,71 @@ Ext.define('DirectoryListing.controller.Manage', {
    onTabChange: function(panel, newtab)
    {
       var me = this;
-      var ugrid = null;
-      if(newtab.xid=="usertab") {
-         ugrid = me.getUserGrid();
+
+      if(newtab.xid=="usertab" || newtab.xid=="grouptab")
+      {
+         var ugrid = null;
+         if(newtab.xid=="usertab") {
+            ugrid = me.getUserGrid();
+         } else if(newtab.xid=="grouptab") {
+            ugrid = me.getGroupGrid();
+         } else {
+            return;
+         }
+
+         var ustore = ugrid.getStore();
+         var usm = ugrid.getSelectionModel();
+         var ur = usm.getSelection()[0];
+         var uidx = -1;
+         if(ur) {
+            uidx = ustore.find('name', ur.data.name);
+         }
+
+         ustore.load({
+            callback: function() {
+               if(uidx>-1) {
+                  usm.select(uidx);
+               } else {
+                  usm.select(ustore.getAt(0));
+               }
+            }
+         });
       }
-      if(newtab.xid=="grouptab") {
-         ugrid = me.getGroupGrid();
-      }
-      if(!ugrid) {
+
+   },
+
+   settingsFormRendered: function(form) {
+      form.getForm().loaded = false;
+      Ext.Ajax.request({
+          url: 'ajax.php?controller=management&action=getsettings',
+          method:'post',
+          success: function(response, opts) {
+             var json = Ext.decode(response.responseText);
+             form.getForm().setValues(json.result);
+             form.getForm().loaded = true;
+          },
+          failure: function(response, opts) {
+             Msg.show("Failure", "Get settings failed.");
+          }
+      });
+   },
+
+   onSubmitSettings: function() {
+      var form = this.getSettingsForm().getForm();
+      if(!form.loaded) {
          return;
       }
+      if(form.isValid()) {
+          form.submit({
+             url: 'ajax.php?controller=management&action=savesettings',
+             success: function(form, action) {
 
-      var ustore = ugrid.getStore();
-      var usm = ugrid.getSelectionModel();
-      var ur = usm.getSelection()[0];
-      var uidx = -1;
-      if(ur) {
-         uidx = ustore.find('name', ur.data.name);
+             },
+             failure: function(form, action) {
+                Msg.show("Failure", "Save settings failed.");
+             }
+          });
       }
-
-      ustore.load({
-         callback: function() {
-            if(uidx>-1) {
-               usm.select(uidx);
-            } else {
-               usm.select(ustore.getAt(0));
-            }
-         }
-      });
-
    },
 
    onGroupPanelRendered: function(v) {

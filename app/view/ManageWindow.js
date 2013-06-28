@@ -7,6 +7,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
    xid:'managewindow',
 
    title:'Manage Shares, Groups and Users',
+   icon:'fileicons/cog.png',
    width:Config.winWidth,
    height:Config.winHeight,
 
@@ -18,9 +19,124 @@ Ext.define('DirectoryListing.view.ManageWindow', {
          },
          items:[
 
+            /*** Settings Tab ***/
+
+            {
+               title:'Settings',
+               icon:'fileicons/wrench_orange.png',
+               xid:'settingstab',
+               xtype:'form',
+               layout:{
+                  type:'hbox',
+                  align:'stretch'
+               },
+               defaults: {
+                  xtype:'panel',
+                  flex:1,
+                  border:0,
+                  bodyPadding:5
+               },
+
+               items: [
+
+                  /*** Left side ***/
+
+                  {
+                     defaults: {
+                        xtype:'fieldset',
+                        layout:'fit'
+                     },
+                     items: [
+
+                        // UI Theme
+                        {
+                           title:'UI Theme',
+                           items: [
+                              {
+                                 xtype: 'radiogroup',
+                                 columns: 2,
+                                 vertical: true,
+                                 items: [
+                                     { boxLabel: 'Blue', name: 'args[uitheme]', inputValue: 'classic' },
+                                     { boxLabel: 'Gray', name: 'args[uitheme]', inputValue: 'gray' },
+                                     { boxLabel: 'Neptune', name: 'args[uitheme]', inputValue: 'neptune' },
+                                     { boxLabel: 'Access', name: 'args[uitheme]', inputValue: 'access' }
+                                 ],
+                                 listeners: {
+                                    change: function(field) {
+                                       field.up('form').fireEvent('dosubmit');
+                                    }
+                                 }
+                             }
+                           ]
+                        }, //uitheme end
+
+                        // Features
+                        {
+                           title:'Enabled Features',
+                           items: [
+                              {
+                                 xtype: 'checkboxgroup',
+                                 columns: 2,
+                                 vertical: true,
+                                 listeners: {
+                                    change: function(field) {
+                                       field.up('form').fireEvent('dosubmit');
+                                    }
+                                 },
+                                 items: [
+                                    { boxLabel:'Upload', name:'args[upload]', inputValue:'true' },
+                                    { boxLabel:'Delete', name:'args[delete]', inputValue:'true' },
+                                    { boxLabel:'Copy', name:'args[copy]', inputValue:'true' },
+                                    { boxLabel:'Move / Rename', name:'args[move_rename]', inputValue:'true' }
+                                 ]
+                              }
+                           ]
+                        }, //features end
+
+                        // About Text
+                        {
+                           title:'About Content (HTML allowed)',
+                           padding:'5px 10px 5px 10px',
+                           items: [
+                              {
+                                 xtype:'textareafield',
+                                 name:'args[about_content]',
+                                 grow:true,
+                                 checkChangeBuffer:1000,
+                                 enableKeyEvents: true,
+                                 listeners: {
+                                    change: function(field) {
+                                       field.up('form').fireEvent('dosubmit');
+                                    }
+                                 }
+                              }
+                           ]
+                        } //about end
+
+                     ]
+                  },
+
+                  /*** Left side END ***/
+
+                  /*** Right side ***/
+
+                  {
+
+                  }
+
+                  /*** Right side END ***/
+
+               ]
+
+            },
+
+            /*** Settings Tab END ***/
+
             /*** Group Tab ***/
             {
                title:'Groups',
+               icon:'fileicons/group.png',
                xid:'grouptab',
                layout:{
                   type:'hbox',
@@ -286,6 +402,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
 
             {
                title:'Users',
+               icon:'fileicons/user_green.png',
                xid:'usertab',
                layout:{
                   type:'hbox',

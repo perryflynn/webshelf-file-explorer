@@ -46,7 +46,7 @@ Ext.onReady(function() {
          me.fireEvent('checkloginstatus');
          window.setInterval(function() {
             me.fireEvent('checkloginstatus');
-         }, 60000);
+         }, 300000);
       }
    });
 
