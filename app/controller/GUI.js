@@ -113,9 +113,8 @@ Ext.define('DirectoryListing.controller.GUI', {
 
    onBodyRendered: function() {
       var me = this;
-      var body = me.getViewport();
-
-      me.getWindow().on('resize', me.onViewportResized, me);
+      me.getViewport().on('resize', me.onViewportResized, me);
+      me.getViewport().fireEvent('resize');
 
       if(typeof HashManager.get('path')!="string") {
          HashManager.set('path', '/');

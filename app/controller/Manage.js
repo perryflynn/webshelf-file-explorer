@@ -2,10 +2,11 @@
 Ext.define('DirectoryListing.controller.Manage', {
     extend: 'Ext.app.Controller',
 
-    views: [ 'ManageWindow', 'ChangePasswordWindow' ],
+    views: [ 'Viewport', 'ManageWindow', 'ChangePasswordWindow' ],
     stores: [  ],
 
     refs: [
+        { ref: 'viewport', selector: 'viewport' },
         { ref: 'mgWindow', selector: 'window[xid=managewindow]' },
         { ref: 'settingsForm', selector: 'window[xid=managewindow] form[xid=settingstab]' },
         { ref: 'groupGrid', selector: 'window[xid=managewindow] gridpanel[xid=grouplist]' },
@@ -15,12 +16,16 @@ Ext.define('DirectoryListing.controller.Manage', {
     ],
 
     cachedLoginStatus: null,
+    windowState: 'restored',
 
    init: function() {
 
         this.control({
            'window[xid=managewindow]': {
-              close: this.onWindowClose
+              afterrender: this.onWindowRendered,
+              close: this.onWindowClose,
+              maximize: this.onWindowMaximized,
+              restore: this.onWindowRestored
            },
            'window[xid=managewindow] tabpanel': {
               tabchange: this.onTabChange
@@ -86,7 +91,46 @@ Ext.define('DirectoryListing.controller.Manage', {
       }
    },
 
+   onWindowRendered: function() {
+      var me = this;
+      me.getViewport().on('resize', me.onViewportResized, me);
+      me.getViewport().fireEvent('resize');
+   },
+
+   onWindowMaximized: function() {
+      this.windowState = "maximized";
+   },
+
+   onWindowRestored: function() {
+      this.windowState = "restored";
+   },
+
+   onViewportResized: function() {
+      var me = this;
+
+      var body = me.getViewport();
+      var bwidth = body.getWidth();
+      var bheight = body.getHeight();
+      var win = me.getMgWindow();
+      var wwidth = Settings.windowwidth;
+      var wheight = Settings.windowheight;
+
+      if(me.windowState=="restored" && (wwidth>bwidth || wheight>bheight)) {
+         win.setPosition(0,0);
+         win.maximize();
+      } else if(me.windowState=="maximized" && wwidth<=bwidth && wheight<=bheight) {
+         win.restore();
+      }
+
+      if(me.windowState=="restored") {
+         win.center();
+      }
+
+   },
+
    onWindowClose: function() {
+      var me = this;
+      me.getViewport().un('resize', me.onViewportResized, me);
       this.application.fireEvent('togglefilewindow', true);
       this.application.fireEvent('reloadfiletree', true);
    },
