@@ -12,6 +12,7 @@ class Request {
 
    private $getargs;
    private $postargs;
+   private $serverargs;
 
    final function __construct()
    {
@@ -36,6 +37,8 @@ class Request {
       if(isset($_POST['args']) && is_array($_POST['args']) && count($_POST['args'])>0) {
          $this->postargs = $_POST['args'];
       }
+
+      $this->serverargs = $_SERVER;
 
    }
 
@@ -75,6 +78,15 @@ class Request {
 
    public function getGetArg($key) {
       return $this->getArg($key, Request::ARGTYPE_GET);
+   }
+   
+
+   public function getServerArg($key) {
+      if(isset($this->serverargs[$key])) {
+         return $this->serverargs[$key];
+      } else {
+         throw new Exception("Key '".$key."' not exist");
+      }
    }
 
 

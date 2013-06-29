@@ -98,10 +98,34 @@ class FilesystemController extends BaseController {
 
    protected function uploadAction()
    {
+      $method = $this->request->getServerArg("REQUEST_METHOD");
+      $length = $this->request->getServerArg("CONTENT_LENGTH");
+      $reqwith = $this->request->getServerArg("HTTP_X_REQUESTED_WITH");
+      $maxsize = \JsonConfig::instance()->getSetting("upload_maxsize");
+
+      if($method!="PUT") {
+         $this->response->failure();
+         $this->response->setMessage("Bad Request: PUT expected");
+         return;
+      }
+
+      if($reqwith!="XMLHttpRequest") {
+         $this->response->failure();
+         $this->response->setMessage("Bad Request: XMLHttpRequest required");
+         return;
+      }
+
+      if($reqwith>$maxsize) {
+         $this->response->failure();
+         $this->response->setMessage("Bad Request: Content length larger than ".$maxsize." Bytes");
+         return;
+      }
+
       $this->response->setResult(array(
           "files" => $_FILES,
           "get" => $_GET,
-          "post" => $_POST
+          "post" => $_POST,
+          "server" => $_SERVER
       ));
       $this->response->success();
    }

@@ -16,6 +16,7 @@ class JsonConfig extends \Util\Singleton {
           "filebase" => "files/",
           "public_group" => "anonymous",
           "settings" => array(
+               "upload_maxsize" => 1024*1024*1024, // 1GB
                "windowwidth" => 1024,
                "windowheight" => 600,
                "uitheme" => "gray",
@@ -112,6 +113,31 @@ class JsonConfig extends \Util\Singleton {
       }
 
       return $config;
+   }
+
+   public function getSettings()
+   {
+      $skel = $this->getSkeleton();
+      $cfg = $this->loadConfiguration();
+
+      foreach($skel['settings'] as $key => &$item) {
+         if(isset($cfg['settings'][$key])) {
+            $item = $cfg['settings'][$key];
+         }
+      }
+      unset($item);
+      return $skel['settings'];
+   }
+
+   public function getSetting($key)
+   {
+      $cfg = $this->getSettings();
+      if(isset($cfg[$key])) {
+         return $cfg[$key];
+      }
+
+      throw new Exception("Key '".$key."' not found.");
+
    }
 
    public function getUser($username=null) {

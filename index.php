@@ -1,13 +1,7 @@
 <?php
    include('init.php');
-   $skel = \JsonConfig::instance()->getSkeleton();
-   $cfg = \JsonConfig::instance()->loadConfiguration();
 
-   $settings = $skel['settings'];
-   if(isset($cfg['settings'])) {
-      $settings = $cfg['settings'];
-   }
-
+   $settings = \JsonConfig::instance()->getSettings();
    $uitheme = "-".$settings['uitheme'];
    if($uitheme=="-classic") $uitheme = "";
 ?>
