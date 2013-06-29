@@ -2,7 +2,7 @@
 Ext.define('DirectoryListing.controller.GUI', {
     extend: 'Ext.app.Controller',
 
-    views: [ 'Viewport' ],
+    views: [ 'Viewport', 'DirectoryListing.view.UrlWindow', 'Ext.ux.upload.Dialog' ],
     stores: [  ],
 
     refs: [
@@ -12,6 +12,8 @@ Ext.define('DirectoryListing.controller.GUI', {
         { ref: 'dirtree', selector: 'window[xid=filewindow] treepanel[xid=dirtree]' },
         { ref: 'filelist', selector: 'window[xid=filewindow] gridpanel[xid=filelist]' },
         { ref: 'currentpath', selector: 'window[xid=filewindow] panel textfield[xid=current-path]' },
+        { ref: 'uploadbutton', selector: 'window[xid=filewindow] toolbar button[xid=upload]' },
+        { ref: 'uploadwindow', selector: 'window[xid=uploadwindow]' },
         { ref: 'openbutton', selector: 'window[xid=filewindow] toolbar button[xid=file-open]' },
         { ref: 'directlinkbutton', selector: 'window[xid=filewindow] toolbar button[xid=direct-link]' }
     ],
@@ -49,6 +51,10 @@ Ext.define('DirectoryListing.controller.GUI', {
             'window[xid=filewindow] gridpanel[xid=filelist]': {
                itemclick: this.onFilelistSelected,
                itemdblclick: this.onOpenFile
+            },
+            'window[xid=uploadwindow]': {
+               uploadcomplete: this.onUploadCompleted,
+               close: this.onUploadWindowClosed
             },
             'viewport': {
                afterrender: this.onViewportRendered/*,
@@ -108,10 +114,12 @@ Ext.define('DirectoryListing.controller.GUI', {
          me.expandPathString += me.expandPathArray[me.expandPathIndex]+separator;
          me.expandPathIndex++;
 
-         treenode.findChild('id', me.expandPathString).expand(false, function() {
-            me.getDirtree().getSelectionModel().select(this);
-            me.expandPath(me, this);
-         });
+         window.setTimeout(function() {
+            treenode.findChild('id', me.expandPathString).expand(false, function() {
+               me.getDirtree().getSelectionModel().select(this);
+               me.expandPath(me, this);
+            });
+         }, 100);
 
       }
    },
@@ -270,7 +278,9 @@ Ext.define('DirectoryListing.controller.GUI', {
                controller:'filesystem',
                action:'upload',
                'args[targetpath]':this.currentpath
-            }
+            },
+            xid:'uploadwindow',
+            modal:true
          });
 
          dialog.show();
@@ -303,6 +313,9 @@ Ext.define('DirectoryListing.controller.GUI', {
          return;
       }
       me.currentpath = item[0].data.id;
+
+      var can_upload = (item[0].raw.can_upload && item[0].raw.can_upload==true ? true : false);
+      me.getUploadbutton().setDisabled(!can_upload);
 
       this.getFilelist().setLoading(true);
       this.getFilelist().getStore().load({
@@ -361,10 +374,16 @@ Ext.define('DirectoryListing.controller.GUI', {
       });
    },
 
-   onUploadFileAdded: function(btn, files) {
-      console.log(btn);
-      console.log(files);
-      return false;
+   onUploadCompleted: function(win, mgr, items, errors) {
+      if(errors<1) {
+         win.up('window').close();
+      } else {
+         Msg.show("Failure", "Upload of "+errors+" files failed.")
+      }
+   },
+
+   onUploadWindowClosed: function(win) {
+      this.onReloadFilelist();
    }
 
 

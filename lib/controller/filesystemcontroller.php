@@ -65,6 +65,10 @@ class FilesystemController extends BaseController {
          $ext = end(explode(".", $file));
          $mime = null;
          switch($ext) {
+            case "mp3":
+               $mime = "audio/mp3"; break;
+            case "wav":
+               $mime = "audio/wav"; break;
             case "png":
                $mime = "image/png"; break;
             case "jpg":
@@ -183,14 +187,6 @@ class FilesystemController extends BaseController {
          $showhidden = false;
       }
 
-      // Check Protection
-      $ifprotected = false;
-      $rgx = "/^".preg_quote(BASE, "/")."(.*?)".preg_quote(DIRECTORY_SEPARATOR, "/")."/";
-      $result = preg_match($rgx, $path, $match);
-      if($result===1) {
-         $ifprotected = \JsonConfig::instance()->isShareProtected($match[1]);
-      }
-
       // Build tree
       if($node=="root") {
          $shares = \JsonConfig::instance()->getUserShares();
@@ -198,12 +194,19 @@ class FilesystemController extends BaseController {
 
          $result = array();
          foreach($shares as $share) {
+
+            $globalupload = \JsonConfig::instance()->getSetting("upload");
+            $shareupload = \JsonConfig::instance()->hasUserShareProperty($share, "upload", true);
+
             $result[] = array(
                "id" => DIRECTORY_SEPARATOR.$share.DIRECTORY_SEPARATOR,
                "text" => $share,
                "leaf" => false,
                "children" => $result,
                "iconCls" => (\JsonConfig::instance()->isSharePublic($share) ? "iconcls-share" : "iconcls-usershare"),
+
+                "can_upload" => ($globalupload && $shareupload),
+
             );
          }
 
@@ -213,6 +216,10 @@ class FilesystemController extends BaseController {
       }
 
       else if(is_dir($path)) {
+
+         // Check Protection
+         $sharename = $this->getShareFromPath($path);
+         $ifprotected = \JsonConfig::instance()->isShareProtected($sharename);
 
          $result = array();
          $path = realpath($path);
@@ -276,6 +283,9 @@ class FilesystemController extends BaseController {
                               dirname($_SERVER['PHP_SELF'])."/".basename(BASE)."/".$filebase.$file));
                      }
 
+                     $globalupload = \JsonConfig::instance()->getSetting("upload");
+                     $shareupload = \JsonConfig::instance()->hasUserShareProperty($sharename, "upload", true);
+
                      if(substr(basename($file), 0, 1)!="." || $showhidden==true) {
 
                         // Result
@@ -298,7 +308,10 @@ class FilesystemController extends BaseController {
                                 "url" => $url,
                                 "fqdnurl" => $fqdnurl,
                             ),
-                            "qtip" => $folders." Folders, ".$files." Files"
+                            "qtip" => $folders." Folders, ".$files." Files",
+
+                            "can_upload" => ($globalupload && $shareupload),
+
                         );
 
                      }

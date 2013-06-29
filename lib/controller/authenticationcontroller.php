@@ -164,6 +164,12 @@ class AuthenticationController extends BaseController {
          return;
       }
 
+      if(strpos($path, "/")!==false) {
+         $this->response->setMessage("Illegal character in share name");
+         $this->response->failure();
+         return;
+      }
+
       // Protection settings
       $accessfile = BASE.$path.DIRECTORY_SEPARATOR.".htaccess";
       if($protected!="true" && is_file($accessfile)) {

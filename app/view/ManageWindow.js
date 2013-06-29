@@ -296,7 +296,10 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                                         root: 'result'
                                      }
                                   }
-                               })
+                               }),
+                               validator: function(value) {
+                                  return (value.indexOf('/')<0 ? true : "Illegal character in share name" );
+                               }
                            })
 
                         },

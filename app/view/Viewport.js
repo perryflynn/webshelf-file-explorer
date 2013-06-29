@@ -287,6 +287,11 @@ Ext.define('DirectoryListing.view.Viewport', {
             case 'ico':
             case 'xpm':
                filename='page_white_picture'; break;
+            case 'mp3':
+            case 'm4a':
+            case 'wav':
+            case 'flac':
+               filename='music'; break;
             case 'pps':
             case 'ppsx':
                filename='page_white_powerpoint'; break;
