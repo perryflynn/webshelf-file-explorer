@@ -44,6 +44,7 @@ class JsonConfig extends \Util\Singleton {
                           "read" => true,
                           "protected" => false,
                           "delete" => false,
+                          "upload" => false,
                           "download" => true
                       ),
                   ),
@@ -55,6 +56,7 @@ class JsonConfig extends \Util\Singleton {
                           "read" => true,
                           "protected" => true,
                           "delete" => true,
+                          "upload" => true,
                           "download" => true
                       ),
                   ),
@@ -204,6 +206,33 @@ class JsonConfig extends \Util\Singleton {
       }
 
       return $shares;
+   }
+
+   public function hasUserShareProperty($share, $property, $value, $username=null) {
+      $cfg = \JsonConfig::instance()->loadConfiguration();
+      if($username==null) {
+         $username = \JsonConfig::instance()->getSessionUsername();
+      }
+
+      $groups = array();
+      if(isset($cfg['users'][$username]['groups'])) {
+         $groups = $cfg['users'][$username]['groups'];
+      } else {
+         $groups = array($cfg['public_group']);
+      }
+
+      foreach($groups as $group) {
+         foreach($cfg['groups'][$group]['shares'] as $ishare) {
+            if($ishare['path']!=$share) {
+               continue;
+            }
+            if(isset($ishare[$property]) && $ishare[$property]==$value) {
+               return true;
+            }
+         }
+      }
+
+      return false;
    }
 
    public function isShareProtected($share)

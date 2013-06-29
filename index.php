@@ -43,7 +43,7 @@
       <script type="text/javascript" src="app/app.js"></script>
 
    </head>
-   <body id="docbody">
+   <body>
 
       <noscript>
          <div style="position:absolute; top:32px; left:32px; font-size:16px; color:red; font-weight: bold; font-family: Arial;">

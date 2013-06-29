@@ -327,6 +327,7 @@ Ext.define('DirectoryListing.controller.Manage', {
              'args[path]': data.path,
              'args[read]': data.read,
              'args[protected]': data['protected'],
+             'args[upload]': data.upload,
              'args[download]': data.download,
              'args[delete]': data['delete']
           },

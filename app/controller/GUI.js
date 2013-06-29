@@ -265,9 +265,11 @@ Ext.define('DirectoryListing.controller.GUI', {
       if(btn.xid=="upload") {
          var dialog = Ext.create('Ext.ux.upload.Dialog', {
             dialogTitle: 'Upload file to '+this.currentpath,
-            uploadUrl: 'ajax.php?controller=filesystem&action=upload',
+            uploadUrl: 'ajax.php',
             uploadParams: {
-               path:this.currentpath
+               controller:'filesystem',
+               action:'upload',
+               'args[targetpath]':this.currentpath
             }
          });
 

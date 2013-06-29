@@ -24,6 +24,16 @@ class FilesystemController extends BaseController {
 
    }
 
+   public function getShareFromPath($path) {
+      $path = realpath($path)."/";
+      $rgx = "/^".preg_quote(BASE, "/")."(.*?)".preg_quote(DIRECTORY_SEPARATOR, "/")."/";
+      $result = preg_match($rgx, $path, $match);
+      if($result!==1) {
+         throw new Exception("Share cant not extracted");
+      }
+      return $match[1];
+   }
+
    private function is_allowed($filter, $path) {
       $path = realpath($path);
 
@@ -39,10 +49,9 @@ class FilesystemController extends BaseController {
 
       // Share allowed?
       $shares = \JsonConfig::instance()->getUserShares();
-      $rgx = "/^".preg_quote(BASE, "/")."(.*?)".preg_quote(DIRECTORY_SEPARATOR, "/")."/";
-      $result = preg_match($rgx, $path, $match);
+      $share = $this->getShareFromPath($path);
 
-      $final = ($typefilter && $result===1 && in_array($match[1], $shares));
+      $final = ($typefilter && in_array($share, $shares));
       return $final;
 
    }
@@ -98,11 +107,24 @@ class FilesystemController extends BaseController {
 
    protected function uploadAction()
    {
+      if(\JsonConfig::instance()->getSetting("upload")!==true) {
+         $this->response->failure();
+         $this->response->setMessage("Upload not enabled");
+         return;
+      }
+
+      // Request parameters
       $method = $this->request->getServerArg("REQUEST_METHOD");
       $length = $this->request->getServerArg("CONTENT_LENGTH");
-      $reqwith = $this->request->getServerArg("HTTP_X_REQUESTED_WITH");
       $maxsize = \JsonConfig::instance()->getSetting("upload_maxsize");
+      $targetpath = $this->request->getGetArg("targetpath");
 
+      // Request headers
+      $reqwith = $this->request->getServerArg("HTTP_X_REQUESTED_WITH");
+      $xfilename = $this->request->getServerArg("HTTP_X_FILE_NAME");
+      $xmimetype = $this->request->getServerArg("HTTP_X_FILE_TYPE");
+
+      // Scurity stuff
       if($method!="PUT") {
          $this->response->failure();
          $this->response->setMessage("Bad Request: PUT expected");
@@ -115,18 +137,37 @@ class FilesystemController extends BaseController {
          return;
       }
 
-      if($reqwith>$maxsize) {
+      if($length>$maxsize) {
          $this->response->failure();
          $this->response->setMessage("Bad Request: Content length larger than ".$maxsize." Bytes");
          return;
       }
 
-      $this->response->setResult(array(
-          "files" => $_FILES,
-          "get" => $_GET,
-          "post" => $_POST,
-          "server" => $_SERVER
-      ));
+      // Check share permissions
+      $path = BASE.$targetpath;
+      $targetshare = $this->getShareFromPath($path);
+
+      if(\JsonConfig::instance()->hasUserShareProperty($targetshare, "upload", true)==false) {
+         $this->response->failure();
+         $this->response->setMessage("Operation not allowed");
+         return;
+      }
+
+      // Upload!
+      $xfilename = preg_replace("/[^A-Za-z0-9_\-\.]/", "_", $xfilename);
+      $targetfile = $path."/".$xfilename;
+      if(is_file($targetfile)) {
+         $targetfile = $path."/".substr(sha1(microtime(true)."-"), -8)."_".$xfilename;
+      }
+
+      $putdata = fopen("php://input", "r");
+      $fp = fopen($targetfile, "w");
+      while ($data = fread($putdata, 1024)) {
+         fwrite($fp, $data);
+      }
+      fclose($fp);
+      fclose($putdata);
+
       $this->response->success();
    }
 
