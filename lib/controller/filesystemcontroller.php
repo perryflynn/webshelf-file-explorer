@@ -96,6 +96,16 @@ class FilesystemController extends BaseController {
       }
    }
 
+   protected function uploadAction()
+   {
+      $this->response->setResult(array(
+          "files" => $_FILES,
+          "get" => $_GET,
+          "post" => $_POST
+      ));
+      $this->response->success();
+   }
+
    protected function getfilesAction()
    {
       $node = $this->request->getGetArg("node");

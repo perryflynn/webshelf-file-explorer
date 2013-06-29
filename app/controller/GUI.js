@@ -21,6 +21,8 @@ Ext.define('DirectoryListing.controller.GUI', {
    expandPathIndex: 0,
    expandPathString:'',
 
+   currentpath: null,
+
    windowState: 'restored',
 
    init: function() {
@@ -33,6 +35,9 @@ Ext.define('DirectoryListing.controller.GUI', {
             },
             'window[xid=filewindow] toolbar button': {
                click: this.onButtonClicked
+            },
+            'window[xid=filewindow] toolbar uploadbutton[xid=upload]': {
+               filesadded: this.onUploadFileAdded
             },
             'window[xid=filewindow] toolbar button[xid=hidden-files]': {
                toggle: this.onShowHiddenFilesToggled
@@ -119,6 +124,43 @@ Ext.define('DirectoryListing.controller.GUI', {
       if(typeof HashManager.get('path')!="string") {
          HashManager.set('path', '/');
       }
+
+
+      /*var uploadbutton = {
+         xtype:'uploadbutton',
+         xid:'upload',
+         text:'Upload',
+         tooltip:'Upload files to current folder<br>Hint: drag & drop upload works too! :-)',
+         icon:'fileicons/page_white_get.png',
+         xid:'upload',
+         plugins: [
+            {
+               ptype: 'ux.upload.window',
+               title: 'Upload',
+               width: 520,
+               height: 350
+            }
+         ],
+         uploader:
+         {
+            url: 'upload.php',
+            uploadpath: 'foo/bar/',
+            autoStart: true,
+            max_file_size: '2048mb',
+            drop_element:'docbody',
+            statusQueuedText: 'Ready to upload',
+            statusUploadingText: 'Uploading ({0}%)',
+            statusFailedText: '<span style="color: red">Error</span>',
+            statusDoneText: '<span style="color: green">Complete</span>',
+
+            statusInvalidSizeText: 'File too large',
+            statusInvalidExtensionText: 'Invalid file type'
+         }
+      };
+
+      if(Settings.upload==true)
+         me.getWindow().getDockedItems('toolbar[dock=top]')[0].insert(5, uploadbutton);*/
+
 
    },
 
@@ -220,6 +262,17 @@ Ext.define('DirectoryListing.controller.GUI', {
          this.application.fireEvent('openmanagewindow');
          this.application.fireEvent('togglefilewindow', false);
       }
+      if(btn.xid=="upload") {
+         var dialog = Ext.create('Ext.ux.upload.Dialog', {
+            dialogTitle: 'Upload file to '+this.currentpath,
+            uploadUrl: 'ajax.php?controller=filesystem&action=upload',
+            uploadParams: {
+               path:this.currentpath
+            }
+         });
+
+         dialog.show();
+      }
    },
 
    onShowHiddenFilesToggled: function(btn, pressed) {
@@ -241,8 +294,6 @@ Ext.define('DirectoryListing.controller.GUI', {
          }, this);
       }
    },
-
-   currentpath: null,
 
    onTreeDirSelected: function(tree, item) {
       var me = this;
@@ -306,6 +357,12 @@ Ext.define('DirectoryListing.controller.GUI', {
             me.getFilelist().setLoading(false);
          }
       });
+   },
+
+   onUploadFileAdded: function(btn, files) {
+      console.log(btn);
+      console.log(files);
+      return false;
    }
 
 

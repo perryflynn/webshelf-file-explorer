@@ -19,6 +19,7 @@
 
       <link rel='StyleSheet' type='text/css' href='ext/resources/css/ext-all<?php echo $uitheme ?>.css'>
       <link rel='StyleSheet' type='text/css' href='style.css'>
+      <link rel='StyleSheet' type='text/css' href='ux/upload/css/upload.css'>
 
       <script type="text/javascript" src="ext/ext-all<?php echo ($_SERVER['HTTP_HOST']=="raspberrypi" ? "-debug" : "") ?>.js"></script>
       <script type="text/javascript" src="app/msg.js"></script>
@@ -28,26 +29,27 @@
          var hostname = "<?php echo $_SERVER['HTTP_HOST']; ?>";
          var separator = "<?php echo addslashes(DIRECTORY_SEPARATOR); ?>";
          HashManager.init();
-         Settings = {
-<?php
-   $varlist = array();
-   foreach($settings as $key => $value) {
-      if(is_int($value)) {
-         $varlist[] = "            ".$key.": ".$value;
-      } else {
-         $varlist[] = "            ".$key.": \"".str_replace('"', "\\\"", $value)."\"";
-      }
-   }
-   echo implode(",\n", $varlist);
-?>
-
-         };
+         <?php
+            echo "Settings = {\n";
+            $varlist = array();
+            foreach($settings as $key => $value) {
+               if(is_bool($value)) {
+                  $varlist[] = "            ".$key.": ".($value ? "true" : "false");
+               } elseif(is_int($value)) {
+                  $varlist[] = "            ".$key.": ".$value;
+               } else {
+                  $varlist[] = "            ".$key.": \"".str_replace('"', "\\\"", $value)."\"";
+               }
+            }
+            echo implode(",\n", $varlist)."\n";
+            echo "         };\n";
+         ?>
       </script>
 
       <script type="text/javascript" src="app/app.js"></script>
 
    </head>
-   <body>
+   <body id="docbody">
 
       <noscript>
          <div style="position:absolute; top:32px; left:32px; font-size:16px; color:red; font-weight: bold; font-family: Arial;">

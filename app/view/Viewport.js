@@ -80,6 +80,12 @@ Ext.define('DirectoryListing.view.Viewport', {
                      }
                   }
                },
+               {
+                  text:'Upload',
+                  tooltip:'Upload multiple files',
+                  icon:'fileicons/page_white_get.png',
+                  xid:'upload'
+               },
                { xtype:'tbfill' },
                {
                   xtype:'label',

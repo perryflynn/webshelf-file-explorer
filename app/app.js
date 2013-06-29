@@ -10,7 +10,8 @@ if(!console) {
 Ext.Loader.setConfig({
     enabled : true,
     paths   : {
-        DirectoryListing : 'app'
+        DirectoryListing : 'app',
+        'Ext.ux': 'ux'
     }
 });
 Ext.require('*');
