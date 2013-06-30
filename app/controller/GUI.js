@@ -12,8 +12,9 @@ Ext.define('DirectoryListing.controller.GUI', {
         { ref: 'dirtree', selector: 'window[xid=filewindow] treepanel[xid=dirtree]' },
         { ref: 'filelist', selector: 'window[xid=filewindow] gridpanel[xid=filelist]' },
         { ref: 'currentpath', selector: 'window[xid=filewindow] panel textfield[xid=current-path]' },
-        { ref: 'uploadbutton', selector: 'window[xid=filewindow] toolbar button[xid=upload]' },
+        { ref: 'uploadbutton', selector: 'window[xid=filewindow] button[xid=newmenu] menuitem[xid=upload]' },
         { ref: 'uploadwindow', selector: 'window[xid=uploadwindow]' },
+        { ref: 'newfolderMenu', selector:'window[xid=filewindow] button[xid=newmenu] menuitem[xid=newfolder]' },
         { ref: 'openbutton', selector: 'window[xid=filewindow] toolbar button[xid=file-open]' },
         { ref: 'directlinkbutton', selector: 'window[xid=filewindow] toolbar button[xid=direct-link]' }
     ],
@@ -38,9 +39,6 @@ Ext.define('DirectoryListing.controller.GUI', {
             'window[xid=filewindow] toolbar button': {
                click: this.onButtonClicked
             },
-            'window[xid=filewindow] toolbar uploadbutton[xid=upload]': {
-               filesadded: this.onUploadFileAdded
-            },
             'window[xid=filewindow] toolbar button[xid=hidden-files]': {
                toggle: this.onShowHiddenFilesToggled
             },
@@ -55,6 +53,12 @@ Ext.define('DirectoryListing.controller.GUI', {
             'window[xid=uploadwindow]': {
                uploadcomplete: this.onUploadCompleted,
                close: this.onUploadWindowClosed
+            },
+            'window[xid=filewindow] button[xid=newmenu] menuitem': {
+               click: this.onNewMenuItemClicked
+            },
+            'window[xid=filewindow] button[xid=newmenu] menuitem[xid=newfolder] textfield': {
+               specialkey: this.onNewMenuCreateFolder
             },
             'viewport': {
                afterrender: this.onViewportRendered/*,
@@ -270,6 +274,10 @@ Ext.define('DirectoryListing.controller.GUI', {
          this.application.fireEvent('openmanagewindow');
          this.application.fireEvent('togglefilewindow', false);
       }
+
+   },
+
+   onNewMenuItemClicked: function(btn) {
       if(btn.xid=="upload") {
          var dialog = Ext.create('Ext.ux.upload.Dialog', {
             dialogTitle: 'Upload file to '+this.currentpath,
@@ -284,6 +292,33 @@ Ext.define('DirectoryListing.controller.GUI', {
          });
 
          dialog.show();
+      }
+   },
+
+   onNewMenuCreateFolder: function(field, e) {
+      var me = this;
+      if(e.keyCode==e.ENTER) {
+         var foldername = field.getSubmitValue();
+         var targetfolder = me.currentpath;
+
+         field.up('button[xid=newmenu]').child('menu').hide();
+         field.setValue('');
+
+         Ext.Ajax.request({
+            url: 'ajax.php?controller=filesystem&action=createdirectory',
+            params: {
+               'args[newfolder]': foldername,
+               'args[targetfolder]': targetfolder
+            },
+            success: function(response, opts) {
+               me.application.fireEvent('reloadfiletree');
+               Msg.show("Success", "Logout successfull.");
+            },
+            failure: function(response, opts) {
+                Msg.show("Failure", "Logout failed.");
+            }
+         });
+
       }
    },
 
@@ -316,6 +351,9 @@ Ext.define('DirectoryListing.controller.GUI', {
 
       var can_upload = (item[0].raw.can_upload && item[0].raw.can_upload==true ? true : false);
       me.getUploadbutton().setDisabled(!can_upload);
+
+      var can_mkdir = (item[0].raw.can_mkdir && item[0].raw.can_mkdir==true ? true : false);
+      me.getNewfolderMenu().setDisabled(!can_mkdir);
 
       this.getFilelist().setLoading(true);
       this.getFilelist().getStore().load({

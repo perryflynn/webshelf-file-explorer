@@ -27,9 +27,11 @@ class ManagementController extends BaseController {
 
       try { $settings['windowwidth'] = ((int)$this->request->getPostArg("windowwidth")); } catch(Exception $ex) {  }
       try { $settings['windowheight'] = ((int)$this->request->getPostArg("windowheight")); } catch(Exception $ex) {  }
+      try { $settings['upload_maxsize'] = ((int)$this->request->getPostArg("upload_maxsize")); } catch(Exception $ex) {  }
       try { $settings['upload'] = ($this->request->getPostArg("upload")=="true"); } catch(Exception $ex) {  }
       try { $settings['copy'] = ($this->request->getPostArg("copy")=="true"); } catch(Exception $ex) {  }
       try { $settings['delete'] = ($this->request->getPostArg("delete")=="true"); } catch(Exception $ex) {  }
+      try { $settings['mkdir'] = ($this->request->getPostArg("mkdir")=="true"); } catch(Exception $ex) {  }
       try { $settings['move_rename'] = ($this->request->getPostArg("move_rename")=="true"); } catch(Exception $ex) {  }
       try { $settings['about_content'] = $this->request->getPostArg("about_content"); } catch(Exception $ex) {  }
 
@@ -42,12 +44,7 @@ class ManagementController extends BaseController {
 
    protected function getsettingsAction()
    {
-      $skel = \JsonConfig::instance()->getSkeleton();
-      $cfg = \JsonConfig::instance()->loadConfiguration();
-      $settings = $skel['settings'];
-      if(isset($cfg['settings'])) {
-         $settings = $cfg['settings'];
-      }
+      $settings = \JsonConfig::instance()->getSettings();
 
       $result = array();
       foreach($settings as $name => $value) {

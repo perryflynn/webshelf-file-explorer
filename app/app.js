@@ -18,17 +18,12 @@ Ext.require('*');
 
 Ext.onReady(function() {
 
-    /*Ext.Ajax.on('requestcomplete', function (conn, response, options) {
+    Ext.Ajax.on('requestcomplete', function (conn, response, options) {
         var json = Ext.decode(response.responseText);
-        if(json.success==false && !(json.globalerror && json.globalerror==false)) {
-            Ext.Msg.show({
-                title:'Error',
-                msg: json.error_message,
-                buttons: Ext.MessageBox.OK,
-                icon: Ext.MessageBox.ERROR
-            });
+        if(json.message!=null && json.success==false && !(json.globalerror && json.globalerror==false)) {
+           Msg.show("Remote Error", json.message);
         }
-    });*/
+    });
 
    Ext.getBody().setHTML("");
 

@@ -16,15 +16,16 @@ class JsonConfig extends \Util\Singleton {
           "filebase" => "files/",
           "public_group" => "anonymous",
           "settings" => array(
-               "upload_maxsize" => 1024*1024*1024, // 1GB
+               "upload_maxsize" => 1024, // 1GB
                "windowwidth" => 1024,
                "windowheight" => 600,
                "uitheme" => "gray",
                "upload" => false,
                "copy" => false,
+               "mkdir" => false,
                "delete" => false,
                "move_rename" => false,
-               "about_content" => "Please modify this text in settigs.",
+               "about_content" => "Please modify this text in settings.",
           ),
           "users" => array(
               "admin" => array(
@@ -45,6 +46,7 @@ class JsonConfig extends \Util\Singleton {
                           "protected" => false,
                           "delete" => false,
                           "upload" => false,
+                          "mkdir" => false,
                           "download" => true
                       ),
                   ),
@@ -57,6 +59,7 @@ class JsonConfig extends \Util\Singleton {
                           "protected" => true,
                           "delete" => true,
                           "upload" => true,
+                          "mkdir" => true,
                           "download" => true
                       ),
                   ),

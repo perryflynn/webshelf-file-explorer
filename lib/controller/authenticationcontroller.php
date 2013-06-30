@@ -101,6 +101,7 @@ class AuthenticationController extends BaseController {
             "read" => $share['read'],
             "protected" => (isset($share['protected']) ? $share['protected'] : true),
             "upload" => (isset($share['upload']) ? $share['upload'] : false),
+            "mkdir" => (isset($share['mkdir']) ? $share['mkdir'] : false),
             "download" => $share['download'],
             "saved" => true,
          );
@@ -154,6 +155,7 @@ class AuthenticationController extends BaseController {
       $read = $this->request->getPostArg("read");
       $protected = $this->request->getPostArg("protected");
       $upload = $this->request->getPostArg("upload");
+      $mkdir = $this->request->getPostArg("mkdir");
       $download = $this->request->getPostArg("download");
       $delete = $this->request->getPostArg("delete");
 
@@ -204,6 +206,7 @@ class AuthenticationController extends BaseController {
          "read" => ($read=="true" ? true : false),
          "protected" => ($protected=="true" ? true : false),
          "upload" => ($upload=="true" ? true : false),
+         "mkdir" => ($mkdir=="true" ? true : false),
          "delete" => ($delete=="true" ? true : false),
          "download" => ($download=="true" ? true : false),
       );

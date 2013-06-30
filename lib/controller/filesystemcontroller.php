@@ -120,7 +120,7 @@ class FilesystemController extends BaseController {
       // Request parameters
       $method = $this->request->getServerArg("REQUEST_METHOD");
       $length = $this->request->getServerArg("CONTENT_LENGTH");
-      $maxsize = \JsonConfig::instance()->getSetting("upload_maxsize");
+      $maxsize = \JsonConfig::instance()->getSetting("upload_maxsize")*1024*1024;
       $targetpath = $this->request->getGetArg("targetpath");
 
       // Request headers
@@ -201,6 +201,8 @@ class FilesystemController extends BaseController {
 
             $globalupload = \JsonConfig::instance()->getSetting("upload");
             $shareupload = \JsonConfig::instance()->hasUserShareProperty($share, "upload", true);
+            $globalmkdir = \JsonConfig::instance()->getSetting("mkdir");
+            $sharemkdir = \JsonConfig::instance()->hasUserShareProperty($share, "mkdir", true);
 
             $result[] = array(
                "id" => DIRECTORY_SEPARATOR.$share.DIRECTORY_SEPARATOR,
@@ -210,6 +212,7 @@ class FilesystemController extends BaseController {
                "iconCls" => (\JsonConfig::instance()->isSharePublic($share) ? "iconcls-share" : "iconcls-usershare"),
 
                 "can_upload" => ($globalupload && $shareupload),
+                "can_mkdir" => ($globalmkdir && $sharemkdir),
 
             );
          }
@@ -289,6 +292,8 @@ class FilesystemController extends BaseController {
 
                      $globalupload = \JsonConfig::instance()->getSetting("upload");
                      $shareupload = \JsonConfig::instance()->hasUserShareProperty($sharename, "upload", true);
+                     $globalmkdir = \JsonConfig::instance()->getSetting("mkdir");
+                     $sharemkdir = \JsonConfig::instance()->hasUserShareProperty($sharename, "mkdir", true);
 
                      if(substr(basename($file), 0, 1)!="." || $showhidden==true) {
 
@@ -315,6 +320,7 @@ class FilesystemController extends BaseController {
                             "qtip" => $folders." Folders, ".$files." Files",
 
                             "can_upload" => ($globalupload && $shareupload),
+                            "can_mkdir" => ($globalmkdir && $sharemkdir),
 
                         );
 
@@ -348,6 +354,48 @@ class FilesystemController extends BaseController {
 
       $this->response->success();
       $this->response->setResult($result);
+   }
+
+   protected function createdirectoryAction()
+   {
+      if(\JsonConfig::instance()->getSetting("mkdir")!==true) {
+         $this->response->failure();
+         $this->response->setMessage("Mkdir not enabled");
+         return;
+      }
+
+      $targetfolder = $this->request->getPostArg("targetfolder");
+      $newfolder = $this->request->getPostArg("newfolder");
+
+      $path = BASE.$targetfolder."/";
+      $targetshare = $this->getShareFromPath($path);
+
+      // Check permissions
+      if(\JsonConfig::instance()->hasUserShareProperty($targetshare, "mkdir", true)==false) {
+         $this->response->failure();
+         $this->response->setMessage("Operation not allowed");
+         return;
+      }
+
+      // Prepare name
+      $search = array("ä", "ü", "ö", "ß", "€", "Ä", "Ü", "Ö");
+      $replace = array("ae", "ue", "oe", "ss", "euro", "Ae", "Ue", "Oe");
+      $newfolder = str_replace($search, $replace, $newfolder);
+      $newfolder = preg_replace("/[^A-Za-z0-9_\-\.]/", "_", $newfolder);
+      $newfoldername = $path."/".$newfolder;
+      if(is_dir($newfoldername)) {
+         $newfoldername = $path."/".substr(sha1(microtime(true)."-"), -8)."_".$newfolder;
+      }
+
+      $result = mkdir($newfoldername, 0755);
+
+      if($result) {
+         $this->response->success();
+      } else {
+         $this->response->failure();
+         $this->response->setMessage("Folder creation failed.");
+      }
+
    }
 
 }

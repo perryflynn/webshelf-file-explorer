@@ -61,6 +61,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                                  xtype:'numberfield',
                                  name:'args[windowwidth]',
                                  fieldLabel:'Width',
+                                 checkChangeBuffer:1000,
                                  minValue:500,
                                  listeners: {
                                     change: function(field) {
@@ -72,6 +73,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                                  xtype:'numberfield',
                                  name:'args[windowheight]',
                                  fieldLabel:'Height',
+                                 checkChangeBuffer:1000,
                                  minValue:100,
                                  listeners: {
                                     change: function(field) {
@@ -105,6 +107,35 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                            ]
                         }, //uitheme end
 
+                        // Upload
+                        {
+                           title:'Upload Settings',
+                           layout:'anchor',
+                           defaults: {
+                              anchor:'100%'
+                           },
+                           items: [
+                              {
+                                 xtype:'checkboxfield',
+                                 boxLabel:'Upload',
+                                 name:'args[upload]',
+                                 inputValue:'true'
+                              },
+                              {
+                                 xtype:'numberfield',
+                                 name:'args[upload_maxsize]',
+                                 fieldLabel:'Max Size in MB',
+                                 minValue:1,
+                                 checkChangeBuffer:1000,
+                                 listeners: {
+                                    change: function(field) {
+                                       field.up('form').fireEvent('dosubmit');
+                                    }
+                                 }
+                              }
+                           ]
+                        }, //uploadend
+
                         // Features
                         {
                            title:'Enabled Features',
@@ -119,10 +150,10 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                                     }
                                  },
                                  items: [
-                                    { boxLabel:'Upload', name:'args[upload]', inputValue:'true' },
                                     { boxLabel:'Delete', name:'args[delete]', inputValue:'true' },
                                     { boxLabel:'Copy', name:'args[copy]', inputValue:'true' },
-                                    { boxLabel:'Move / Rename', name:'args[move_rename]', inputValue:'true' }
+                                    { boxLabel:'Move / Rename', name:'args[move_rename]', inputValue:'true' },
+                                    { boxLabel:'Create Directory', name:'args[mkdir]', inputValue:'true' }
                                  ]
                               }
                            ]
@@ -344,6 +375,26 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                            }
                         },
                         {
+                           text:'Mkdir',
+                           dataIndex:'mkdir',
+                           xtype: 'checkcolumn',
+                           listeners: {
+                              beforecheckchange: function(col, rowidx) {
+                                 var grid = this.up('gridpanel');
+                                 var record = grid.getStore().getAt(rowidx);
+                                 if(record.data.path=="") {
+                                    Msg.show("Failure", "Please set a path first.");
+                                    return false;
+                                 }
+                              },
+                              checkchange: function(column, recordIndex, checked) {
+                                 var grid = this.up('gridpanel');
+                                 grid.getSelectionModel().select(recordIndex);
+                                 grid.fireEvent('edit', null, {record:grid.getStore().getAt(recordIndex), grid:grid});
+                              }
+                           }
+                        },
+                        {
                            text:'Protected',
                            dataIndex:'protected',
                            xtype: 'checkcolumn',
@@ -432,7 +483,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                          })
                      ],
                      store: Ext.create('Ext.data.Store', {
-                        fields:['path', 'read', 'protected', 'upload', 'delete', 'download', 'saved'],
+                        fields:['path', 'read', 'protected', 'upload', 'mkdir', 'delete', 'download', 'saved'],
                         proxy: {
                            type: 'ajax',
                            url: 'ajax.php?controller=authentication&action=groupsharelist',

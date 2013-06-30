@@ -21,6 +21,7 @@ Ext.define('DirectoryListing.view.AboutWindow', {
                   '<b><u>Credits</u></b><br>'+
                   'webshelf by Christian Blechert (<a href="http://fiae.ws" target="_blank">http://fiae.ws</a>)<br>'+
                   'Icons by <a href="http://www.famfamfam.com/lab/icons/" target="_blank">famfamfam</a><br>'+
+                  'Upload Widget by <a href="https://github.com/ivan-novakov/extjs-upload-widget" target="_blank">Ivan Novakov</a><br>'+
                   'UI by <a href="http://www.sencha.com/products/extjs/" target="_blank">ExtJS</a>'
             }
          ]

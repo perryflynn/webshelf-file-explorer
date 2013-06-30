@@ -81,10 +81,29 @@ Ext.define('DirectoryListing.view.Viewport', {
                   }
                },
                {
-                  text:'Upload',
-                  tooltip:'Upload multiple files',
-                  icon:'fileicons/page_white_get.png',
-                  xid:'upload'
+                  text:'New Item',
+                  tooltip:'Create or upload new Files or Folders',
+                  icon:'fileicons/new.png',
+                  xid:'newmenu',
+                  menu: [
+                     {
+                        text:'Upload multiple files',
+                        icon:'fileicons/page_white_get.png',
+                        xid:'upload'
+                     },
+                     {
+                        text:'New Folder',
+                        icon:'fileicons/folder_add.png',
+                        xid:'newfolder',
+                        menu: [
+                           {
+                              xtype:'textfield',
+                              emptyText:'New Folder'
+                           }
+                        ]
+                     }
+
+                  ]
                },
                { xtype:'tbfill' },
                {
