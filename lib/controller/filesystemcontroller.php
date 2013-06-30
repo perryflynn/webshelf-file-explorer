@@ -29,7 +29,7 @@ class FilesystemController extends BaseController {
       $rgx = "/^".preg_quote(BASE, "/")."(.*?)".preg_quote(DIRECTORY_SEPARATOR, "/")."/";
       $result = preg_match($rgx, $path, $match);
       if($result!==1) {
-         throw new Exception("Share cant not extracted");
+         throw new Exception("Share can't extracted");
       }
       return $match[1];
    }
@@ -203,6 +203,8 @@ class FilesystemController extends BaseController {
             $shareupload = \JsonConfig::instance()->hasUserShareProperty($share, "upload", true);
             $globalmkdir = \JsonConfig::instance()->getSetting("mkdir");
             $sharemkdir = \JsonConfig::instance()->hasUserShareProperty($share, "mkdir", true);
+            $globaldelete = \JsonConfig::instance()->getSetting("delete");
+            $sharedelete = \JsonConfig::instance()->hasUserShareProperty($share, "delete", true);
 
             $result[] = array(
                "id" => DIRECTORY_SEPARATOR.$share.DIRECTORY_SEPARATOR,
@@ -213,6 +215,8 @@ class FilesystemController extends BaseController {
 
                 "can_upload" => ($globalupload && $shareupload),
                 "can_mkdir" => ($globalmkdir && $sharemkdir),
+                "can_delete" => ($globaldelete && $sharedelete),
+                "is_share" => true,
 
             );
          }
@@ -294,13 +298,21 @@ class FilesystemController extends BaseController {
                      $shareupload = \JsonConfig::instance()->hasUserShareProperty($sharename, "upload", true);
                      $globalmkdir = \JsonConfig::instance()->getSetting("mkdir");
                      $sharemkdir = \JsonConfig::instance()->hasUserShareProperty($sharename, "mkdir", true);
+                     $globaldelete = \JsonConfig::instance()->getSetting("delete");
+                     $sharedelete = \JsonConfig::instance()->hasUserShareProperty($sharename, "delete", true);
 
                      if(substr(basename($file), 0, 1)!="." || $showhidden==true) {
 
                         // Result
                         $absfile = BASE.$filebase.$file;
+
+                        $id = DIRECTORY_SEPARATOR.trim($filebase.$file, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
+                        if(is_file($absfile)) {
+                           $id = DIRECTORY_SEPARATOR.trim($filebase.$file, DIRECTORY_SEPARATOR);
+                        }
+
                         $result[] = array(
-                            "id" => DIRECTORY_SEPARATOR.trim($filebase.$file, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR,
+                            "id" => $id,
                             "text" => $file,
                             "leaf" => ($folders>0 ? false : true),
                             "iconCls" => "iconcls-folder",
@@ -321,6 +333,8 @@ class FilesystemController extends BaseController {
 
                             "can_upload" => ($globalupload && $shareupload),
                             "can_mkdir" => ($globalmkdir && $sharemkdir),
+                            "can_delete" => ($globaldelete && $sharedelete),
+                            "is_share" => false,
 
                         );
 
@@ -368,6 +382,10 @@ class FilesystemController extends BaseController {
       $newfolder = $this->request->getPostArg("newfolder");
 
       $path = BASE.$targetfolder."/";
+      if(is_file($path)) {
+         $path = dirname($path);
+      }
+
       $targetshare = $this->getShareFromPath($path);
 
       // Check permissions
@@ -394,6 +412,35 @@ class FilesystemController extends BaseController {
       } else {
          $this->response->failure();
          $this->response->setMessage("Folder creation failed.");
+      }
+
+   }
+
+   protected function deletefileAction()
+   {
+      if(\JsonConfig::instance()->getSetting("delete")!==true) {
+         $this->response->failure();
+         $this->response->setMessage("Delete not enabled");
+         return;
+      }
+
+      $filepath = $this->request->getPostArg("filepath");
+      $path = BASE.$filepath;
+      $targetshare = $this->getShareFromPath($path);
+
+      // Check permissions
+      if(\JsonConfig::instance()->hasUserShareProperty($targetshare, "delete", true)==false) {
+         $this->response->failure();
+         $this->response->setMessage("Operation not allowed");
+         return;
+      }
+
+      try {
+         \Util\File::deleteRecusive($path);
+         $this->response->success();
+      } catch(\Exception $ex) {
+         $this->response->failure();
+         $this->response->setMessage("Delete failed.");
       }
 
    }

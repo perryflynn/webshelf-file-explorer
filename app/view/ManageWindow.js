@@ -156,8 +156,8 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                                  },
                                  items: [
                                     { boxLabel:'Delete', name:'args[delete]', inputValue:'true' },
-                                    { boxLabel:'Copy', name:'args[copy]', inputValue:'true' },
-                                    { boxLabel:'Move / Rename', name:'args[move_rename]', inputValue:'true' },
+                                    { boxLabel:'Copy (coming soon)', disabled:true, name:'args[copy]', inputValue:'true' },
+                                    { boxLabel:'Move / Rename (coming soon)', disabled:true, name:'args[move_rename]', inputValue:'true' },
                                     { boxLabel:'Create Directory', name:'args[mkdir]', inputValue:'true' }
                                  ]
                               }
@@ -341,6 +341,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                         },
                         {
                            text:'Read',
+                           width:60,
                            dataIndex:'read',
                            xtype: 'checkcolumn',
                            listeners: {
@@ -361,6 +362,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                         },
                         {
                            text:'Upload',
+                           width:60,
                            dataIndex:'upload',
                            xtype: 'checkcolumn',
                            listeners: {
@@ -381,6 +383,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                         },
                         {
                            text:'Mkdir',
+                           width:60,
                            dataIndex:'mkdir',
                            xtype: 'checkcolumn',
                            listeners: {
@@ -401,6 +404,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                         },
                         {
                            text:'Protected',
+                           width:60,
                            dataIndex:'protected',
                            xtype: 'checkcolumn',
                            listeners: {
@@ -422,8 +426,8 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                         {
                            text:'Delete',
                            dataIndex:'delete',
-                           hidden:true,
                            xtype: 'checkcolumn',
+                           width:60,
                            listeners: {
                               beforecheckchange: function(col, rowidx) {
                                  var grid = this.up('gridpanel');

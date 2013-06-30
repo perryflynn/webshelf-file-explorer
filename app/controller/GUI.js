@@ -44,11 +44,13 @@ Ext.define('DirectoryListing.controller.GUI', {
             },
             'window[xid=filewindow] treepanel[xid=dirtree]': {
                selectionchange: this.onTreeDirSelected,
-               load:this.onDirTreeLoad
+               load: this.onDirTreeLoad,
+               itemcontextmenu: this.onTreeItemContextMenu
             },
             'window[xid=filewindow] gridpanel[xid=filelist]': {
                itemclick: this.onFilelistSelected,
-               itemdblclick: this.onOpenFile
+               itemdblclick: this.onOpenFile,
+               itemcontextmenu: this.onTreeItemContextMenu
             },
             'window[xid=uploadwindow]': {
                uploadcomplete: this.onUploadCompleted,
@@ -57,7 +59,7 @@ Ext.define('DirectoryListing.controller.GUI', {
             'window[xid=filewindow] button[xid=newmenu] menuitem': {
                click: this.onNewMenuItemClicked
             },
-            'window[xid=filewindow] button[xid=newmenu] menuitem[xid=newfolder] textfield': {
+            'menuitem[xid=newfolder] textfield': {
                specialkey: this.onNewMenuCreateFolder
             },
             'viewport': {
@@ -119,11 +121,14 @@ Ext.define('DirectoryListing.controller.GUI', {
          me.expandPathIndex++;
 
          window.setTimeout(function() {
-            treenode.findChild('id', me.expandPathString).expand(false, function() {
-               me.getDirtree().getSelectionModel().select(this);
-               me.expandPath(me, this);
-            });
-         }, 100);
+            var nextnode = treenode.findChild('id', me.expandPathString);
+            if(nextnode) {
+               nextnode.expand(false, function() {
+                  me.getDirtree().getSelectionModel().select(this);
+                  me.expandPath(me, this);
+               });
+            }
+         }, 50);
 
       }
    },
@@ -136,43 +141,6 @@ Ext.define('DirectoryListing.controller.GUI', {
       if(typeof HashManager.get('path')!="string") {
          HashManager.set('path', '/');
       }
-
-
-      /*var uploadbutton = {
-         xtype:'uploadbutton',
-         xid:'upload',
-         text:'Upload',
-         tooltip:'Upload files to current folder<br>Hint: drag & drop upload works too! :-)',
-         icon:'fileicons/page_white_get.png',
-         xid:'upload',
-         plugins: [
-            {
-               ptype: 'ux.upload.window',
-               title: 'Upload',
-               width: 520,
-               height: 350
-            }
-         ],
-         uploader:
-         {
-            url: 'upload.php',
-            uploadpath: 'foo/bar/',
-            autoStart: true,
-            max_file_size: '2048mb',
-            drop_element:'docbody',
-            statusQueuedText: 'Ready to upload',
-            statusUploadingText: 'Uploading ({0}%)',
-            statusFailedText: '<span style="color: red">Error</span>',
-            statusDoneText: '<span style="color: green">Complete</span>',
-
-            statusInvalidSizeText: 'File too large',
-            statusInvalidExtensionText: 'Invalid file type'
-         }
-      };
-
-      if(Settings.upload==true)
-         me.getWindow().getDockedItems('toolbar[dock=top]')[0].insert(5, uploadbutton);*/
-
 
    },
 
@@ -301,25 +269,53 @@ Ext.define('DirectoryListing.controller.GUI', {
          var foldername = field.getSubmitValue();
          var targetfolder = me.currentpath;
 
-         field.up('button[xid=newmenu]').child('menu').hide();
+         if(field.up('button[xid=newmenu]') && field.up('button[xid=newmenu]').child('menu')) {
+            field.up('button[xid=newmenu]').child('menu').hide();
+         }
+         if(field.up('menu[xid=foldermenu]')) {
+            field.up('menu[xid=foldermenu]').hide();
+         }
+
          field.setValue('');
 
-         Ext.Ajax.request({
-            url: 'ajax.php?controller=filesystem&action=createdirectory',
-            params: {
-               'args[newfolder]': foldername,
-               'args[targetfolder]': targetfolder
-            },
-            success: function(response, opts) {
-               me.application.fireEvent('reloadfiletree');
-               Msg.show("Success", "Logout successfull.");
-            },
-            failure: function(response, opts) {
-                Msg.show("Failure", "Logout failed.");
-            }
-         });
+         this.createDirectory(targetfolder, foldername);
 
       }
+   },
+
+   createDirectory: function(targetfolder, newfolder) {
+      var me = this;
+      Ext.Ajax.request({
+         url: 'ajax.php?controller=filesystem&action=createdirectory',
+         params: {
+            'args[newfolder]': newfolder,
+            'args[targetfolder]': targetfolder
+         },
+         success: function(response, opts) {
+            me.application.fireEvent('reloadfiletree');
+            Msg.show("Success", "Folder created.");
+         },
+         failure: function(response, opts) {
+             Msg.show("Failure", "Folder creation failed.");
+         }
+      });
+   },
+
+   deleteFile: function(filepath) {
+      var me = this;
+      Ext.Ajax.request({
+         url: 'ajax.php?controller=filesystem&action=deletefile',
+         params: {
+            'args[filepath]': filepath
+         },
+         success: function(response, opts) {
+            me.application.fireEvent('reloadfiletree');
+            Msg.show("Success", "Delete successfull.");
+         },
+         failure: function(response, opts) {
+             Msg.show("Failure", "Delete failed.");
+         }
+      });
    },
 
    onShowHiddenFilesToggled: function(btn, pressed) {
@@ -373,6 +369,54 @@ Ext.define('DirectoryListing.controller.GUI', {
       if(me.currentpath!="root") {
          HashManager.set('path', me.currentpath);
       }
+
+   },
+
+   onTreeItemContextMenu: function(view, record, html, index, e) {
+
+      var me = this;
+      e.preventDefault();
+      if(!Settings.mkdir && !Settings['delete']) {
+         return;
+      }
+
+      var can_delete = (record.raw.can_delete && record.raw.can_delete==true ? true : false);
+      var can_mkdir = (record.raw.can_mkdir && record.raw.can_mkdir==true ? true : false);
+
+      var menu = Ext.create('Ext.menu.Menu', {
+         xid:'foldermenu',
+         items: [
+            {
+               text:'New Folder',
+               icon:'fileicons/folder_add.png',
+               xid:'newfolder',
+               disabled: !can_mkdir,
+               hidden:(!Settings.mkdir),
+               menu: [
+                  {
+                     xtype:'textfield',
+                     emptyText:'New Folder'
+                  }
+               ]
+            },
+            {
+               text:'Delete',
+               disabled: (!can_delete || record.raw.is_share),
+               icon:'fileicons/folder_delete.png',
+               xid:'delete-folder',
+               hidden:(!Settings['delete']),
+               handler: function(btn) {
+                  Ext.MessageBox.confirm('Delete files & folders', 'Are you sure you want to do that?<br>All folders and files will deleted!', function(res) {
+                     if(res=="yes") {
+                        me.deleteFile(record.data.id);
+                     }
+                  });
+               }
+            }
+         ]
+      });
+
+      menu.showAt(e.getXY());
 
    },
 
