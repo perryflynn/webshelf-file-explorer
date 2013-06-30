@@ -84,17 +84,20 @@ Ext.define('DirectoryListing.view.Viewport', {
                   text:'New Item',
                   tooltip:'Create or upload new Files or Folders',
                   icon:'fileicons/new.png',
+                  hidden: ( !Settings.upload && !Settings.mkdir ),
                   xid:'newmenu',
                   menu: [
                      {
                         text:'Upload multiple files',
                         icon:'fileicons/page_white_get.png',
-                        xid:'upload'
+                        xid:'upload',
+                        hidden:(!Settings.upload)
                      },
                      {
                         text:'New Folder',
                         icon:'fileicons/folder_add.png',
                         xid:'newfolder',
+                        hidden:(!Settings.mkdir),
                         menu: [
                            {
                               xtype:'textfield',

@@ -119,7 +119,12 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                                  xtype:'checkboxfield',
                                  boxLabel:'Upload',
                                  name:'args[upload]',
-                                 inputValue:'true'
+                                 inputValue:'true',
+                                 listeners: {
+                                    change: function(field) {
+                                       field.up('form').fireEvent('dosubmit');
+                                    }
+                                 }
                               },
                               {
                                  xtype:'numberfield',
