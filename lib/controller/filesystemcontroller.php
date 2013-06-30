@@ -157,13 +157,17 @@ class FilesystemController extends BaseController {
          return;
       }
 
-      // Upload!
+      // Make filenames
+      $search = array("ä", "ü", "ö", "ß", "€", "Ä", "Ü", "Ö");
+      $replace = array("ae", "ue", "oe", "ss", "euro", "Ae", "Ue", "Oe");
+      $xfilename = str_replace($search, $replace, $xfilename);
       $xfilename = preg_replace("/[^A-Za-z0-9_\-\.]/", "_", $xfilename);
       $targetfile = $path."/".$xfilename;
       if(is_file($targetfile)) {
          $targetfile = $path."/".substr(sha1(microtime(true)."-"), -8)."_".$xfilename;
       }
 
+      // Upload!
       $putdata = fopen("php://input", "r");
       $fp = fopen($targetfile, "w");
       while ($data = fread($putdata, 1024)) {

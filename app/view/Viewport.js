@@ -162,7 +162,7 @@ Ext.define('DirectoryListing.view.Viewport', {
                      { header:'', dataIndex:'metadata', width:32, renderer:this.fileIconRenderer },
                      { header:'Filename', dataIndex:'text', flex:4 },
                      { header:'Last modified', dataIndex:'metadata', flex:1, renderer: function(value) { return value.mtime; } },
-                     { header:'Size', dataIndex:'metadata', flex:1, renderer:this.filesizerenderer },
+                     { header:'Size', dataIndex:'metadata', flex:1, renderer:this.filesizerenderer }
                   ],
 
                   store: Ext.create('Ext.data.Store', {
@@ -223,6 +223,8 @@ Ext.define('DirectoryListing.view.Viewport', {
       if(ext!=null && ext!="") {
 
          switch(ext) {
+            case 'apk':
+               filename='android'; break;
             case 'pdf':
                filename='page_white_acrobat'; break;
             case 'cpp':
@@ -292,6 +294,8 @@ Ext.define('DirectoryListing.view.Viewport', {
             case 'wav':
             case 'flac':
                filename='music'; break;
+            case 'ppt':
+            case 'pptx':
             case 'pps':
             case 'ppsx':
                filename='page_white_powerpoint'; break;
