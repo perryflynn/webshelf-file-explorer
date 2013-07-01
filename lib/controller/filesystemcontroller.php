@@ -25,7 +25,7 @@ class FilesystemController extends BaseController {
    }
 
    public function getShareFromPath($path) {
-      $path = realpath($path)."/";
+      $path = realpath($path).DIRECTORY_SEPARATOR;
       $rgx = "/^".preg_quote(BASE, "/")."(.*?)".preg_quote(DIRECTORY_SEPARATOR, "/")."/";
       $result = preg_match($rgx, $path, $match);
       if($result!==1) {
