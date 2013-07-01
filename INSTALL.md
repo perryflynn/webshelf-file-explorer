@@ -3,8 +3,8 @@ How to install webshelf
 
 - Unpack the  archive
 - Login
-  Username: admin
-  Password: admin
+  - Username: admin
+  - Password: admin
 
 - Change password
 - Create shares and groups as you like
