@@ -381,10 +381,11 @@ class FilesystemController extends BaseController {
       $targetfolder = $this->request->getPostArg("targetfolder");
       $newfolder = $this->request->getPostArg("newfolder");
 
-      $path = BASE.$targetfolder."/";
+      $path = BASE.$targetfolder;
       if(is_file($path)) {
          $path = dirname($path);
       }
+      $path = $path."/";
 
       $targetshare = $this->getShareFromPath($path);
 

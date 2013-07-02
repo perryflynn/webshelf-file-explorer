@@ -382,10 +382,34 @@ Ext.define('DirectoryListing.controller.GUI', {
 
       var can_delete = (record.raw.can_delete && record.raw.can_delete==true ? true : false);
       var can_mkdir = (record.raw.can_mkdir && record.raw.can_mkdir==true ? true : false);
+      var can_upload = (record.raw.can_upload && record.raw.can_upload==true ? true : false);
+
+      var path = record.raw.id.substring(0, record.raw.id.lastIndexOf('/'))+'/';
 
       var menu = Ext.create('Ext.menu.Menu', {
          xid:'foldermenu',
          items: [
+            {
+               text:'Upload multiple files',
+               icon:'fileicons/page_white_get.png',
+               xid:'upload',
+               disabled: !can_upload,
+               hidden:(!Settings.upload),
+               handler: function(btn) {
+                  var dialog = Ext.create('Ext.ux.upload.Dialog', {
+                     dialogTitle: 'Upload file to '+path,
+                     uploadUrl: 'ajax.php',
+                     uploadParams: {
+                        controller:'filesystem',
+                        action:'upload',
+                        'args[targetpath]':path
+                     },
+                     xid:'uploadwindow',
+                     modal:true
+                  });
+                  dialog.show();
+               }
+            },
             {
                text:'New Folder',
                icon:'fileicons/folder_add.png',
