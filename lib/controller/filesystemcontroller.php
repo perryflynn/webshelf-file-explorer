@@ -17,8 +17,12 @@ class FilesystemController extends BaseController {
       }
 
       foreach($sharelist as $share) {
-         if(!(file_exists($share) && is_dir($share))) {
+         if(!(file_exists(BASE.$share) && is_dir(BASE.$share))) {
             @mkdir(BASE.$share, 0775);
+            if(\JsonConfig::instance()->isShareProtected($share)) {
+               $accessfile = BASE.$share.DIRECTORY_SEPARATOR.".htaccess";
+               @file_put_contents($accessfile, "\ndeny from all\n", FILE_APPEND);
+            }
          }
       }
 
