@@ -129,6 +129,11 @@ Ext.define('DirectoryListing.controller.Manage', {
    },
 
    onWindowClose: function() {
+      var theme = this.getSettingsForm().getForm().findField('args[uitheme]').getSubmitValue();
+      if(theme!=Settings.uitheme) {
+         Msg.show("Information", "Please reload the browser to change to the new theme.")
+      }
+
       var values = this.getSettingsForm().getForm().getFieldValues();
       Ext.iterate(values, function(key, value) {
          var myRegexp = /\[(.*?)\]/g;
