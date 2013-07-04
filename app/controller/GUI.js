@@ -12,6 +12,7 @@ Ext.define('DirectoryListing.controller.GUI', {
         { ref: 'dirtree', selector: 'window[xid=filewindow] treepanel[xid=dirtree]' },
         { ref: 'filelist', selector: 'window[xid=filewindow] gridpanel[xid=filelist]' },
         { ref: 'currentpath', selector: 'window[xid=filewindow] panel textfield[xid=current-path]' },
+        { ref: 'newmenu', selector: 'window[xid=filewindow] button[xid=newmenu]' },
         { ref: 'uploadbutton', selector: 'window[xid=filewindow] button[xid=newmenu] menuitem[xid=upload]' },
         { ref: 'uploadwindow', selector: 'window[xid=uploadwindow]' },
         { ref: 'newfolderMenu', selector:'window[xid=filewindow] button[xid=newmenu] menuitem[xid=newfolder]' },
@@ -351,6 +352,14 @@ Ext.define('DirectoryListing.controller.GUI', {
       var can_mkdir = (item[0].raw.can_mkdir && item[0].raw.can_mkdir==true ? true : false);
       me.getNewfolderMenu().setDisabled(!can_mkdir);
 
+      if((Settings.user.loggedin==false && can_upload==false && can_mkdir==false) ||
+         (!Settings.mkdir && !Settings.upload))
+      {
+         me.getNewmenu().hide();
+      } else {
+         me.getNewmenu().show();
+      }
+
       this.getFilelist().setLoading(true);
       this.getFilelist().getStore().load({
          params: {
@@ -376,13 +385,16 @@ Ext.define('DirectoryListing.controller.GUI', {
 
       var me = this;
       e.preventDefault();
-      if(!Settings.mkdir && !Settings['delete']) {
-         return;
-      }
 
       var can_delete = (record.raw.can_delete && record.raw.can_delete==true ? true : false);
       var can_mkdir = (record.raw.can_mkdir && record.raw.can_mkdir==true ? true : false);
       var can_upload = (record.raw.can_upload && record.raw.can_upload==true ? true : false);
+
+      if((Settings.user.loggedin==false && can_upload==false && can_mkdir==false && can_delete==false) ||
+         (!Settings.mkdir && !Settings.upload && !Settings['delete']))
+      {
+         return;
+      }
 
       var path = record.raw.id.substring(0, record.raw.id.lastIndexOf('/'))+'/';
 

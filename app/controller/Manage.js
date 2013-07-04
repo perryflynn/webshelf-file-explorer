@@ -129,6 +129,14 @@ Ext.define('DirectoryListing.controller.Manage', {
    },
 
    onWindowClose: function() {
+      var values = this.getSettingsForm().getForm().getFieldValues();
+      Ext.iterate(values, function(key, value) {
+         var myRegexp = /\[(.*?)\]/g;
+         var match = myRegexp.exec(key);
+         var skey = match[1];
+         Settings[skey] = value;
+      });
+
       var me = this;
       me.getViewport().un('resize', me.onViewportResized, me);
       this.application.fireEvent('togglefilewindow', true);
