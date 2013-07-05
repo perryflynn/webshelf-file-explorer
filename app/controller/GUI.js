@@ -1,4 +1,3 @@
-
 Ext.define('DirectoryListing.controller.GUI', {
     extend: 'Ext.app.Controller',
 
@@ -352,7 +351,7 @@ Ext.define('DirectoryListing.controller.GUI', {
       var can_mkdir = (item[0].raw.can_mkdir && item[0].raw.can_mkdir==true ? true : false);
       me.getNewfolderMenu().setDisabled(!can_mkdir);
 
-      if((Settings.user.loggedin==false && can_upload==false && can_mkdir==false) ||
+      if(((!Settings.user||Settings.user.loggedin==false) && can_upload==false && can_mkdir==false) ||
          (!Settings.mkdir && !Settings.upload))
       {
          me.getNewmenu().hide();
@@ -390,7 +389,7 @@ Ext.define('DirectoryListing.controller.GUI', {
       var can_mkdir = (record.raw.can_mkdir && record.raw.can_mkdir==true ? true : false);
       var can_upload = (record.raw.can_upload && record.raw.can_upload==true ? true : false);
 
-      if((Settings.user.loggedin==false && can_upload==false && can_mkdir==false && can_delete==false) ||
+      if(((!Settings.user||Settings.user.loggedin==false) && can_upload==false && can_mkdir==false && can_delete==false) ||
          (!Settings.mkdir && !Settings.upload && !Settings['delete']))
       {
          return;
