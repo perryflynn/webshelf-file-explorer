@@ -137,28 +137,6 @@ Ext.define('DirectoryListing.view.Viewport', {
 
             items: [
                {
-                  region:'west',
-                  width:220,
-                  xtype:'treepanel',
-                  xid:'dirtree',
-                  rootVisible: false,
-                  split: true,
-
-                  store: Ext.create('Ext.data.TreeStore', {
-                     nodeParam:'args[node]',
-                     proxy: {
-                        type: 'ajax',
-                        url: 'ajax.php?controller=filesystem&action=getfiles&args[filter]=folders',
-                        reader: {
-                           type: 'json',
-                           root: 'result'
-                        }
-                     }
-                  })
-
-
-               },
-               {
                   region:'north',
                   xtype:'panel',
                   bodyPadding:5,
@@ -176,9 +154,53 @@ Ext.define('DirectoryListing.view.Viewport', {
                   ]
                },
                {
+                  region:'west',
+                  width:220,
+                  xtype:'treepanel',
+                  xid:'dirtree',
+                  rootVisible: false,
+                  split: true,
+
+                  viewConfig: {
+                     plugins: {
+                        ptype: 'treeviewdragdrop',
+                        dragGroup:'ddfileop',
+                        ddGroup:'ddfileop',
+                        appendOnly: true,
+                        sortOnDrop: true
+                     }
+                  },
+
+                  store: Ext.create('Ext.data.TreeStore', {
+                     nodeParam:'args[node]',
+                     proxy: {
+                        type: 'ajax',
+                        url: 'ajax.php?controller=filesystem&action=getfiles&args[filter]=folders',
+                        reader: {
+                           type: 'json',
+                           root: 'result'
+                        }
+                     }
+                  })
+
+
+               },
+               {
                   region:'center',
                   xtype:'gridpanel',
                   xid:'filelist',
+                  multiSelect: true,
+
+                  viewConfig: {
+                      plugins: {
+                          ptype: 'gridviewdragdrop',
+                          dragGroup:'ddfileop',
+                          ddGroup:'ddfileop',
+                          appendOnly: true,
+                          sortOnDrop: true,
+                          enableDrop: false
+                      }
+                  },
 
                   columns: [
                      { header:'', dataIndex:'metadata', width:32, renderer:this.fileIconRenderer },

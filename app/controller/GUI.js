@@ -47,6 +47,10 @@ Ext.define('DirectoryListing.controller.GUI', {
                load: this.onDirTreeLoad,
                itemcontextmenu: this.onTreeItemContextMenu
             },
+            'window[xid=filewindow] treepanel[xid=dirtree] tableview': {
+               beforedrop: this.onDirTreeBeforeDrop,
+               drop: this.onDirTreeDrop
+            },
             'window[xid=filewindow] gridpanel[xid=filelist]': {
                itemclick: this.onFilelistSelected,
                itemdblclick: this.onOpenFile,
@@ -55,6 +59,11 @@ Ext.define('DirectoryListing.controller.GUI', {
             'window[xid=uploadwindow]': {
                uploadcomplete: this.onUploadCompleted,
                close: this.onUploadWindowClosed
+            },
+            'window[xid=batchdeletewindow]': {
+               deletefile:this.onRunDeleteFiles,
+               deletecompleted: this.onRunDeleteFilesCompleted,
+               close: this.onDeleteFilesWindowClosed
             },
             'window[xid=filewindow] button[xid=newmenu] menuitem': {
                click: this.onNewMenuItemClicked
@@ -301,21 +310,40 @@ Ext.define('DirectoryListing.controller.GUI', {
       });
    },
 
-   deleteFile: function(filepath) {
-      var me = this;
+   showDeleteDialog: function(records) {
+      Ext.require('DirectoryListing.view.DeleteBatchWindow', function() {
+         var win = Ext.create('DirectoryListing.view.DeleteBatchWindow', {
+            records:records
+         });
+         win.show();
+      });
+   },
+
+   onRunDeleteFiles: function(record, callback) {
       Ext.Ajax.request({
          url: 'ajax.php?controller=filesystem&action=deletefile',
          params: {
-            'args[filepath]': filepath
+            'args[filepath]': record.raw.id
          },
          success: function(response, opts) {
-            me.application.fireEvent('reloadfiletree');
-            Msg.show("Success", "Delete successfull.");
+            callback();
          },
          failure: function(response, opts) {
-             Msg.show("Failure", "Delete failed.");
+             callback();
          }
       });
+   },
+
+   onRunDeleteFilesCompleted: function(numitems) {
+      Msg.show("Success", numitems+" File"+(numitems==1 ? "" : "s")+" deleted!");
+   },
+
+   onDeleteFilesWindowClosed: function() {
+      this.application.fireEvent('reloadfiletree');
+   },
+
+   deleteFile: function(filepath) {
+      console.log('called deprecated delete method!');
    },
 
    onShowHiddenFilesToggled: function(btn, pressed) {
@@ -380,10 +408,16 @@ Ext.define('DirectoryListing.controller.GUI', {
 
    },
 
-   onTreeItemContextMenu: function(view, record, html, index, e) {
+   onTreeItemContextMenu: function(view, singlerecord, html, index, e) {
 
       var me = this;
       e.preventDefault();
+
+      console.log(view.up('tablepanel'));
+
+      var grid = view.up('tablepanel')
+      var records = grid.getSelectionModel().getSelection();
+      var record = records[0]; // For check permissions and other stuff
 
       var can_delete = (record.raw.can_delete && record.raw.can_delete==true ? true : false);
       var can_mkdir = (record.raw.can_mkdir && record.raw.can_mkdir==true ? true : false);
@@ -441,11 +475,12 @@ Ext.define('DirectoryListing.controller.GUI', {
                xid:'delete-folder',
                hidden:(!Settings['delete']),
                handler: function(btn) {
-                  Ext.MessageBox.confirm('Delete files & folders', 'Are you sure you want to do that?<br>All folders and files will deleted!', function(res) {
+                  /*Ext.MessageBox.confirm('Delete files & folders', 'Are you sure you want to do that?<br>All folders and files will deleted!', function(res) {
                      if(res=="yes") {
                         me.deleteFile(record.data.id);
                      }
-                  });
+                  });*/
+                  me.showDeleteDialog(records);
                }
             }
          ]
@@ -501,6 +536,20 @@ Ext.define('DirectoryListing.controller.GUI', {
 
    onUploadWindowClosed: function(win) {
       this.onReloadFilelist();
+   },
+
+   onDirTreeBeforeDrop: function(node, data, overModel, dropPosition, dropHandlers) {
+
+      if(dropPosition!="append") {
+         return false;
+      }
+
+      console.log('dirtree beforedrop');
+      return true;
+   },
+
+   onDirTreeDrop: function(node, data, dropRec, dropPosition) {
+
    }
 
 
