@@ -187,8 +187,8 @@ Ext.define('DirectoryListing.controller.GUI', {
       var bwidth = body.getWidth();
       var bheight = body.getHeight();
       var win = me.getWindow();
-      var wwidth = Settings.windowwidth;
-      var wheight = Settings.windowheight;
+      var wwidth = Settings.windowwidth+20;
+      var wheight = Settings.windowheight+20;
 
       if(me.windowState=="restored" && (wwidth>bwidth || wheight>bheight)) {
          win.setPosition(0,0);
@@ -413,8 +413,6 @@ Ext.define('DirectoryListing.controller.GUI', {
       var me = this;
       e.preventDefault();
 
-      console.log(view.up('tablepanel'));
-
       var grid = view.up('tablepanel')
       var records = grid.getSelectionModel().getSelection();
       var record = records[0]; // For check permissions and other stuff
@@ -539,12 +537,9 @@ Ext.define('DirectoryListing.controller.GUI', {
    },
 
    onDirTreeBeforeDrop: function(node, data, overModel, dropPosition, dropHandlers) {
-
       if(dropPosition!="append") {
          return false;
       }
-
-      console.log('dirtree beforedrop');
       return true;
    },
 
