@@ -128,6 +128,12 @@ Ext.define('DirectoryListing.view.Viewport', {
                   xid:'login'
                },
                {
+                  tooltip:'Change password of current user',
+                  icon:'fileicons/key_go.png',
+                  xid:'changepw',
+                  hidden:true
+               },
+               {
                   text:'About',
                   icon:'fileicons/information.png',
                   xid:'about'

@@ -97,6 +97,9 @@ Ext.define('DirectoryListing.controller.GUI', {
       il.show();
       lb.setText('Logout');
 
+      var pw = tb.child('button[xid=changepw]');
+      pw.show();
+
       if(Settings.user && Settings.user.admin && Settings.user.admin==true) {
          m.setDisabled(false);
          m.show();
@@ -113,6 +116,9 @@ Ext.define('DirectoryListing.controller.GUI', {
       lb.setText('Login');
       m.setDisabled(true);
       m.hide();
+
+      var pw = tb.child('button[xid=changepw]');
+      pw.hide();
    },
 
    globalToggleFileWindow: function(b) {
@@ -250,6 +256,15 @@ Ext.define('DirectoryListing.controller.GUI', {
       if(btn.xid=='manage') {
          this.application.fireEvent('openmanagewindow');
          this.application.fireEvent('togglefilewindow', false);
+      }
+      if(btn.xid=="changepw") {
+         var username = Settings.user.username;
+         Ext.require('DirectoryListing.view.ChangePasswordWindow', function() {
+            var win = Ext.create('DirectoryListing.view.ChangePasswordWindow', {
+               targetusername: username
+            });
+            win.show();
+         });
       }
 
    },

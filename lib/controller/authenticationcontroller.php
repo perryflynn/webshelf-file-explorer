@@ -113,6 +113,12 @@ class AuthenticationController extends BaseController {
 
    protected function deleteshareAction()
    {
+      if(!\JsonConfig::instance()->isAdmin()) {
+         $this->response->failure();
+         $this->response->setMessage("Forbidden.");
+         return;
+      }
+
       $share = $this->request->getPostArg("share");
       $group = $this->request->getPostArg("group");
 
@@ -318,6 +324,12 @@ class AuthenticationController extends BaseController {
       $password = $this->request->getPostArg('password');
       $actuser = \JsonConfig::instance()->getSessionUsername();
       $cfg = \JsonConfig::instance()->loadConfiguration();
+
+      if(!\JsonConfig::instance()->isAdmin() && $username!=\JsonConfig::instance()->getSessionUsername()) {
+         $this->response->failure();
+         $this->response->setMessage("Forbidden.");
+         return;
+      }
 
       if(!\JsonConfig::instance()->userExist($username)) {
          $this->response->failure();
