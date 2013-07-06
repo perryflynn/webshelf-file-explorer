@@ -47,6 +47,8 @@ class JsonConfig extends \Util\Singleton {
                           "delete" => false,
                           "upload" => false,
                           "mkdir" => false,
+                          "copy" => false,
+                          "move_rename" => false,
                           "download" => true
                       ),
                   ),
@@ -60,6 +62,8 @@ class JsonConfig extends \Util\Singleton {
                           "delete" => true,
                           "upload" => true,
                           "mkdir" => true,
+                          "copy" => true,
+                          "move_rename" => true,
                           "download" => true
                       ),
                   ),

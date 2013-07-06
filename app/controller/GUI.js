@@ -60,10 +60,20 @@ Ext.define('DirectoryListing.controller.GUI', {
                uploadcomplete: this.onUploadCompleted,
                close: this.onUploadWindowClosed
             },
-            'window[xid=batchdeletewindow]': {
-               deletefile:this.onRunDeleteFiles,
-               deletecompleted: this.onRunDeleteFilesCompleted,
-               close: this.onDeleteFilesWindowClosed
+            'window[xid=deletebatchwindow]': {
+               okclicked:this.onRunDeleteFiles,
+               okcompleted: this.onRunDeleteFilesCompleted,
+               close: this.onBatchWindowClosed
+            },
+            'window[xid=copybatchwindow]': {
+               okclicked:this.onRunCopyFiles,
+               okcompleted: this.onRunCopyFilesCompleted,
+               close: this.onBatchWindowClosed
+            },
+            'window[xid=movebatchwindow]': {
+               okclicked:this.onRunMoveFiles,
+               okcompleted: this.onRunMoveFilesCompleted,
+               close: this.onBatchWindowClosed
             },
             'window[xid=filewindow] button[xid=newmenu] menuitem': {
                click: this.onNewMenuItemClicked
@@ -95,7 +105,7 @@ Ext.define('DirectoryListing.controller.GUI', {
       var m = tb.child('button[xid=manage]');
       il.setText("Logged in as "+user.username);
       il.show();
-      lb.setText('Logout');
+      lb.setTooltip('Logout');
 
       var pw = tb.child('button[xid=changepw]');
       pw.show();
@@ -113,7 +123,7 @@ Ext.define('DirectoryListing.controller.GUI', {
       var m = tb.child('button[xid=manage]');
       il.setText("Not logged in");
       il.hide();
-      lb.setText('Login');
+      lb.setTooltip('Login');
       m.setDisabled(true);
       m.hide();
 
@@ -326,22 +336,27 @@ Ext.define('DirectoryListing.controller.GUI', {
    },
 
    showDeleteDialog: function(records) {
-      Ext.require('DirectoryListing.view.DeleteBatchWindow', function() {
-         var win = Ext.create('DirectoryListing.view.DeleteBatchWindow', {
+      Ext.require('DirectoryListing.view.BatchWindow', function() {
+         var win = Ext.create('DirectoryListing.view.BatchWindow', {
+            title:"Really delete "+records.length+" File"+(records.length==1 ? "" : "s")+"?",
+            icon:'fileicons/folder_delete.png',
+            xid:'deletebatchwindow',
+            oktext:'Delete all files',
             records:records
          });
          win.show();
       });
    },
 
-   onRunDeleteFiles: function(record, callback) {
+   onRunDeleteFiles: function(record, target, callback) {
       Ext.Ajax.request({
          url: 'ajax.php?controller=filesystem&action=deletefile',
          params: {
             'args[filepath]': record.raw.id
          },
          success: function(response, opts) {
-            callback();
+            var json = Ext.decode(response.responseText);
+            callback(json.success);
          },
          failure: function(response, opts) {
              callback();
@@ -349,11 +364,15 @@ Ext.define('DirectoryListing.controller.GUI', {
       });
    },
 
-   onRunDeleteFilesCompleted: function(numitems) {
-      Msg.show("Success", numitems+" File"+(numitems==1 ? "" : "s")+" deleted!");
+   onRunDeleteFilesCompleted: function(numitems, numsuccess, numfailed) {
+      if(numfailed<1) {
+         Msg.show("Operation completed", numitems+" File"+(numitems==1 ? "" : "s")+" deleted!");
+      } else {
+         Msg.show("Operation failed", "Could not delete "+numfailed+" of "+numitems+"!");
+      }
    },
 
-   onDeleteFilesWindowClosed: function() {
+   onBatchWindowClosed: function() {
       this.application.fireEvent('reloadfiletree');
    },
 
@@ -367,7 +386,7 @@ Ext.define('DirectoryListing.controller.GUI', {
    },
 
    onBtnLoginClicked: function(btn) {
-      if(btn.getText()=="Login") {
+      if(!Settings.user || Settings.user.loggedin==false) {
          Ext.require('DirectoryListing.view.LoginWindow', function() {
             var loginwin = Ext.create('DirectoryListing.view.LoginWindow');
             loginwin.show();
@@ -551,11 +570,137 @@ Ext.define('DirectoryListing.controller.GUI', {
       this.onReloadFilelist();
    },
 
-   onDirTreeBeforeDrop: function(node, data, overModel, dropPosition, dropHandlers) {
+   onDirTreeBeforeDrop: function(node, data, overModel, dropPosition, dropHandlers)
+   {
+      dropHandlers.wait = true;
       if(dropPosition!="append") {
          return false;
       }
-      return true;
+
+      if(overModel.raw.id==data.records[0].raw.parent) {
+         Msg.show("Information", "The files are already in this folder!");
+         return false;
+      }
+
+      if(!Settings.move_rename && !Settings.copy) {
+         Msg.show("Information", "The copy/move feature is disabled!");
+         return false;
+      }
+
+      console.log(overModel.raw);
+      console.log(data.records[0].raw);
+
+      var copyenabled = (overModel.raw.can_copy && data.records[0].raw.can_copy);
+      var moveenabled = (overModel.raw.can_move_rename && data.records[0].raw.can_move_rename);
+
+      if(!copyenabled && !moveenabled) {
+         Msg.show("Information", "Copy or move from <b>"+data.records[0].raw.parent+"</b> to <b>"+overModel.raw.id+"</b> is not enabled!");
+         return false;
+      }
+
+      var menu = Ext.create('Ext.menu.Menu', {
+         xid:'dropmenu',
+         items: [
+            {
+               text:'Copy selected files',
+               icon:'fileicons/page_white_copy.png',
+               xid:'copy',
+               disabled: !copyenabled,
+               hidden:(!Settings.copy),
+               handler: function(btn) {
+                  dropHandlers.cancelDrop();
+                  Ext.require('DirectoryListing.view.BatchWindow', function() {
+                     var win = Ext.create('DirectoryListing.view.BatchWindow', {
+                        title:"Really copy "+data.records.length+" File"+(data.records.length==1 ? "" : "s")+"?",
+                        icon:'fileicons/page_white_copy.png',
+                        xid:'copybatchwindow',
+                        oktext:'Copy all files',
+                        autostart:true,
+                        records:data.records,
+                        target:overModel
+                     });
+                     win.show();
+                  });
+               }
+            },
+            {
+               text:'Move selected files',
+               icon:'fileicons/page_white_go.png',
+               xid:'move',
+               disabled: !moveenabled,
+               hidden:(!Settings.move_rename),
+               handler: function() {
+                  dropHandlers.cancelDrop();
+                  Ext.require('DirectoryListing.view.BatchWindow', function() {
+                     var win = Ext.create('DirectoryListing.view.BatchWindow', {
+                        title:"Really move "+data.records.length+" File"+(data.records.length==1 ? "" : "s")+"?",
+                        icon:'fileicons/page_white_go.png',
+                        xid:'movebatchwindow',
+                        oktext:'Move all files',
+                        autostart:false,
+                        records:data.records,
+                        target:overModel
+                     });
+                     win.show();
+                  });
+               }
+            }
+         ]
+      });
+
+      menu.showBy(node);
+   },
+
+   onRunCopyFiles: function(record, target, callback) {
+      Ext.Ajax.request({
+         url: 'ajax.php?controller=filesystem&action=fileoperation',
+         params: {
+            'args[operation]': 'copy',
+            'args[filepath]': record.raw.id,
+            'args[target]': target.raw.id
+         },
+         success: function(response, opts) {
+            var json = Ext.decode(response.responseText);
+            callback(json.success);
+         },
+         failure: function(response, opts) {
+            callback(false);
+         }
+      });
+   },
+
+   onRunCopyFilesCompleted: function(numitems, numsuccess, numfailed) {
+      if(numfailed<1) {
+         Msg.show("Operation completed", numitems+" File"+(numitems==1 ? "" : "s")+" copied!");
+      } else {
+         Msg.show("Operation failed", "Could not copy "+numfailed+" of "+numitems+"!");
+      }
+   },
+
+   onRunMoveFiles: function(record, target, callback) {
+      Ext.Ajax.request({
+         url: 'ajax.php?controller=filesystem&action=fileoperation',
+         params: {
+            'args[operation]': 'move',
+            'args[filepath]': record.raw.id,
+            'args[target]': target.raw.id
+         },
+         success: function(response, opts) {
+            var json = Ext.decode(response.responseText);
+            callback(json.success);
+         },
+         failure: function(response, opts) {
+            callback(false);
+         }
+      });
+   },
+
+   onRunMoveFilesCompleted: function(numitems, numsuccess, numfailed) {
+      if(numfailed<1) {
+         Msg.show("Operation completed", numitems+" File"+(numitems==1 ? "" : "s")+" moved!");
+      } else {
+         Msg.show("Operation failed", "Could not move "+numfailed+" of "+numitems+"!");
+      }
    },
 
    onDirTreeDrop: function(node, data, dropRec, dropPosition) {

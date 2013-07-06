@@ -37,8 +37,9 @@ class File {
     */
    public static function rmove($src, $dest){
 
-       // If source is not a directory stop processing
-       if(!is_dir($src)) return false;
+       if(is_file($src)) {
+          return rename($src, $dest.DIRECTORY_SEPARATOR.basename($src));
+       }
 
        // If the destination directory does not exist create it
        if(!is_dir($dest)) {
@@ -52,13 +53,14 @@ class File {
        $i = new DirectoryIterator($src);
        foreach($i as $f) {
            if($f->isFile()) {
-               rename($f->getRealPath(), "$dest/" . $f->getFilename());
+               rename($f->getRealPath(), $dest.DIRECTORY_SEPARATOR.$f->getFilename());
            } else if(!$f->isDot() && $f->isDir()) {
-               self::rmove($f->getRealPath(), "$dest/$f");
+               self::rmove($f->getRealPath(), $dest.DIRECTORY_SEPARATOR.$f);
                unlink($f->getRealPath());
            }
        }
        unlink($src);
+       return true;
    }
 
 
@@ -71,8 +73,9 @@ class File {
     */
    public static function rcopy($src, $dest){
 
-       // If source is not a directory stop processing
-       if(!is_dir($src)) return false;
+       if(is_file($src)) {
+          return copy($src, $dest.DIRECTORY_SEPARATOR.basename($src));
+       }
 
        // If the destination directory does not exist create it
        if(!is_dir($dest)) {
@@ -86,11 +89,12 @@ class File {
        $i = new DirectoryIterator($src);
        foreach($i as $f) {
            if($f->isFile()) {
-               copy($f->getRealPath(), "$dest/" . $f->getFilename());
+               copy($f->getRealPath(), $dest.DIRECTORY_SEPARATOR.$f->getFilename());
            } else if(!$f->isDot() && $f->isDir()) {
-               self::rcopy($f->getRealPath(), "$dest/$f");
+               self::rcopy($f->getRealPath(), $dest.DIRECTORY_SEPARATOR.$f);
            }
        }
+       return true;
    }
 
 

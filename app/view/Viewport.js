@@ -116,14 +116,14 @@ Ext.define('DirectoryListing.view.Viewport', {
                   style: 'padding-right:10px;'
                },
                {
-                  text:'Manage',
+                  tooltip:'Manage settings, users, groups and shares',
                   icon:'fileicons/cog.png',
                   disabled:true,
                   hidden:true,
                   xid:'manage'
                },
                {
-                  text:'Get Status...',
+                  tooltip:'Get Status...',
                   icon:'fileicons/user_go.png',
                   xid:'login'
                },
@@ -134,7 +134,7 @@ Ext.define('DirectoryListing.view.Viewport', {
                   hidden:true
                },
                {
-                  text:'About',
+                  tooltip:'About',
                   icon:'fileicons/information.png',
                   xid:'about'
                }

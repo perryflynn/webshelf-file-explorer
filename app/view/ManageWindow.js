@@ -156,8 +156,8 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                                  },
                                  items: [
                                     { boxLabel:'Delete', name:'args[delete]', inputValue:'true' },
-                                    { boxLabel:'Copy (coming soon)', disabled:true, name:'args[copy]', inputValue:'true' },
-                                    { boxLabel:'Move / Rename (coming soon)', disabled:true, name:'args[move_rename]', inputValue:'true' },
+                                    { boxLabel:'Copy', name:'args[copy]', inputValue:'true' },
+                                    { boxLabel:'Move / Rename', name:'args[move_rename]', inputValue:'true' },
                                     { boxLabel:'Create Directory', name:'args[mkdir]', inputValue:'true' }
                                  ]
                               }
@@ -403,6 +403,48 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                            }
                         },
                         {
+                           text:'Copy',
+                           width:60,
+                           dataIndex:'copy',
+                           xtype: 'checkcolumn',
+                           listeners: {
+                              beforecheckchange: function(col, rowidx) {
+                                 var grid = this.up('gridpanel');
+                                 var record = grid.getStore().getAt(rowidx);
+                                 if(record.data.path=="") {
+                                    Msg.show("Failure", "Please set a path first.");
+                                    return false;
+                                 }
+                              },
+                              checkchange: function(column, recordIndex, checked) {
+                                 var grid = this.up('gridpanel');
+                                 grid.getSelectionModel().select(recordIndex);
+                                 grid.fireEvent('edit', null, {record:grid.getStore().getAt(recordIndex), grid:grid});
+                              }
+                           }
+                        },
+                        {
+                           text:'Move/Rename',
+                           width:90,
+                           dataIndex:'move_rename',
+                           xtype: 'checkcolumn',
+                           listeners: {
+                              beforecheckchange: function(col, rowidx) {
+                                 var grid = this.up('gridpanel');
+                                 var record = grid.getStore().getAt(rowidx);
+                                 if(record.data.path=="") {
+                                    Msg.show("Failure", "Please set a path first.");
+                                    return false;
+                                 }
+                              },
+                              checkchange: function(column, recordIndex, checked) {
+                                 var grid = this.up('gridpanel');
+                                 grid.getSelectionModel().select(recordIndex);
+                                 grid.fireEvent('edit', null, {record:grid.getStore().getAt(recordIndex), grid:grid});
+                              }
+                           }
+                        },
+                        {
                            text:'Protected',
                            width:60,
                            dataIndex:'protected',
@@ -492,7 +534,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                          })
                      ],
                      store: Ext.create('Ext.data.Store', {
-                        fields:['path', 'read', 'protected', 'upload', 'mkdir', 'delete', 'download', 'saved'],
+                        fields:['path', 'read', 'protected', 'upload', 'mkdir', 'copy', 'move_rename', 'delete', 'download', 'saved'],
                         proxy: {
                            type: 'ajax',
                            url: 'ajax.php?controller=authentication&action=groupsharelist',

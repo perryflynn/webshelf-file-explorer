@@ -112,8 +112,8 @@ Ext.define('DirectoryListing.controller.Manage', {
       var bwidth = body.getWidth();
       var bheight = body.getHeight();
       var win = me.getMgWindow();
-      var wwidth = Settings.windowwidth;
-      var wheight = Settings.windowheight;
+      var wwidth = Settings.windowwidth+20;
+      var wheight = Settings.windowheight+20;
 
       if(me.windowState=="restored" && (wwidth>bwidth || wheight>bheight)) {
          win.setPosition(0,0);
@@ -342,6 +342,8 @@ Ext.define('DirectoryListing.controller.Manage', {
              'args[protected]': data['protected'],
              'args[upload]': data.upload,
              'args[mkdir]': data.mkdir,
+             'args[copy]': data.copy,
+             'args[move_rename]': data.move_rename,
              'args[download]': data.download,
              'args[delete]': data['delete']
           },

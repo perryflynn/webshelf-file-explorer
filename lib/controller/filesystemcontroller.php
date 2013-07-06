@@ -203,10 +203,23 @@ class FilesystemController extends BaseController {
          $result = array();
          foreach($shares as $share) {
 
+            // Upload
             $globalupload = \JsonConfig::instance()->getSetting("upload");
             $shareupload = \JsonConfig::instance()->hasUserShareProperty($share, "upload", true);
+
+            // Mkdir
             $globalmkdir = \JsonConfig::instance()->getSetting("mkdir");
             $sharemkdir = \JsonConfig::instance()->hasUserShareProperty($share, "mkdir", true);
+
+            // Copy
+            $globalcopy = \JsonConfig::instance()->getSetting("copy");
+            $sharecopy = \JsonConfig::instance()->hasUserShareProperty($share, "copy", true);
+
+            // Move/Rename
+            $globalmoverename = \JsonConfig::instance()->getSetting("move_rename");
+            $sharemoverename = \JsonConfig::instance()->hasUserShareProperty($share, "move_rename", true);
+
+            // Delete
             $globaldelete = \JsonConfig::instance()->getSetting("delete");
             $sharedelete = \JsonConfig::instance()->hasUserShareProperty($share, "delete", true);
 
@@ -220,6 +233,8 @@ class FilesystemController extends BaseController {
                 "can_upload" => ($globalupload && $shareupload),
                 "can_mkdir" => ($globalmkdir && $sharemkdir),
                 "can_delete" => ($globaldelete && $sharedelete),
+                "can_copy" => ($globalcopy && $sharecopy),
+                "can_move_rename" => ($globalmoverename && $sharemoverename),
                 "is_share" => true,
 
             );
@@ -298,12 +313,26 @@ class FilesystemController extends BaseController {
                               dirname($_SERVER['PHP_SELF'])."/".basename(BASE)."/".$filebase.$file));
                      }
 
+                     // Upload
                      $globalupload = \JsonConfig::instance()->getSetting("upload");
                      $shareupload = \JsonConfig::instance()->hasUserShareProperty($sharename, "upload", true);
+
+                     // Mkdir
                      $globalmkdir = \JsonConfig::instance()->getSetting("mkdir");
                      $sharemkdir = \JsonConfig::instance()->hasUserShareProperty($sharename, "mkdir", true);
+
+                     // Delete
                      $globaldelete = \JsonConfig::instance()->getSetting("delete");
                      $sharedelete = \JsonConfig::instance()->hasUserShareProperty($sharename, "delete", true);
+
+                     // Copy
+                     $globalcopy = \JsonConfig::instance()->getSetting("copy");
+                     $sharecopy = \JsonConfig::instance()->hasUserShareProperty($sharename, "copy", true);
+
+                     // Move/Rename
+                     $globalmoverename = \JsonConfig::instance()->getSetting("move_rename");
+                     $sharemoverename = \JsonConfig::instance()->hasUserShareProperty($sharename, "move_rename", true);
+
 
                      if(substr(basename($file), 0, 1)!="." || $showhidden==true) {
 
@@ -311,6 +340,8 @@ class FilesystemController extends BaseController {
                         $absfile = BASE.$filebase.$file;
 
                         $id = DIRECTORY_SEPARATOR.trim($filebase.$file, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
+                        $parent = dirname($id)."/";
+
                         if(is_file($absfile)) {
                            $id = DIRECTORY_SEPARATOR.trim($filebase.$file, DIRECTORY_SEPARATOR);
                         }
@@ -335,9 +366,12 @@ class FilesystemController extends BaseController {
                             ),
                             "qtip" => $folders." Folders, ".$files." Files",
 
+                            "parent" => $parent,
                             "can_upload" => ($globalupload && $shareupload),
                             "can_mkdir" => ($globalmkdir && $sharemkdir),
                             "can_delete" => ($globaldelete && $sharedelete),
+                            "can_copy" => ($globalcopy && $sharecopy),
+                            "can_move_rename" => ($globalmoverename && $sharemoverename),
                             "is_share" => false,
 
                         );
@@ -446,6 +480,70 @@ class FilesystemController extends BaseController {
       } catch(\Exception $ex) {
          $this->response->failure();
          $this->response->setMessage("Delete failed.");
+      }
+
+   }
+
+   protected function fileoperationAction() {
+      $operation = $this->request->getPostArg("operation");
+      $filepath = $this->request->getPostArg("filepath");
+      $target = $this->request->getPostArg("target");
+
+      if(!in_array($operation, array("copy", "move"))) {
+         $this->response->failure();
+         $this->response->setMessage("Unknown operation");
+         return;
+      }
+
+      $permission = $operation;
+      if($permission=="move") {
+         $permission = "move_rename";
+      }
+
+      $sourcepath = BASE.$filepath;
+      $targetpath = BASE.$target;
+
+      $sourceshare = $this->getShareFromPath($sourcepath);
+      $targetshare = $this->getShareFromPath($targetpath);
+
+      $rglobal = \JsonConfig::instance()->getSetting($permission);
+      $rsharesorce = \JsonConfig::instance()->hasUserShareProperty($sourceshare, $permission, true);
+      $rsharetarget = \JsonConfig::instance()->hasUserShareProperty($targetshare, $permission, true);
+
+      if($rglobal==false || $rsharesorce==false || $rsharetarget==false) {
+         $this->response->failure();
+         if($rglobal==true) {
+            $this->response->setMessage(basename($sourcepath).": Operation not allowed in/between this shares");
+         } else {
+            $this->response->setMessage(basename($sourcepath).": Operation disabled");
+         }
+         return;
+      }
+
+      if(!is_dir($sourcepath) && !is_file($sourcepath)) {
+         $this->response->failure();
+         $this->response->setMessage(basename($sourcepath).": Source not exist");
+         return;
+      }
+
+      if(!is_dir($targetpath)) {
+         $this->response->failure();
+         $this->response->setMessage(basename($sourcepath).": Target not exist");
+         return;
+      }
+
+      if(file_exists($targetpath.DIRECTORY_SEPARATOR.basename($sourcepath))) {
+         $this->response->failure();
+         $this->response->setMessage(basename($sourcepath).": Target already exist");
+         return;
+      }
+
+      $methodname = "r".$operation;
+      $result = \Util\File::$methodname($sourcepath, $targetpath);
+      if($result) {
+         $this->response->success();
+      } else {
+         $this->response->failure();
       }
 
    }
