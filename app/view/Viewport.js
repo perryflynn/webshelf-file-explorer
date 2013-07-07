@@ -172,8 +172,10 @@ Ext.define('DirectoryListing.view.Viewport', {
                         ptype: 'treeviewdragdrop',
                         dragGroup:'ddfileop',
                         ddGroup:'ddfileop',
+                        dragText:'{0} selected file{1}',
                         appendOnly: true,
-                        sortOnDrop: true
+                        sortOnDrop: true,
+                        pluginId:'dragdrop'
                      }
                   },
 
@@ -202,9 +204,11 @@ Ext.define('DirectoryListing.view.Viewport', {
                           ptype: 'gridviewdragdrop',
                           dragGroup:'ddfileop',
                           ddGroup:'ddfileop',
+                          dragText:'{0} selected file{1}',
                           appendOnly: true,
                           sortOnDrop: true,
-                          enableDrop: false
+                          enableDrop: false,
+                          pluginId:'dragdrop'
                       }
                   },
 

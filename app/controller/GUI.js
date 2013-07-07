@@ -185,6 +185,17 @@ Ext.define('DirectoryListing.controller.GUI', {
 
    },
 
+   updateFeatures: function(features) {
+      //console.log(features);
+      if(features.copy || features.move_rename) {
+         this.getDirtree().getView().getPlugin('dragdrop').enable();
+         this.getFilelist().getView().getPlugin('dragdrop').enable();
+      } else {
+         this.getDirtree().getView().getPlugin('dragdrop').disable();
+         this.getFilelist().getView().getPlugin('dragdrop').disable();
+      }
+   },
+
    expandPath: function(me, treenode) {
       if(typeof me.expandPathArray[me.expandPathIndex]!="undefined") {
          if(me.expandPathString=='') me.expandPathString=separator;
@@ -209,6 +220,15 @@ Ext.define('DirectoryListing.controller.GUI', {
 
       if(node.data.id=="root")
       {
+         Ext.Ajax.request({
+             url: 'ajax.php?controller=management&action=getfeaturelist',
+             method:'post',
+             success: function(response, opts) {
+                var json = Ext.decode(response.responseText);
+                me.updateFeatures(json.result);
+             }
+         });
+
          me.getNewmenu().hide();
          if(!me.getDirtree().getRootNode() || !me.getDirtree().getRootNode().getChildAt(0))
          {
