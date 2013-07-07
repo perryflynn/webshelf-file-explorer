@@ -75,6 +75,9 @@ Ext.define('DirectoryListing.controller.GUI', {
                okcompleted: this.onRunMoveFilesCompleted,
                close: this.onBatchWindowClosed
             },
+            'window[xid=renamewindow]': {
+               renamefile: this.onRenameFile
+            },
             'window[xid=filewindow] button[xid=newmenu] menuitem': {
                click: this.onNewMenuItemClicked
             },
@@ -185,8 +188,12 @@ Ext.define('DirectoryListing.controller.GUI', {
 
    },
 
-   updateFeatures: function(features) {
-      //console.log(features);
+   updateFeatures: function(features)
+   {
+      // "delete", "upload", "mkdir", "copy", "move_rename", "download"
+      Settings.features = features;
+
+      // Drag & Drop
       if(features.copy || features.move_rename) {
          this.getDirtree().getView().getPlugin('dragdrop').enable();
          this.getFilelist().getView().getPlugin('dragdrop').enable();
@@ -194,6 +201,17 @@ Ext.define('DirectoryListing.controller.GUI', {
          this.getDirtree().getView().getPlugin('dragdrop').disable();
          this.getFilelist().getView().getPlugin('dragdrop').disable();
       }
+
+      // The new-menu
+      if(features.mkdir || features.upload) {
+         this.getNewmenu().show();
+      } else {
+         this.getNewmenu().hide();
+      }
+
+      this.getUploadbutton().setVisible(features.upload);
+      this.getNewfolderMenu().setVisible(features.mkdir);
+
    },
 
    expandPath: function(me, treenode) {
@@ -264,14 +282,6 @@ Ext.define('DirectoryListing.controller.GUI', {
 
       var can_mkdir = (item[0].raw.can_mkdir && item[0].raw.can_mkdir==true ? true : false);
       me.getNewfolderMenu().setDisabled(!can_mkdir);
-
-      if(((!Settings.user||Settings.user.loggedin==false) && can_upload==false && can_mkdir==false) ||
-         (!Settings.mkdir && !Settings.upload))
-      {
-         me.getNewmenu().hide();
-      } else {
-         me.getNewmenu().show();
-      }
 
       this.getFilelist().setLoading(true);
       this.getFilelist().getStore().load({
@@ -419,6 +429,34 @@ Ext.define('DirectoryListing.controller.GUI', {
       });
    },
 
+   showRenameDialog: function(record) {
+      Ext.require('DirectoryListing.view.RenameWindow', function() {
+         var win = Ext.create('DirectoryListing.view.RenameWindow', {
+            title:"Rename "+record.raw.id,
+            filename:record.raw.id
+         });
+         win.show();
+      });
+   },
+
+   onRenameFile: function(newname, filename) {
+      var me = this;
+      Ext.Ajax.request({
+         url: 'ajax.php?controller=filesystem&action=renamefile',
+         params: {
+            'args[file]': filename,
+            'args[newname]': newname
+         },
+         success: function(response, opts) {
+            me.application.fireEvent('reloadfiletree');
+            Msg.show("Success", "Renamed '"+filename.substring(filename.lastIndexOf('/')+1)+"' to '"+newname+"'");
+         },
+         failure: function(response, opts) {
+             Msg.show("Failure", "Rename failed.");
+         }
+      });
+   },
+
    onRunDeleteFiles: function(record, target, callback) {
       Ext.Ajax.request({
          url: 'ajax.php?controller=filesystem&action=deletefile',
@@ -480,8 +518,8 @@ Ext.define('DirectoryListing.controller.GUI', {
       var can_mkdir = (record.raw.can_mkdir && record.raw.can_mkdir==true ? true : false);
       var can_upload = (record.raw.can_upload && record.raw.can_upload==true ? true : false);
 
-      if(((!Settings.user||Settings.user.loggedin==false) && can_upload==false && can_mkdir==false && can_delete==false) ||
-         (!Settings.mkdir && !Settings.upload && !Settings['delete']))
+      if(Settings.features && !Settings.features.upload && !Settings.features.mkdir && !Settings.features['delete'] &&
+         !can_delete && !can_mkdir && !can_upload)
       {
          return;
       }
@@ -496,7 +534,7 @@ Ext.define('DirectoryListing.controller.GUI', {
                icon:'fileicons/page_white_get.png',
                xid:'upload',
                disabled: !can_upload,
-               hidden:(!Settings.upload),
+               hidden:(Settings.features && !Settings.features.upload),
                handler: function(btn) {
                   var dialog = Ext.create('Ext.ux.upload.Dialog', {
                      dialogTitle: 'Upload file to '+path,
@@ -513,11 +551,21 @@ Ext.define('DirectoryListing.controller.GUI', {
                }
             },
             {
+               text:'Rename',
+               icon:'fileicons/textfield_rename.png',
+               xid:'rename',
+               //disabled:
+               hidden:(Settings.features && !Settings.features.move_rename),
+               handler: function() {
+                  me.showRenameDialog(record);
+               }
+            },
+            {
                text:'New Folder',
                icon:'fileicons/folder_add.png',
                xid:'newfolder',
                disabled: !can_mkdir,
-               hidden:(!Settings.mkdir),
+               hidden:(Settings.features && !Settings.features.mkdir),
                menu: [
                   {
                      xtype:'textfield',
@@ -530,13 +578,8 @@ Ext.define('DirectoryListing.controller.GUI', {
                disabled: (!can_delete || record.raw.is_share),
                icon:'fileicons/folder_delete.png',
                xid:'delete-folder',
-               hidden:(!Settings['delete']),
+               hidden:(Settings.features && !Settings.features['delete']),
                handler: function(btn) {
-                  /*Ext.MessageBox.confirm('Delete files & folders', 'Are you sure you want to do that?<br>All folders and files will deleted!', function(res) {
-                     if(res=="yes") {
-                        me.deleteFile(record.data.id);
-                     }
-                  });*/
                   me.showDeleteDialog(records);
                }
             }

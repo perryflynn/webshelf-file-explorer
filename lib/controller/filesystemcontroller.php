@@ -548,4 +548,44 @@ class FilesystemController extends BaseController {
 
    }
 
+   protected function renamefileAction()
+   {
+      $file = $this->request->getPostArg("file");
+      $newname = preg_replace("/[^A-Za-z0-9\-_\.]/", "_", $this->request->getPostArg("newname"));
+
+      $sourcefile = realpath(BASE.$file);
+      $targetfile = dirname($sourcefile).DIRECTORY_SEPARATOR.$newname;
+      $share = $this->getShareFromPath($sourcefile);
+
+      $rglobal = \JsonConfig::instance()->getSetting("move_rename");
+      $rsharesorce = \JsonConfig::instance()->hasUserShareProperty($share, "move_rename", true);
+
+      if($rglobal!=true || $rsharesorce!=true) {
+         $this->response->failure();
+         $this->response->setMessage("Rename not allowed");
+         return;
+      }
+
+      if(!file_exists($sourcefile)) {
+         $this->response->failure();
+         $this->response->setMessage("Sourcefile not exist");
+         return;
+      }
+
+      if(file_exists($targetfile)) {
+         $this->response->failure();
+         $this->response->setMessage("Targetfile already exist");
+         return;
+      }
+
+      $result = rename($sourcefile, $targetfile);
+      if($result) {
+         $this->response->success();
+      } else {
+         $this->response->failure();
+         $this->response->setMessage("Rename from '".$sourcefile."' to '".$targetfile."' failed");
+      }
+
+   }
+
 }
