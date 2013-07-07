@@ -139,25 +139,6 @@ Ext.define('DirectoryListing.controller.GUI', {
       }
    },
 
-   expandPath: function(me, treenode) {
-      if(typeof me.expandPathArray[me.expandPathIndex]!="undefined") {
-         if(me.expandPathString=='') me.expandPathString=separator;
-         me.expandPathString += me.expandPathArray[me.expandPathIndex]+separator;
-         me.expandPathIndex++;
-
-         window.setTimeout(function() {
-            var nextnode = treenode.findChild('id', me.expandPathString);
-            if(nextnode) {
-               nextnode.expand(false, function() {
-                  me.getDirtree().getSelectionModel().select(this);
-                  me.expandPath(me, this);
-               });
-            }
-         }, 50);
-
-      }
-   },
-
    onBodyRendered: function() {
       var me = this;
       me.getViewport().on('resize', me.onViewportResized, me);
@@ -167,25 +148,6 @@ Ext.define('DirectoryListing.controller.GUI', {
          HashManager.set('path', '/');
       }
 
-   },
-
-   onDirTreeLoad: function(store, node, records) {
-      var me = this;
-
-      if(node.data.id=="root") {
-         me.expandPathArray = HashManager.get('path').split(separator);
-         me.expandPathIndex = 0;
-         me.expandPathString = separator;
-         me.expandPathArray.shift();
-         me.expandPathArray.pop();
-
-         if(me.expandPathArray.length>0 && node.findChild('id', separator+me.expandPathArray[0]+separator)!=null) {
-            me.expandPath(me, node);
-         } else {
-            me.getDirtree().getSelectionModel().select(node.getChildAt(0));
-         }
-
-      }
    },
 
    onWindowMaximized: function() {
@@ -220,6 +182,95 @@ Ext.define('DirectoryListing.controller.GUI', {
    },
 
    onViewportRendered: function() {
+
+   },
+
+   expandPath: function(me, treenode) {
+      if(typeof me.expandPathArray[me.expandPathIndex]!="undefined") {
+         if(me.expandPathString=='') me.expandPathString=separator;
+         me.expandPathString += me.expandPathArray[me.expandPathIndex]+separator;
+         me.expandPathIndex++;
+
+         window.setTimeout(function() {
+            var nextnode = treenode.findChild('id', me.expandPathString);
+            if(nextnode) {
+               nextnode.expand(false, function() {
+                  me.getDirtree().getSelectionModel().select(this);
+                  me.expandPath(me, this);
+               });
+            }
+         }, 50);
+
+      }
+   },
+
+   onDirTreeLoad: function(store, node, records) {
+      var me = this;
+
+      if(node.data.id=="root")
+      {
+         me.getNewmenu().hide();
+         if(!me.getDirtree().getRootNode() || !me.getDirtree().getRootNode().getChildAt(0))
+         {
+            this.getCurrentpath().setValue("");
+            me.getFilelist().getStore().removeAll();
+            me.onBtnLoginClicked(true);
+         }
+
+         me.expandPathArray = HashManager.get('path').split(separator);
+         me.expandPathIndex = 0;
+         me.expandPathString = separator;
+         me.expandPathArray.shift();
+         me.expandPathArray.pop();
+
+         if(me.expandPathArray.length>0 && node.findChild('id', separator+me.expandPathArray[0]+separator)!=null) {
+            me.expandPath(me, node);
+         } else {
+            me.getDirtree().getSelectionModel().select(node.getChildAt(0));
+         }
+
+      }
+   },
+
+   onTreeDirSelected: function(tree, item) {
+      var me = this;
+      if(item.length<1 || !item[0].data) {
+         return;
+      }
+      me.currentpath = item[0].data.id;
+
+      var can_upload = (item[0].raw.can_upload && item[0].raw.can_upload==true ? true : false);
+      me.getUploadbutton().setDisabled(!can_upload);
+
+      var can_mkdir = (item[0].raw.can_mkdir && item[0].raw.can_mkdir==true ? true : false);
+      me.getNewfolderMenu().setDisabled(!can_mkdir);
+
+      if(((!Settings.user||Settings.user.loggedin==false) && can_upload==false && can_mkdir==false) ||
+         (!Settings.mkdir && !Settings.upload))
+      {
+         me.getNewmenu().hide();
+      } else {
+         me.getNewmenu().show();
+      }
+
+      this.getFilelist().setLoading(true);
+      this.getFilelist().getStore().load({
+         params: {
+            'args[node]':me.currentpath,
+            'args[showhidden]': me.showHiddenFiles
+         },
+         callback: function() {
+            me.getFilelist().setLoading(false);
+         }
+      });
+
+      item[0].expand();
+      this.getOpenbutton().disable();
+      this.getDirectlinkbutton().disable();
+      this.getCurrentpath().setValue((me.currentpath=="root" ? "/" : me.currentpath));
+      if(me.currentpath!="root") {
+         HashManager.set('path', me.currentpath);
+      }
 
    },
 
@@ -261,7 +312,7 @@ Ext.define('DirectoryListing.controller.GUI', {
          this.onReloadFilelist(record);
       }
       if(btn.xid=='login') {
-         this.onBtnLoginClicked(btn);
+         this.onBtnLoginClicked();
       }
       if(btn.xid=='manage') {
          this.application.fireEvent('openmanagewindow');
@@ -385,61 +436,15 @@ Ext.define('DirectoryListing.controller.GUI', {
       this.onReloadFilelist();
    },
 
-   onBtnLoginClicked: function(btn) {
-      if(!Settings.user || Settings.user.loggedin==false) {
+   onBtnLoginClicked: function(forcewindow) {
+      if(!Settings.user || Settings.user.loggedin==false || forcewindow==true) {
          Ext.require('DirectoryListing.view.LoginWindow', function() {
             var loginwin = Ext.create('DirectoryListing.view.LoginWindow');
             loginwin.show();
          });
       } else {
-         Ext.MessageBox.confirm('Logout', 'Are you sure you want to do that?', function(res) {
-            if(res=="yes") {
-               this.application.fireEvent('logout');
-            }
-         }, this);
+         this.application.fireEvent('logout');
       }
-   },
-
-   onTreeDirSelected: function(tree, item) {
-      var me = this;
-      if(item.length<1 || !item[0].data) {
-         return;
-      }
-      me.currentpath = item[0].data.id;
-
-      var can_upload = (item[0].raw.can_upload && item[0].raw.can_upload==true ? true : false);
-      me.getUploadbutton().setDisabled(!can_upload);
-
-      var can_mkdir = (item[0].raw.can_mkdir && item[0].raw.can_mkdir==true ? true : false);
-      me.getNewfolderMenu().setDisabled(!can_mkdir);
-
-      if(((!Settings.user||Settings.user.loggedin==false) && can_upload==false && can_mkdir==false) ||
-         (!Settings.mkdir && !Settings.upload))
-      {
-         me.getNewmenu().hide();
-      } else {
-         me.getNewmenu().show();
-      }
-
-      this.getFilelist().setLoading(true);
-      this.getFilelist().getStore().load({
-         params: {
-            'args[node]':me.currentpath,
-            'args[showhidden]': me.showHiddenFiles
-         },
-         callback: function() {
-            me.getFilelist().setLoading(false);
-         }
-      });
-
-      item[0].expand();
-      this.getOpenbutton().disable();
-      this.getDirectlinkbutton().disable();
-      this.getCurrentpath().setValue((me.currentpath=="root" ? "/" : me.currentpath));
-      if(me.currentpath!="root") {
-         HashManager.set('path', me.currentpath);
-      }
-
    },
 
    onTreeItemContextMenu: function(view, singlerecord, html, index, e) {
@@ -587,14 +592,11 @@ Ext.define('DirectoryListing.controller.GUI', {
          return false;
       }
 
-      console.log(overModel.raw);
-      console.log(data.records[0].raw);
-
       var copyenabled = (overModel.raw.can_copy && data.records[0].raw.can_copy);
       var moveenabled = (overModel.raw.can_move_rename && data.records[0].raw.can_move_rename);
 
       if(!copyenabled && !moveenabled) {
-         Msg.show("Information", "Copy or move from <b>"+data.records[0].raw.parent+"</b> to <b>"+overModel.raw.id+"</b> is not enabled!");
+         Msg.show("Information", "Copy or move from <b>"+data.records[0].raw.parent+"</b> to <b>"+overModel.raw.id+"</b> is not allowed!");
          return false;
       }
 
@@ -637,7 +639,7 @@ Ext.define('DirectoryListing.controller.GUI', {
                         icon:'fileicons/page_white_go.png',
                         xid:'movebatchwindow',
                         oktext:'Move all files',
-                        autostart:false,
+                        autostart:true,
                         records:data.records,
                         target:overModel
                      });

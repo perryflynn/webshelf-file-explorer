@@ -35,10 +35,13 @@ class File {
     * @param String $dest - Destination of files being moved
     * @see http://ben.lobaugh.net/blog/864/php-5-recursively-move-or-copy-files
     */
-   public static function rmove($src, $dest){
-
+   public static function rmove($src, $dest)
+   {
        if(is_file($src)) {
           return rename($src, $dest.DIRECTORY_SEPARATOR.basename($src));
+       }
+       if(is_dir($src)) {
+          $dest = $dest.DIRECTORY_SEPARATOR.basename($src).DIRECTORY_SEPARATOR;
        }
 
        // If the destination directory does not exist create it
@@ -50,16 +53,16 @@ class File {
        }
 
        // Open the source directory to read in files
-       $i = new DirectoryIterator($src);
+       $i = new \DirectoryIterator($src);
        foreach($i as $f) {
            if($f->isFile()) {
                rename($f->getRealPath(), $dest.DIRECTORY_SEPARATOR.$f->getFilename());
            } else if(!$f->isDot() && $f->isDir()) {
                self::rmove($f->getRealPath(), $dest.DIRECTORY_SEPARATOR.$f);
-               unlink($f->getRealPath());
+               rmdir($f->getRealPath());
            }
        }
-       unlink($src);
+       rmdir($src);
        return true;
    }
 
@@ -71,10 +74,13 @@ class File {
     * @param String $dest - Destination of files being moved
     * @see http://ben.lobaugh.net/blog/864/php-5-recursively-move-or-copy-files
     */
-   public static function rcopy($src, $dest){
-
+   public static function rcopy($src, $dest)
+   {
        if(is_file($src)) {
           return copy($src, $dest.DIRECTORY_SEPARATOR.basename($src));
+       }
+       if(is_dir($src)) {
+          $dest = $dest.DIRECTORY_SEPARATOR.basename($src).DIRECTORY_SEPARATOR;
        }
 
        // If the destination directory does not exist create it
@@ -86,7 +92,7 @@ class File {
        }
 
        // Open the source directory to read in files
-       $i = new DirectoryIterator($src);
+       $i = new \DirectoryIterator($src);
        foreach($i as $f) {
            if($f->isFile()) {
                copy($f->getRealPath(), $dest.DIRECTORY_SEPARATOR.$f->getFilename());

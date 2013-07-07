@@ -84,9 +84,7 @@ Ext.define('DirectoryListing.view.BatchWindow', {
             me.close();
          }
       }
-      console.log(me);
-      console.log(me.fireEvent('okclicked', me.records[me.deleteindex], me.target, callback));
-      console.log('start!');
+      me.fireEvent('okclicked', me.records[me.deleteindex], me.target, callback);
    },
 
    items: [{
