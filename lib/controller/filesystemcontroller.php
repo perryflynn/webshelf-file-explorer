@@ -130,7 +130,7 @@ class FilesystemController extends BaseController {
       // Request headers
       $reqwith = $this->request->getServerArg("HTTP_X_REQUESTED_WITH");
       $xfilename = $this->request->getServerArg("HTTP_X_FILE_NAME");
-      //$xmimetype = $this->request->getServerArg("HTTP_X_FILE_TYPE"); for future...
+      //$xmimetype = $this->request->getServerArg("HTTP_X_FILE_TYPE");
 
       // Scurity stuff
       if($method!="PUT") {
