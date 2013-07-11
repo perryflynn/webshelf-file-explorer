@@ -361,20 +361,14 @@ Ext.define('DirectoryListing.controller.GUI', {
    },
 
    onNewMenuItemClicked: function(btn) {
+      var me = this;
       if(btn.xid=="upload") {
-         var dialog = Ext.create('Ext.ux.upload.Dialog', {
-            dialogTitle: 'Upload file to '+this.currentpath,
-            uploadUrl: 'ajax.php',
-            uploadParams: {
-               controller:'filesystem',
-               action:'upload',
-               'args[targetpath]':this.currentpath
-            },
-            xid:'uploadwindow',
-            modal:true
+         Ext.require('DirectoryListing.view.UploadWindow', function() {
+            var win = Ext.create('DirectoryListing.view.UploadWindow', {
+               targetpath: me.currentpath
+            });
+            win.show();
          });
-
-         dialog.show();
       }
    },
 
@@ -536,18 +530,14 @@ Ext.define('DirectoryListing.controller.GUI', {
                disabled: !can_upload,
                hidden:(Settings.features && !Settings.features.upload),
                handler: function(btn) {
-                  var dialog = Ext.create('Ext.ux.upload.Dialog', {
-                     dialogTitle: 'Upload file to '+path,
-                     uploadUrl: 'ajax.php',
-                     uploadParams: {
-                        controller:'filesystem',
-                        action:'upload',
-                        'args[targetpath]':path
-                     },
-                     xid:'uploadwindow',
-                     modal:true
+
+                  Ext.require('DirectoryListing.view.UploadWindow', function() {
+                     var win = Ext.create('DirectoryListing.view.UploadWindow', {
+                        targetpath: path
+                     });
+                     win.show();
                   });
-                  dialog.show();
+
                }
             },
             {
