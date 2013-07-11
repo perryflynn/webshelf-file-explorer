@@ -133,7 +133,6 @@ class AuthenticationController extends BaseController {
       $cfg = \JsonConfig::instance()->loadConfiguration();
       $delindex = -1;
       foreach($cfg['groups'][$group]['shares'] as $index => $cshare) {
-         var_dump($cshare['path'],$share);
          if($cshare['path']==$share) {
             $delindex = $index;
             break;
