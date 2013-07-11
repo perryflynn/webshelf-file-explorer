@@ -130,7 +130,7 @@ class FilesystemController extends BaseController {
       // Request headers
       $reqwith = $this->request->getServerArg("HTTP_X_REQUESTED_WITH");
       $xfilename = $this->request->getServerArg("HTTP_X_FILE_NAME");
-      $xmimetype = $this->request->getServerArg("HTTP_X_FILE_TYPE");
+      //$xmimetype = $this->request->getServerArg("HTTP_X_FILE_TYPE"); for future...
 
       // Scurity stuff
       if($method!="PUT") {
@@ -147,7 +147,7 @@ class FilesystemController extends BaseController {
 
       if($length>$maxsize) {
          $this->response->failure();
-         $this->response->setMessage("Bad Request: Content length larger than ".$maxsize." Bytes");
+         $this->response->setMessage("Bad Request: Content length larger than ".($maxsize/1024/1024)." MB");
          return;
       }
 
@@ -172,15 +172,36 @@ class FilesystemController extends BaseController {
       }
 
       // Upload!
+      $stepsize = 1024;
+      $progress_size = 0;
+      $failed = false;
+
       $putdata = fopen("php://input", "r");
       $fp = fopen($targetfile, "w");
-      while ($data = fread($putdata, 1024)) {
+      while ($data = fread($putdata, $stepsize)) {
          fwrite($fp, $data);
+         $progress_size += $stepsize;
+
+         // Check max filesize, detect incorrect content-length
+         if($progress_size>$maxsize) {
+            $failed = true;
+            break;
+         }
       }
       fclose($fp);
       fclose($putdata);
 
-      $this->response->success();
+      if($failed==true) {
+         if(is_file($targetfile)) {
+            unlink($targetfile);
+         }
+         $this->response->failure();
+         $this->response->setMessage("File bigger than ".($maxsize/1024/1024)." MB");
+      } else {
+         $this->response->success();
+      }
+
+
    }
 
    protected function getfilesAction()
