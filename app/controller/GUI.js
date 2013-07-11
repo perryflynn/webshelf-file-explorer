@@ -164,23 +164,25 @@ Ext.define('DirectoryListing.controller.GUI', {
    onViewportResized: function() {
       var me = this;
 
-      var body = me.getViewport();
-      var bwidth = body.getWidth();
-      var bheight = body.getHeight();
-      var win = me.getWindow();
-      var wwidth = Settings.windowwidth+20;
-      var wheight = Settings.windowheight+20;
+      window.setTimeout(function() {
+         var body = me.getViewport();
+         var bwidth = body.getWidth();
+         var bheight = body.getHeight();
+         var win = me.getWindow();
+         var wwidth = Settings.windowwidth+20;
+         var wheight = Settings.windowheight+20;
 
-      if(me.windowState=="restored" && (wwidth>bwidth || wheight>bheight)) {
-         win.setPosition(0,0);
-         win.maximize();
-      } else if(me.windowState=="maximized" && wwidth<=bwidth && wheight<=bheight) {
-         win.restore();
-      }
+         if(me.windowState=="restored" && (wwidth>bwidth || wheight>bheight)) {
+            win.setPosition(0,0);
+            win.maximize();
+         } else if(me.windowState=="maximized" && wwidth<=bwidth && wheight<=bheight) {
+            win.restore();
+         }
 
-      if(me.windowState=="restored") {
-         win.center();
-      }
+         if(me.windowState=="restored") {
+            win.center();
+         }
+      }, 50);
 
    },
 
