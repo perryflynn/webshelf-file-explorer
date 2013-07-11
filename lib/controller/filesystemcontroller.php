@@ -76,7 +76,7 @@ class FilesystemController extends BaseController {
             case "png":
                $mime = "image/png"; break;
             case "jpg":
-               $mime = "image/jpg"; break;
+               $mime = "image/jpeg"; break;
             case "gif":
                $mime = "image/gif"; break;
             case "html":
