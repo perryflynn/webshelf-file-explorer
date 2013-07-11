@@ -89,20 +89,24 @@ Ext.define('DirectoryListing.controller.Authentication', {
       var win = this.getLoginWindow();
       var form = this.getForm();
 
-      form.getForm().submit({
-         clientValidation: true,
-         url: 'ajax.php?controller=authentication&action=login',
-         success: function(form, action) {
-            Msg.show("Success", "Login successfull.");
-            me.application.fireEvent('checkloginstatus');
-            me.application.fireEvent('reloadfiletree');
-            win.close();
-         },
-         failure: function(form, action) {
-            Msg.show("Failure", "Login failed.");
-            me.application.fireEvent('checkloginstatus');
-         }
-      });
+      if(form.isValid()) {
+         form.getForm().submit({
+            clientValidation: true,
+            url: 'ajax.php?controller=authentication&action=login',
+            success: function(form, action) {
+               Msg.show("Success", "Login successfull.");
+               me.application.fireEvent('checkloginstatus');
+               me.application.fireEvent('reloadfiletree');
+               win.close();
+            },
+            failure: function(form, action) {
+               Msg.show("Failure", "Login failed.");
+               me.application.fireEvent('checkloginstatus');
+            }
+         });
+      } else {
+         Msg.show("Failure", "Password not match with repeat field.");
+      }
 
    }
 
