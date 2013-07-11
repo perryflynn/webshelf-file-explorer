@@ -32,9 +32,19 @@ Ext.define('DirectoryListing.view.UploadWindow', {
 
       this.callParent();
 
+      // Window events
+      this.on('beforeshow', this.onBeforeShow, this);
+
       // Redirect events
       this.child('[xid=uploadpanel]').on('uploadcomplete', this.onComplete, this);
 
+   },
+
+   onBeforeShow: function() {
+      if(typeof window.FileReader=="undefined") {
+         Msg.show("Failure", "FileAPI is not supported in this browser!")
+         return false;
+      }
    },
 
    onComplete:function(panel, manager, items, errorCount, eOpts) {
