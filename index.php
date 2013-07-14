@@ -37,6 +37,7 @@
 
       <script type="text/javascript" src="ext/ext-all<?php echo ($_SERVER['HTTP_HOST']=="raspberrypi" || $_SERVER['HTTP_HOST']=="192.168.1.128" ? "-debug" : "") ?>.js"></script>
       <script type="text/javascript" src="app/msg.js"></script>
+      <script type="text/javascript" src="app/tools.js"></script>
       <script type="text/javascript" src="app/hashmanager.js"></script>
 
       <script type="text/javascript">

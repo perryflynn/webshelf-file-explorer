@@ -38,7 +38,8 @@ Ext.define('DirectoryListing.view.Viewport', {
                   text:'Expand',
                   tooltip:'Expand all',
                   icon:'fileicons/arrow_out.png',
-                  xid:'expandall'
+                  xid:'expandall',
+                  hidden:true
                },
                {
                   text:'Collapse',
@@ -189,7 +190,24 @@ Ext.define('DirectoryListing.view.Viewport', {
                            root: 'result'
                         }
                      }
-                  })
+                  }),
+
+                  dockedItems: [
+                     {
+                        xtype:'toolbar',
+                        dock:'bottom',
+                        height:25,
+                        items: [
+                           {
+                              xtype:'progressbar',
+                              xid:'space',
+                              flex:1,
+                              text:'Get filesystem info...',
+                              value:0
+                           }
+                        ]
+                     }
+                  ]
 
 
                },
@@ -216,7 +234,7 @@ Ext.define('DirectoryListing.view.Viewport', {
                      { header:'', dataIndex:'metadata', width:32, renderer:this.fileIconRenderer },
                      { header:'Filename', dataIndex:'text', flex:4 },
                      { header:'Last modified', dataIndex:'metadata', flex:1, renderer: function(value) { return value.mtime; } },
-                     { header:'Size', dataIndex:'metadata', flex:1, renderer:this.filesizerenderer }
+                     { header:'Size', dataIndex:'metadata', flex:1, renderer:Tools.filesizeformat }
                   ],
 
                   store: Ext.create('Ext.data.Store', {
@@ -229,7 +247,21 @@ Ext.define('DirectoryListing.view.Viewport', {
                            root: 'result'
                         }
                      }
-                  })
+                  }),
+
+                  dockedItems: [
+                     {
+                        xtype:'toolbar',
+                        dock:'bottom',
+                        height:25,
+                        items: [
+                           {
+                              xtype:'tbtext',
+                              xid:'sumfiles'
+                           }
+                        ]
+                     }
+                  ]
 
 
                }
@@ -242,33 +274,6 @@ Ext.define('DirectoryListing.view.Viewport', {
       this.callParent();
 
 
-   },
-
-   filesizerenderer: function(value) {
-      var size = value.size;
-      var unit = "Byte";
-
-      if(size>1024) {
-         size = (size/1024);
-         unit = "KByte";
-      }
-
-      if(size>1024) {
-         size = (size/1024);
-         unit = "MByte";
-      }
-
-      if(size>1024) {
-         size = (size/1024);
-         unit = "GByte";
-      }
-
-      if(size>1024) {
-         size = (size/1024);
-         unit = "TByte";
-      }
-
-      return (unit=='Byte' ? size : size.toFixed(2))+" "+unit;
    },
 
    fileIconRenderer: function(value) {

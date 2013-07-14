@@ -16,7 +16,9 @@ Ext.define('DirectoryListing.controller.GUI', {
         { ref: 'uploadwindow', selector: 'window[xid=uploadwindow]' },
         { ref: 'newfolderMenu', selector:'window[xid=filewindow] button[xid=newmenu] menuitem[xid=newfolder]' },
         { ref: 'openbutton', selector: 'window[xid=filewindow] toolbar button[xid=file-open]' },
-        { ref: 'directlinkbutton', selector: 'window[xid=filewindow] toolbar button[xid=direct-link]' }
+        { ref: 'directlinkbutton', selector: 'window[xid=filewindow] toolbar button[xid=direct-link]' },
+        { ref: 'spacebar', selector: 'window[xid=filewindow] treepanel[xid=dirtree] toolbar[dock=bottom] progressbar[xid=space]' },
+        { ref: 'filebar', selector: 'window[xid=filewindow] gridpanel[xid=filelist] toolbar[dock=bottom] tbtext[xid=sumfiles]' }
     ],
 
    showHiddenFiles:false,
@@ -96,6 +98,7 @@ Ext.define('DirectoryListing.controller.GUI', {
            'loggedout': this.globalLoggedout,
            'togglefilewindow': this.globalToggleFileWindow,
            'reloadfiletree': this.onReloadTree,
+           'updatespaceinfo': this.globalUpdateSpaceInfo,
            scope: this
         });
 
@@ -140,6 +143,37 @@ Ext.define('DirectoryListing.controller.GUI', {
       } else {
          this.getWindow().hide();
       }
+   },
+
+   globalUpdateSpaceInfo: function(path) {
+      var me = this;
+      var sb = me.getSpacebar();
+      Ext.Ajax.request({
+          url: 'ajax.php',
+          method:'GET',
+          params: {
+             'args[path]': path,
+             controller: 'filesystem',
+             action: 'spaceinfo'
+          },
+          success: function(response, opts) {
+             var json = Ext.decode(response.responseText);
+
+             if(json.success==true) {
+                sb.up('toolbar').show();
+                sb.updateProgress(json.result.percent_used_float);
+                sb.updateText(json.result.used+" GB of "+json.result.total+" GB used");
+             } else {
+                sb.up('toolbar').hide();
+                sb.updateProgress(0);
+                sb.updateText("");
+             }
+
+          },
+          failure: function(response, opts) {
+
+          }
+      });
    },
 
    onBodyRendered: function() {
@@ -285,16 +319,36 @@ Ext.define('DirectoryListing.controller.GUI', {
       var can_mkdir = (item[0].raw.can_mkdir && item[0].raw.can_mkdir==true ? true : false);
       me.getNewfolderMenu().setDisabled(!can_mkdir);
 
-      this.getFilelist().setLoading(true);
-      this.getFilelist().getStore().load({
-         params: {
-            'args[node]':me.currentpath,
-            'args[showhidden]': me.showHiddenFiles
-         },
-         callback: function() {
-            me.getFilelist().setLoading(false);
-         }
-      });
+      // when lase node reached
+      if(me.expandPathIndex>=(me.expandPathArray.length)) {
+
+         // load filelist
+         this.getFilelist().setLoading(true);
+         this.getFilelist().getStore().load({
+            params: {
+               'args[node]':me.currentpath,
+               'args[showhidden]': me.showHiddenFiles
+            },
+            callback: function(records) {
+               me.getFilelist().setLoading(false);
+               var fb = me.getFilebar();
+
+               var sumfiles = records.length;
+               var sumbytes = 0;
+               Ext.each(records, function(record) {
+                  sumbytes += record.raw.metadata.size;
+               });
+
+               console.log(sumbytes);
+               me.getFilebar().setText(sumfiles+' file'+(sumfiles==1 ? "" : "s")+", "+Tools.filesizeformat({size:sumbytes}));
+
+            }
+         });
+
+         // get space info
+         me.application.fireEvent('updatespaceinfo', me.currentpath);
+
+      }
 
       item[0].expand();
       this.getOpenbutton().disable();

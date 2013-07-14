@@ -609,4 +609,44 @@ class FilesystemController extends BaseController {
 
    }
 
+   protected function spaceinfoAction()
+   {
+      $path = $this->request->getGetArg("path");
+      $abspath = realpath(BASE.$path);
+      $share = $this->getShareFromPath($abspath);
+
+      $rglobal = \JsonConfig::instance()->getSetting("upload");
+      $rsharesorce = \JsonConfig::instance()->hasUserShareProperty($share, "upload", true);
+
+      if($rglobal==false || $rsharesorce==false) {
+         $this->response->failure();
+         return;
+      }
+
+      $total = @disk_total_space($abspath)/1024/1024/1024;
+      $free = @disk_free_space($abspath)/1024/1024/1024;
+
+      if($total==false || $free==false) {
+         $total = 0;
+         $free = 0;
+      }
+
+      $used = $total-$free;
+
+      $this->response->setResult(array(
+          "total" => number_format($total, 2),
+          "free" => number_format($free, 2),
+          "used" => number_format($used, 2),
+          "percent_used" => number_format((100/$total*$used), 2),
+          "percent_used_float" => round((100/$total*$used)/100, 3),
+          "percent_free" => number_format((100/$total*$free), 2),
+          "percent_free_float" => round((100/$total*$free)/100, 3),
+      ));
+
+      $this->response->success();
+
+   }
+
+
+
 }
