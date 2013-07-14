@@ -197,6 +197,7 @@ Ext.define('DirectoryListing.view.Viewport', {
                         xtype:'toolbar',
                         dock:'bottom',
                         height:25,
+                        hidden:true,
                         items: [
                            {
                               xtype:'progressbar',
