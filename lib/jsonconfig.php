@@ -24,6 +24,7 @@ class JsonConfig extends \Util\Singleton {
                "copy" => false,
                "mkdir" => false,
                "delete" => false,
+               "imageviewer" => false,
                "move_rename" => false,
                "about_content" => "Please modify this text in settings.",
           ),

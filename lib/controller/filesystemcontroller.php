@@ -216,6 +216,13 @@ class FilesystemController extends BaseController {
          $showhidden = false;
       }
 
+      $regex = null;
+      try {
+         $regex = $this->request->getGetArg("regex");
+      } catch(\Exception $ex) {
+         $regex = null;
+      }
+
       // Build tree
       if($node=="root") {
          $shares = \JsonConfig::instance()->getUserShares();
@@ -298,6 +305,13 @@ class FilesystemController extends BaseController {
 
             if(is_array($files) && count($files)>0 && $node!="root") {
                foreach($files as $file) {
+
+                  if(!is_null($regex)) {
+                     if(preg_match($regex, $file)!==1) {
+                        continue;
+                     }
+                  }
+
                   if($file!="." && $file!=".." && $this->is_allowed($filter, $path.DIRECTORY_SEPARATOR.$file)) {
 
                      $folders = -1;

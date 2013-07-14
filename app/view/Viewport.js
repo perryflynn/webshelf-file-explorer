@@ -4,7 +4,7 @@ Ext.define('DirectoryListing.view.Viewport', {
    layout:'fit',
 
    requires: [
-
+      'DirectoryListing.view.BasicWindow'
    ],
 
    defaults: {
@@ -15,7 +15,7 @@ Ext.define('DirectoryListing.view.Viewport', {
 
       this.items = [
          {
-            xtype:'window',
+            xtype:'basicwindow',
             xid:'filewindow',
 
             title:'webshelf file explorer @ '+hostname,
@@ -26,6 +26,7 @@ Ext.define('DirectoryListing.view.Viewport', {
             closable:false,
             autoShow:true,
             layout:'border',
+            modal:true,
 
             tbar: [
                {
@@ -53,6 +54,13 @@ Ext.define('DirectoryListing.view.Viewport', {
                   icon:'fileicons/application_go.png',
                   xid:'file-open',
                   disabled:true
+               },
+               {
+                  text:'Image Viewer',
+                  tooltip:'Image Viewer',
+                  icon:'fileicons/photo.png',
+                  xid:'image-viewer',
+                  hidden:true
                },
                {
                   text:'URL',

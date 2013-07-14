@@ -1,6 +1,6 @@
 
 Ext.define('DirectoryListing.view.ManageWindow', {
-   extend: 'Ext.window.Window',
+   extend: 'DirectoryListing.view.BasicWindow',
    layout:'fit',
    modal:true,
    focusOnToFront:false,
@@ -158,7 +158,8 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                                     { boxLabel:'Delete', name:'args[delete]', inputValue:'true' },
                                     { boxLabel:'Copy', name:'args[copy]', inputValue:'true' },
                                     { boxLabel:'Move / Rename', name:'args[move_rename]', inputValue:'true' },
-                                    { boxLabel:'Create Directory', name:'args[mkdir]', inputValue:'true' }
+                                    { boxLabel:'Create Directory', name:'args[mkdir]', inputValue:'true' },
+                                    { boxLabel:'Image Viewer', name:'args[imageviewer]', inputValue:'true' }
                                  ]
                               }
                            ]

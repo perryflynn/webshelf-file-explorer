@@ -31,6 +31,7 @@
          ?>
       </script>
 
+      <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
       <link rel='StyleSheet' type='text/css' href='ext/resources/css/ext-all<?php echo $uitheme ?>.css'>
       <link rel='StyleSheet' type='text/css' href='style.css'>
       <link rel='StyleSheet' type='text/css' href='ux/upload/css/upload.css'>

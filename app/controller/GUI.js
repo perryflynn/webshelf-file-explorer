@@ -17,6 +17,7 @@ Ext.define('DirectoryListing.controller.GUI', {
         { ref: 'newfolderMenu', selector:'window[xid=filewindow] button[xid=newmenu] menuitem[xid=newfolder]' },
         { ref: 'openbutton', selector: 'window[xid=filewindow] toolbar button[xid=file-open]' },
         { ref: 'directlinkbutton', selector: 'window[xid=filewindow] toolbar button[xid=direct-link]' },
+        { ref: 'imageviewerbutton', selector: 'window[xid=filewindow] toolbar button[xid=image-viewer]' },
         { ref: 'spacebar', selector: 'window[xid=filewindow] treepanel[xid=dirtree] toolbar[dock=bottom] progressbar[xid=space]' },
         { ref: 'filebar', selector: 'window[xid=filewindow] gridpanel[xid=filelist] toolbar[dock=bottom] tbtext[xid=sumfiles]' }
     ],
@@ -33,11 +34,6 @@ Ext.define('DirectoryListing.controller.GUI', {
    init: function() {
 
         this.control({
-            'window[xid=filewindow]': {
-               afterrender: this.onBodyRendered,
-               maximize: this.onWindowMaximized,
-               restore: this.onWindowRestored
-            },
             'window[xid=filewindow] toolbar button': {
                click: this.onButtonClicked
             },
@@ -85,10 +81,6 @@ Ext.define('DirectoryListing.controller.GUI', {
             },
             'menuitem[xid=newfolder] textfield': {
                specialkey: this.onNewMenuCreateFolder
-            },
-            'viewport': {
-               afterrender: this.onViewportRendered/*,
-               resize: this.onViewportResized*/
             },
             scope:this
         });
@@ -177,51 +169,9 @@ Ext.define('DirectoryListing.controller.GUI', {
    },
 
    onBodyRendered: function() {
-      var me = this;
-      me.getViewport().on('resize', me.onViewportResized, me);
-      me.getViewport().fireEvent('resize');
-
       if(typeof HashManager.get('path')!="string") {
          HashManager.set('path', '/');
       }
-
-   },
-
-   onWindowMaximized: function() {
-      this.windowState = "maximized";
-   },
-
-   onWindowRestored: function() {
-      this.windowState = "restored";
-   },
-
-   onViewportResized: function() {
-      var me = this;
-
-      window.setTimeout(function() {
-         var body = me.getViewport();
-         var bwidth = body.getWidth();
-         var bheight = body.getHeight();
-         var win = me.getWindow();
-         var wwidth = Settings.windowwidth+20;
-         var wheight = Settings.windowheight+20;
-
-         if(me.windowState=="restored" && (wwidth>bwidth || wheight>bheight)) {
-            win.setPosition(0,0);
-            win.maximize();
-         } else if(me.windowState=="maximized" && wwidth<=bwidth && wheight<=bheight) {
-            win.restore();
-         }
-
-         if(me.windowState=="restored") {
-            win.center();
-         }
-      }, 50);
-
-   },
-
-   onViewportRendered: function() {
-
    },
 
    updateFeatures: function(features)
@@ -245,6 +195,7 @@ Ext.define('DirectoryListing.controller.GUI', {
          this.getNewmenu().hide();
       }
 
+      this.getImageviewerbutton().setVisible(features.imageviewer);
       this.getUploadbutton().setVisible(features.upload);
       this.getNewfolderMenu().setVisible(features.mkdir);
 

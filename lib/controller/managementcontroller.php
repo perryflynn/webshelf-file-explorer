@@ -33,6 +33,7 @@ class ManagementController extends BaseController {
       try { $settings['delete'] = ($this->request->getPostArg("delete")=="true"); } catch(Exception $ex) {  }
       try { $settings['mkdir'] = ($this->request->getPostArg("mkdir")=="true"); } catch(Exception $ex) {  }
       try { $settings['move_rename'] = ($this->request->getPostArg("move_rename")=="true"); } catch(Exception $ex) {  }
+      try { $settings['imageviewer'] = ($this->request->getPostArg("imageviewer")=="true"); } catch(Exception $ex) {  }
       try { $settings['about_content'] = $this->request->getPostArg("about_content"); } catch(Exception $ex) {  }
 
       $cfg['settings'] = $settings;
@@ -84,6 +85,15 @@ class ManagementController extends BaseController {
             } else {
                $result[$feature] = false;
             }
+         }
+      }
+
+      $settings = array("imageviewer");
+      foreach($settings as $setting) {
+         try {
+            $result[$setting] = \JsonConfig::instance()->getSetting($setting);
+         } catch(\Exception $ex) {
+            $result[$setting] = false;
          }
       }
 

@@ -23,9 +23,7 @@ Ext.define('DirectoryListing.controller.Manage', {
         this.control({
            'window[xid=managewindow]': {
               afterrender: this.onWindowRendered,
-              close: this.onWindowClose,
-              maximize: this.onWindowMaximized,
-              restore: this.onWindowRestored
+              close: this.onWindowClose
            },
            'window[xid=managewindow] tabpanel': {
               tabchange: this.onTabChange
@@ -78,8 +76,10 @@ Ext.define('DirectoryListing.controller.Manage', {
    },
 
    globalOpenManageWindow: function() {
+      var me = this;
       Ext.require('DirectoryListing.view.ManageWindow', function() {
          var win = Ext.create('DirectoryListing.view.ManageWindow');
+         me.getViewport().add(win);
          win.show();
       });
    },
@@ -93,39 +93,6 @@ Ext.define('DirectoryListing.controller.Manage', {
 
    onWindowRendered: function() {
       var me = this;
-      me.getViewport().on('resize', me.onViewportResized, me);
-      me.getViewport().fireEvent('resize');
-   },
-
-   onWindowMaximized: function() {
-      this.windowState = "maximized";
-   },
-
-   onWindowRestored: function() {
-      this.windowState = "restored";
-   },
-
-   onViewportResized: function() {
-      var me = this;
-
-      var body = me.getViewport();
-      var bwidth = body.getWidth();
-      var bheight = body.getHeight();
-      var win = me.getMgWindow();
-      var wwidth = Settings.windowwidth+20;
-      var wheight = Settings.windowheight+20;
-
-      if(me.windowState=="restored" && (wwidth>bwidth || wheight>bheight)) {
-         win.setPosition(0,0);
-         win.maximize();
-      } else if(me.windowState=="maximized" && wwidth<=bwidth && wheight<=bheight) {
-         win.restore();
-      }
-
-      if(me.windowState=="restored") {
-         win.center();
-      }
-
    },
 
    onWindowClose: function() {
