@@ -26,7 +26,6 @@ Ext.define('DirectoryListing.view.BasicWindow', {
    },
 
    _onBodyRendered: function() {
-      console.log(this.up('viewport'));
       this.up('viewport').on('resize', this._onViewportResized, this);
       this.up('viewport').fireEvent('resize');
    },

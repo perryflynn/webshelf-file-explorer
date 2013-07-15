@@ -38,6 +38,27 @@ class FilesystemController extends BaseController {
       return $match[1];
    }
 
+   private function getUniqName($file) {
+      $path = dirname($file)."/";
+      $xfilename = basename($file);
+
+      $search = array("ä", "ü", "ö", "ß", "€", "Ä", "Ü", "Ö");
+      $replace = array("ae", "ue", "oe", "ss", "euro", "Ae", "Ue", "Oe");
+      $xfilename = str_replace($search, $replace, $xfilename);
+      $xfilename = preg_replace("/[^A-Za-z0-9_\-\.]/", "_", $xfilename);
+      $targetfile = $path."/".$xfilename;
+      $namecount = 0;
+
+      while(file_exists($targetfile)) {
+         $namecount++;
+         preg_match("/^([^\.]*)(?:\.(.*?))?\$/", $xfilename, $filenameparts);
+         unset($filenameparts[0]);
+         $targetfile = $path."/".$filenameparts[1]."_".$namecount.(isset($filenameparts[2]) ? ".".$filenameparts[2] : "");
+      }
+
+      return $targetfile;
+   }
+
    private function is_allowed($filter, $path) {
       $path = realpath($path);
 
@@ -162,19 +183,11 @@ class FilesystemController extends BaseController {
       }
 
       // Make filenames
-      $search = array("ä", "ü", "ö", "ß", "€", "Ä", "Ü", "Ö");
-      $replace = array("ae", "ue", "oe", "ss", "euro", "Ae", "Ue", "Oe");
-      $xfilename = str_replace($search, $replace, $xfilename);
-      $xfilename = preg_replace("/[^A-Za-z0-9_\-\.]/", "_", $xfilename);
-      $targetfile = $path."/".$xfilename;
-      if(is_file($targetfile)) {
-         $targetfile = $path."/".substr(sha1(microtime(true)."-"), -8)."_".$xfilename;
-      }
+      $targetfile = $this->getUniqName($path."/".$xfilename);
 
       // Upload!
       $stepsize = 1024;
       $progress_size = 0;
-      $failed = false;
 
       $putdata = fopen("php://input", "r");
       $fp = fopen($targetfile, "w");
@@ -184,19 +197,26 @@ class FilesystemController extends BaseController {
 
          // Check max filesize, detect incorrect content-length
          if($progress_size>$maxsize) {
-            $failed = true;
             break;
          }
       }
       fclose($fp);
       fclose($putdata);
 
-      if($failed==true) {
+      // Final checks
+      if($progress_size>$maxsize || $progress_size<$length) {
          if(is_file($targetfile)) {
             unlink($targetfile);
          }
+
          $this->response->failure();
-         $this->response->setMessage("File bigger than ".($maxsize/1024/1024)." MB");
+         if($progress_size>$maxsize) {
+            $this->response->setMessage("File (".($length/1024/1024)." MB) bigger than ".($maxsize/1024/1024)." MB");
+         } else {
+            $this->response->setMessage(number_format($length>0 ? ($length/1024/1024) : 0, 2)." MB expected, ".
+                  number_format($progress_size>0 ? ($progress_size/1024/1024) : 0, 2)." MB written. Unknown error.");
+         }
+
       } else {
          $this->response->success();
       }
@@ -470,14 +490,7 @@ class FilesystemController extends BaseController {
       }
 
       // Prepare name
-      $search = array("ä", "ü", "ö", "ß", "€", "Ä", "Ü", "Ö");
-      $replace = array("ae", "ue", "oe", "ss", "euro", "Ae", "Ue", "Oe");
-      $newfolder = str_replace($search, $replace, $newfolder);
-      $newfolder = preg_replace("/[^A-Za-z0-9_\-\.]/", "_", $newfolder);
-      $newfoldername = $path."/".$newfolder;
-      if(is_dir($newfoldername)) {
-         $newfoldername = $path."/".substr(sha1(microtime(true)."-"), -8)."_".$newfolder;
-      }
+      $newfoldername = $this->getUniqName($path."/".$newfolder);
 
       $result = mkdir($newfoldername, 0755);
 
