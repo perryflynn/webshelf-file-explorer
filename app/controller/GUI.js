@@ -82,6 +82,9 @@ Ext.define('DirectoryListing.controller.GUI', {
             'menuitem[xid=newfolder] textfield': {
                specialkey: this.onNewMenuCreateFolder
             },
+            'viewport': {
+               afterrender: this.onBodyRendered
+            },
             scope:this
         });
 
@@ -169,6 +172,7 @@ Ext.define('DirectoryListing.controller.GUI', {
    },
 
    onBodyRendered: function() {
+      console.log(HashManager.get('path'));
       if(typeof HashManager.get('path')!="string") {
          HashManager.set('path', '/');
       }
