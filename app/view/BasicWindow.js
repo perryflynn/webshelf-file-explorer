@@ -43,6 +43,10 @@ Ext.define('DirectoryListing.view.BasicWindow', {
 
       window.setTimeout(function() {
          var body = me.up('viewport');
+         if(typeof body=="undefined") {
+            return;
+         }
+
          var bwidth = body.getWidth();
          var bheight = body.getHeight();
          var win = me;

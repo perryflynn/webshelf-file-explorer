@@ -60,7 +60,8 @@ Ext.define('DirectoryListing.view.Viewport', {
                   tooltip:'Image Viewer',
                   icon:'fileicons/photo.png',
                   xid:'image-viewer',
-                  hidden:true
+                  hidden:true,
+                  disabled:true
                },
                {
                   text:'URL',

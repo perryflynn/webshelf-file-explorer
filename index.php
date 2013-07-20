@@ -35,6 +35,7 @@
       <link rel='StyleSheet' type='text/css' href='ext/resources/css/ext-all<?php echo $uitheme ?>.css'>
       <link rel='StyleSheet' type='text/css' href='style.css'>
       <link rel='StyleSheet' type='text/css' href='ux/upload/css/upload.css'>
+      <link rel='StyleSheet' type='text/css' href='ux/fiaedotws/imageviewer/icons.css'>
 
       <script type="text/javascript" src="ext/ext-all<?php echo ($_SERVER['HTTP_HOST']=="raspberrypi" || $_SERVER['HTTP_HOST']=="192.168.1.128" ? "-debug" : "") ?>.js"></script>
       <script type="text/javascript" src="app/msg.js"></script>

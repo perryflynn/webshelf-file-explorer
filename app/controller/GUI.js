@@ -172,7 +172,6 @@ Ext.define('DirectoryListing.controller.GUI', {
    },
 
    onBodyRendered: function() {
-      console.log(HashManager.get('path'));
       if(typeof HashManager.get('path')!="string") {
          HashManager.set('path', '/');
       }
@@ -278,6 +277,7 @@ Ext.define('DirectoryListing.controller.GUI', {
       if(me.expandPathIndex>=(me.expandPathArray.length)) {
 
          // load filelist
+         me.getImageviewerbutton().disable();
          this.getFilelist().setLoading(true);
          this.getFilelist().getStore().load({
             params: {
@@ -286,6 +286,7 @@ Ext.define('DirectoryListing.controller.GUI', {
             },
             callback: function(records) {
                me.getFilelist().setLoading(false);
+               me.getImageviewerbutton().enable();
                var fb = me.getFilebar();
 
                var sumfiles = records.length;
@@ -316,6 +317,7 @@ Ext.define('DirectoryListing.controller.GUI', {
 
    onButtonClicked: function(btn) {
 
+      var me = this;
       var dirtree = btn.up('window').child('treepanel[xid=dirtree]');
 
       // Tree
@@ -364,6 +366,33 @@ Ext.define('DirectoryListing.controller.GUI', {
             var win = Ext.create('DirectoryListing.view.ChangePasswordWindow', {
                targetusername: username
             });
+            win.show();
+         });
+      }
+      if(btn.xid=="image-viewer")
+      {
+         Ext.require('DirectoryListing.view.ImageviewerWindow', function() {
+            var store = me.getFilelist().getStore();
+            var imagerecords = store.query('text', /\.(jpg|gif|png)$/i).getRange();
+
+            var images = [];
+            Ext.each(imagerecords, function(record) {
+               images.push(record.raw.metadata.fqdnurl);
+            });
+
+            var selected = null;
+            var sele = me.getFilelist().getSelectionModel().getSelection();
+            if(sele[0] && /\.(jpg|gif|png)$/ig.test(sele[0].raw.text)) {
+               selected = sele[0].raw.metadata.fqdnurl;
+            }
+
+            var win = Ext.create('DirectoryListing.view.ImageviewerWindow', {
+               title:"Imageviewer on "+me.currentpath,
+               imagelist:images,
+               selectedimage: selected
+            });
+
+            me.getViewport().add(win);
             win.show();
          });
       }
