@@ -412,7 +412,6 @@ class FilesystemController extends BaseController {
                             "id" => $id,
                             "text" => $file,
                             "leaf" => false, //($folders>0 ? false : true),
-                            "path" => $path,
                             "iconCls" => "iconcls-folder",
                             "children" => array(
                                "folders" => $folders,
