@@ -357,21 +357,23 @@ class FilesystemController extends BaseController {
                         }
                      }
 
+                     $protocol = ($_SERVER['SERVER_PORT']==443 ? "https://" : "http://");
+                     $server = $_SERVER['SERVER_NAME'];
+                     $urlpath = trim(dirname($_SERVER['PHP_SELF']), "/");
+                     if(empty($urlpath)) {
+                        $urlpath = "/";
+                     } else {
+                        $urlpath = "/".$urlpath."/";
+                     }
+
                      // Protection
-                     if($ifprotected==true)
-                     {
+                     if($ifprotected==true) {
                         $url = "ajax.php?controller=filesystem&action=download&args[file]=".urlencode($filebase.$file);
-                        $fqdnurl = ($_SERVER['SERVER_PORT']==443 ? "https://" : "http://").
-                              str_replace("//", "/", str_replace(DIRECTORY_SEPARATOR, "/", trim($_SERVER['SERVER_NAME'], "/").
-                              trim(dirname($_SERVER['PHP_SELF'])."/", "/")."/ajax.php?controller=filesystem&action=download&args[file]=".urlencode($filebase.$file)));
-                     }
-                     else
-                     {
+                     } else {
                         $url = basename(BASE)."/".$filebase.$file;
-                        $fqdnurl = ($_SERVER['SERVER_PORT']==443 ? "https://" : "http://").
-                              str_replace("//", "/", str_replace(DIRECTORY_SEPARATOR, "/", trim($_SERVER['SERVER_NAME'], "/").
-                              dirname($_SERVER['PHP_SELF'])."/".basename(BASE)."/".$filebase.$file));
                      }
+
+                     $fqdnurl = $protocol.$server.$urlpath.$url;
 
                      // Upload
                      $globalupload = \JsonConfig::instance()->getSetting("upload");
@@ -410,6 +412,7 @@ class FilesystemController extends BaseController {
                             "id" => $id,
                             "text" => $file,
                             "leaf" => false, //($folders>0 ? false : true),
+                            "path" => $path,
                             "iconCls" => "iconcls-folder",
                             "children" => array(
                                "folders" => $folders,
