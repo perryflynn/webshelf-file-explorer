@@ -141,7 +141,7 @@ class FilesystemController extends BaseController {
          $this->response->setMessage("Upload not enabled");
          return;
       }
-      
+
       // Try to disable time_limit
       if(function_exists("set_time_limit")) {
          set_time_limit(0);
@@ -332,7 +332,7 @@ class FilesystemController extends BaseController {
                foreach($files as $file) {
 
                   if(!is_null($regex)) {
-                     if(preg_match($regex, $file)!==1) {
+                     if(preg_match("/".$regex."/i", $file)!==1) {
                         continue;
                      }
                   }
