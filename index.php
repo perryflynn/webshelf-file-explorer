@@ -1,8 +1,12 @@
 <?php
 
 include('init.php');
+
+// Initialize silex
 require_once ROOT.'vendor/autoload.php';
 $app = new Silex\Application();
+
+$app['debug'] = true;
 
 // Load template engine
 $app->register(new Silex\Provider\TwigServiceProvider(), array(

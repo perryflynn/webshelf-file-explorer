@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * Config singleton singleton
+ * @method \JsonConfig instance() Description
+ */
+
 class JsonConfig extends \Util\Singleton {
 
    const SESSION_NAME = "username";

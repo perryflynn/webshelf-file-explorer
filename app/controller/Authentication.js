@@ -54,7 +54,7 @@ Ext.define('DirectoryListing.controller.Authentication', {
    globalCheckLoginStatus: function() {
       var me = this;
       Ext.Ajax.request({
-          url: 'ajax.php?controller=authentication&action=getuserstatus',
+          url: 'index.php/authentication/userstatus',
           success: function(response, opts) {
              var json = Ext.decode(response.responseText);
              Settings.user = json.result;

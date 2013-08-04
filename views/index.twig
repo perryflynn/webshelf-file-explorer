@@ -6,7 +6,7 @@
 
       <script type="text/javascript">
          var hostname = "{{app.request.host}}";
-         var separator = "<?php echo addslashes(DIRECTORY_SEPARATOR); ?>";
+         var separator = "{{dirseparator}}";
          {{jssettings|raw}}
       </script>
 

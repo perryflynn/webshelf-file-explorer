@@ -1,6 +1,6 @@
 <?php
 
-namespace Controller;
+namespace Util;
 
 class Response {
 
@@ -9,7 +9,7 @@ class Response {
    private $result;
 
    final function __construct() {
-      $this->is_success = false;
+      $this->is_success = true;
       $this->message = null;
       $this->result = null;
    }
@@ -26,20 +26,29 @@ class Response {
       return json_encode($response);
    }
 
+   public function setSuccess($b) {
+      $this->is_success = ($b===true ? true : false);
+      return $this;
+   }
+
    public function success() {
-      $this->is_success = true;
+      $this->setSuccess(true);
+      return $this;
    }
 
    public function failure() {
-      $this->is_success = false;
+      $this->setSuccess(false);
+      return $this;
    }
 
    public function setMessage($msg) {
       $this->message = $msg;
+      return $this;
    }
 
    public function setResult($result) {
       $this->result = $result;
+      return $this;
    }
 
 }

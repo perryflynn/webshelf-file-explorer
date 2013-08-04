@@ -20,14 +20,15 @@ $app->get('/', function () use ($app) {
    $jssettings = "var Settings = {\n".implode(",\n", $varlist)."\n         };\n";
 
    // ExtJS core file
-   $extjscore = "ext/ext-all".($_SERVER['HTTP_HOST']=="192.168.56.101" ? "-debug" : "").".js";
-
-
    $host = $app['request']->getHost();
+   $extjscore = "ext/ext-all".($host=="192.168.56.101" ? "-debug" : "").".js";
 
+   // Render template
    return $app['twig']->render('index.twig', array(
        "jssettings" => $jssettings,
        "uitheme" => $uitheme,
-       "extjscore" => $extjscore
+       "extjscore" => $extjscore,
+       "dirseparator" => addslashes(DIRECTORY_SEPARATOR)
    ));
+
 });

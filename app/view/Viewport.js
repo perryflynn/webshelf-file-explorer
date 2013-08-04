@@ -190,10 +190,19 @@ Ext.define('DirectoryListing.view.Viewport', {
                   },
 
                   store: Ext.create('Ext.data.TreeStore', {
-                     nodeParam:'args[node]',
+                     nodeParam:'node',
                      proxy: {
                         type: 'ajax',
-                        url: 'ajax.php?controller=filesystem&action=getfiles&args[filter]=folders',
+                        url: 'index.php/filesystem/getfiles',
+                        actionMethods: {
+                           create: 'POST',
+                           destroy: 'POST',
+                           read: 'POST',
+                           update: 'POST'
+                        },
+                        params: {
+                           filter:'folders'
+                        },
                         reader: {
                            type: 'json',
                            root: 'result'
@@ -251,7 +260,16 @@ Ext.define('DirectoryListing.view.Viewport', {
                      fields:['text', 'children', 'metadata', 'qtip'],
                      proxy: {
                         type: 'ajax',
-                        url: 'ajax.php?controller=filesystem&action=getfiles&args[filter]=files',
+                        url: 'index.php/filesystem/getfiles',
+                        actionMethods: {
+                           create: 'POST',
+                           destroy: 'POST',
+                           read: 'POST',
+                           update: 'POST'
+                        },
+                        params: {
+                           filter:'files'
+                        },
                         reader: {
                            type: 'json',
                            root: 'result'

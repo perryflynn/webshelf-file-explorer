@@ -4,18 +4,23 @@ namespace Util;
 
 abstract class Singleton {
 
-   protected static $instance;
+   protected static $instance = array();
 
    private final function __construct() {
       $this->init();
    }
 
+   private final function __clone() {
+      
+   }
+
    public static function instance() {
-      if((self::$instance instanceof Singleton)==false) {
-         $calledClass = get_called_class();
-         self::$instance = new $calledClass();
+      $calledClass = get_called_class();
+      if(!isset(self::$instance[$calledClass]))
+      {
+         self::$instance[$calledClass] = new $calledClass();
       }
-      return self::$instance;
+      return self::$instance[$calledClass];
    }
 
    abstract protected function init();

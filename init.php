@@ -14,6 +14,12 @@ if(!(file_exists(BASE) && is_dir(BASE))) {
    }
 }
 
+// Load global functions
+$globals = glob(ROOT."globals/global.*.php");
+foreach($globals as $global) {
+   include($global);
+}
+
 //--> Autoloader
 include_once('lib/autoload.php');
 spl_autoload_register('\Autoloader::load');

@@ -144,12 +144,10 @@ Ext.define('DirectoryListing.controller.GUI', {
       var me = this;
       var sb = me.getSpacebar();
       Ext.Ajax.request({
-          url: 'ajax.php',
-          method:'GET',
+          url: 'index.php/filesystem/spaceinfo',
+          method:'POST',
           params: {
-             'args[path]': path,
-             controller: 'filesystem',
-             action: 'spaceinfo'
+             'path': path
           },
           success: function(response, opts) {
              var json = Ext.decode(response.responseText);
@@ -229,8 +227,8 @@ Ext.define('DirectoryListing.controller.GUI', {
       if(node.data.id=="root")
       {
          Ext.Ajax.request({
-             url: 'ajax.php?controller=management&action=getfeaturelist',
-             method:'post',
+             url: 'index.php/management/featurelist',
+             method:'get',
              success: function(response, opts) {
                 var json = Ext.decode(response.responseText);
                 me.updateFeatures(json.result);
@@ -281,8 +279,8 @@ Ext.define('DirectoryListing.controller.GUI', {
          this.getFilelist().setLoading(true);
          this.getFilelist().getStore().load({
             params: {
-               'args[node]':me.currentpath,
-               'args[showhidden]': me.showHiddenFiles
+               'node':me.currentpath,
+               'showhidden': me.showHiddenFiles
             },
             callback: function(records) {
                me.getFilelist().setLoading(false);
@@ -646,8 +644,8 @@ Ext.define('DirectoryListing.controller.GUI', {
       this.getFilelist().setLoading(true);
       this.getFilelist().getStore().load({
          params: {
-            'args[node]':me.currentpath,
-            'args[showhidden]': me.showHiddenFiles
+            'node':me.currentpath,
+            'showhidden': me.showHiddenFiles
          },
          callback: function() {
             me.getFilelist().setLoading(false);
