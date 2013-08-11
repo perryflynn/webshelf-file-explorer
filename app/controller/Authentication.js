@@ -40,7 +40,6 @@ Ext.define('DirectoryListing.controller.Authentication', {
       var me = this;
       Ext.Ajax.request({
           url: 'index.php/authentication/logout',
-          method:'POST',
           success: function(response, opts) {
              me.application.fireEvent('checkloginstatus');
              me.application.fireEvent('reloadfiletree');

@@ -419,7 +419,7 @@ $auth->post('/usergrouplist', function(Request $request)
          );
       }
 
-      Helper\response(true)->setResult($result);
+      return Helper\response(true)->setResult($result);
    }
 );
 

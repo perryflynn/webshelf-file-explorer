@@ -103,9 +103,10 @@ Ext.define('DirectoryListing.controller.Manage', {
 
       var values = this.getSettingsForm().getForm().getFieldValues();
       Ext.iterate(values, function(key, value) {
-         var myRegexp = /\[(.*?)\]/g;
-         var match = myRegexp.exec(key);
-         var skey = match[1];
+         //var myRegexp = /\[(.*?)\]/g;
+         //var match = myRegexp.exec(key);
+         //var skey = match[1];
+         var skey = key;
          Settings[skey] = value;
       });
 
@@ -155,7 +156,6 @@ Ext.define('DirectoryListing.controller.Manage', {
       form.getForm().loaded = false;
       Ext.Ajax.request({
           url: 'index.php/management/getsettings',
-          method:'post',
           success: function(response, opts) {
              var json = Ext.decode(response.responseText);
              form.getForm().setValues(json.result);

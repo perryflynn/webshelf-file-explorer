@@ -277,7 +277,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                         fields:['name', 'shares', 'deletable', 'saved'],
                         proxy: {
                            type: 'ajax',
-                           url: 'ajax.php?controller=authentication&action=grouplist',
+                           url: 'index.php/authentication/grouplist',
                            reader: {
                               type: 'json',
                               root: 'result'
@@ -327,7 +327,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                                   fields:['name'],
                                   proxy: {
                                      type: 'ajax',
-                                     url: 'ajax.php?controller=filesystem&action=sharelist',
+                                     url: 'index.php/filesystem/sharelist',
                                      reader: {
                                         type: 'json',
                                         root: 'result'
@@ -538,7 +538,10 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                         fields:['path', 'read', 'protected', 'upload', 'mkdir', 'copy', 'move_rename', 'delete', 'download', 'saved'],
                         proxy: {
                            type: 'ajax',
-                           url: 'ajax.php?controller=authentication&action=groupsharelist',
+                           url: 'index.php/authentication/groupsharelist',
+                           actionMethods: {
+                              read:'POST'
+                           },
                            reader: {
                               type: 'json',
                               root: 'result'
@@ -677,7 +680,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                         fields:['name', 'admin', 'deletable', 'saved'],
                         proxy: {
                            type: 'ajax',
-                           url: 'ajax.php?controller=authentication&action=userlist',
+                           url: 'index.php/authentication/userlist',
                            reader: {
                               type: 'json',
                               root: 'result'
@@ -722,7 +725,10 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                         fields:['name', 'member'],
                         proxy: {
                            type: 'ajax',
-                           url: 'ajax.php?controller=authentication&action=usergrouplist',
+                           url: 'index.php/authentication/usergrouplist',
+                           actionMethods: {
+                              read:'POST'
+                           },
                            reader: {
                               type: 'json',
                               root: 'result'

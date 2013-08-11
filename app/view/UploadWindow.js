@@ -19,11 +19,9 @@ Ext.define('DirectoryListing.view.UploadWindow', {
          Ext.create('Ext.ux.upload.Panel', {
             xid:'uploadpanel',
             uploader: Ext.create('Ext.ux.upload.uploader.ExtJsUploader', {
-               url: 'ajax.php',
+               url: 'index.php/filesystem/upload',
                timeout: 86400000, // 24 hours
                params: {
-                  controller:'filesystem',
-                  action:'upload',
                   'targetpath':this.targetpath
                }
             })

@@ -157,7 +157,7 @@ $fs->post('/getfiles', function(Request $request)
 
                      // Protection
                      if($ifprotected==true) {
-                        $url = "ajax.php?controller=filesystem&action=download&file=".urlencode($filebase.$file);
+                        $url = "index.php/filesystem/download&file=".urlencode($filebase.$file);
                      } else {
                         $url = basename(BASE)."/".$filebase.$file;
                      }
