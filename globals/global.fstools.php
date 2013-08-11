@@ -48,7 +48,7 @@ namespace FsTools {
 
       // Share allowed?
       $shares = \JsonConfig::instance()->getUserShares();
-      $share = $this->getShareFromPath($path);
+      $share = \FsTools\getShareFromPath($path);
 
       $final = ($typefilter && in_array($share, $shares));
       return $final;

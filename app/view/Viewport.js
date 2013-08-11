@@ -200,7 +200,7 @@ Ext.define('DirectoryListing.view.Viewport', {
                            read: 'POST',
                            update: 'POST'
                         },
-                        params: {
+                        extraParams: {
                            filter:'folders'
                         },
                         reader: {
@@ -267,7 +267,7 @@ Ext.define('DirectoryListing.view.Viewport', {
                            read: 'POST',
                            update: 'POST'
                         },
-                        params: {
+                        extraParams: {
                            filter:'files'
                         },
                         reader: {

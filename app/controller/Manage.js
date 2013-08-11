@@ -345,7 +345,7 @@ Ext.define('DirectoryListing.controller.Manage', {
              Msg.show("Success", "Share deleted successfull.");
              me.getGroupGrid().getStore().load({
                 callback: function() {
-                   me.getGroupGrid().getSelectionModel().select(me.getGroupGrid().getStore().getAt(0));
+                   me.getGroupGrid().getSelectionModel().select(me.getGroupGrid().getStore().find('name', groupname));
                 }
              });
           },

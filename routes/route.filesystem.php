@@ -345,7 +345,7 @@ $fs->post('/deletefile', function(Request $request)
 
       $filepath = $request->get("filepath");
       $path = BASE.$filepath;
-      $targetshare = \FsTools::getShareFromPath($path);
+      $targetshare = \FsTools\getShareFromPath($path);
 
       // Check permissions
       if(\JsonConfig::instance()->hasUserShareProperty($targetshare, "delete", true)==false) {
@@ -430,7 +430,7 @@ $fs->post('/renamefile', function(Request $request)
 
       $sourcefile = realpath(BASE.$file);
       $targetfile = dirname($sourcefile).DIRECTORY_SEPARATOR.$newname;
-      $share = \FsTools::getShareFromPath($sourcefile);
+      $share = \FsTools\getShareFromPath($sourcefile);
 
       $rglobal = \JsonConfig::instance()->getSetting("move_rename");
       $rsharesorce = \JsonConfig::instance()->hasUserShareProperty($share, "move_rename", true);
