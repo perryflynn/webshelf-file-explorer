@@ -27,7 +27,7 @@ Ext.define('DirectoryListing.view.ChangePasswordWindow', {
                {
                   xtype:'textfield',
                   inputType: "password",
-                  name:'args[password]',
+                  name:'password',
                   xid:'password1',
                   fieldLabel:'New Password',
                   value:'changemeplease',

@@ -24,7 +24,7 @@ Ext.define('DirectoryListing.view.UploadWindow', {
                params: {
                   controller:'filesystem',
                   action:'upload',
-                  'args[targetpath]':this.targetpath
+                  'targetpath':this.targetpath
                }
             })
          })

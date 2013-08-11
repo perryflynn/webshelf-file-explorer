@@ -51,4 +51,56 @@ $mm->get('/featurelist', function()
 );
 
 
+$mm->post('/savesettings', function(Request $request)
+   {
+      if(!\JsonConfig::instance()->isAdmin()) {
+         return Helper\response(false)->setMessage("Forbidden");
+      }
+
+      $cfg = \JsonConfig::instance()->loadConfiguration();
+      $skel = \JsonConfig::instance()->getSkeleton();
+      $settings = $skel['settings'];
+
+      //--> UI Theme
+      try {
+         $ui = $request->get("uitheme");
+         if(!in_array($ui, array("classic", "gray", "neptune", "access"))) {
+            $ui = "gray";
+         }
+         $settings['uitheme'] = $request->get("uitheme");
+      } catch(Exception $ex) {  }
+
+      try { $settings['windowwidth'] = ((int)$request->get("windowwidth")); } catch(Exception $ex) {  }
+      try { $settings['windowheight'] = ((int)$request->get("windowheight")); } catch(Exception $ex) {  }
+      try { $settings['upload_maxsize'] = ((int)$request->get("upload_maxsize")); } catch(Exception $ex) {  }
+      try { $settings['upload'] = ($request->get("upload")=="true"); } catch(Exception $ex) {  }
+      try { $settings['copy'] = ($request->get("copy")=="true"); } catch(Exception $ex) {  }
+      try { $settings['delete'] = ($request->get("delete")=="true"); } catch(Exception $ex) {  }
+      try { $settings['mkdir'] = ($request->get("mkdir")=="true"); } catch(Exception $ex) {  }
+      try { $settings['move_rename'] = ($request->get("move_rename")=="true"); } catch(Exception $ex) {  }
+      try { $settings['imageviewer'] = ($request->get("imageviewer")=="true"); } catch(Exception $ex) {  }
+      try { $settings['about_content'] = $request->get("about_content"); } catch(Exception $ex) {  }
+
+      $cfg['settings'] = $settings;
+
+      \JsonConfig::instance()->createConfiguration($cfg);
+      return \Helper\response(true);
+   }
+);
+
+
+$mm->get('/getsettings', function()
+   {
+      $settings = \JsonConfig::instance()->getSettings();
+
+      $result = array();
+      foreach($settings as $name => $value) {
+         $result[$name] = $value;
+      }
+
+      return Helper\response(true)->setResult($result);
+   }
+);
+
+
 $app->mount('/management', $mm);

@@ -39,7 +39,8 @@ Ext.define('DirectoryListing.controller.Authentication', {
    globalLogout: function() {
       var me = this;
       Ext.Ajax.request({
-          url: 'ajax.php?controller=authentication&action=logout',
+          url: 'index.php/authentication/logout',
+          method:'POST',
           success: function(response, opts) {
              me.application.fireEvent('checkloginstatus');
              me.application.fireEvent('reloadfiletree');
@@ -75,7 +76,7 @@ Ext.define('DirectoryListing.controller.Authentication', {
    },
 
    onWindowRendered: function(win) {
-      win.child('form').getForm().findField('args[username]').focus(true, true);
+      win.child('form').getForm().findField('username').focus(true, true);
    },
 
    onTextfieldSpecialKey: function(field, e) {
@@ -92,7 +93,8 @@ Ext.define('DirectoryListing.controller.Authentication', {
       if(form.isValid()) {
          form.getForm().submit({
             clientValidation: true,
-            url: 'ajax.php?controller=authentication&action=login',
+            url: 'index.php/authentication/login',
+            method:'POST',
             success: function(form, action) {
                Msg.show("Success", "Login successfull.");
                me.application.fireEvent('checkloginstatus');

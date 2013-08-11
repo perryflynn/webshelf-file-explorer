@@ -96,7 +96,7 @@ Ext.define('DirectoryListing.controller.Manage', {
    },
 
    onWindowClose: function() {
-      var theme = this.getSettingsForm().getForm().findField('args[uitheme]').getSubmitValue();
+      var theme = this.getSettingsForm().getForm().findField('uitheme').getSubmitValue();
       if(theme!=Settings.uitheme) {
          Msg.show("Information", "Please reload the browser to change to the new theme.")
       }
@@ -154,7 +154,7 @@ Ext.define('DirectoryListing.controller.Manage', {
    settingsFormRendered: function(form) {
       form.getForm().loaded = false;
       Ext.Ajax.request({
-          url: 'ajax.php?controller=management&action=getsettings',
+          url: 'index.php/management/getsettings',
           method:'post',
           success: function(response, opts) {
              var json = Ext.decode(response.responseText);
@@ -174,7 +174,8 @@ Ext.define('DirectoryListing.controller.Manage', {
       }
       if(form.isValid()) {
           form.submit({
-             url: 'ajax.php?controller=management&action=savesettings',
+             url: 'index.php/management/savesettings',
+             method:'POST',
              success: function(form, action) {
 
              },
@@ -208,7 +209,7 @@ Ext.define('DirectoryListing.controller.Manage', {
       var shares = this.getShareGrid();
       shares.getStore().load({
          params: {
-            'args[group]': record.data.name
+            'group': record.data.name
          }
       });
    },
@@ -228,10 +229,10 @@ Ext.define('DirectoryListing.controller.Manage', {
       var groupname = record.data.name;
 
       Ext.Ajax.request({
-          url: 'ajax.php?controller=authentication&action=deletegroup',
+          url: 'index.php/authentication/deletegroup',
           method:'post',
           params: {
-             'args[group]': groupname
+             'group': groupname
           },
           success: function(response, opts) {
              Msg.show("Success", "Group deleted successfull.");
@@ -258,10 +259,10 @@ Ext.define('DirectoryListing.controller.Manage', {
       }
 
       Ext.Ajax.request({
-          url: 'ajax.php?controller=authentication&action=addgroup',
+          url: 'index.php/authentication/addgroup',
           method:'post',
           params: {
-             'args[group]': data.name
+             'group': data.name
           },
           success: function(response, opts) {
              Msg.show("Success", "Create group successfull.");
@@ -300,19 +301,19 @@ Ext.define('DirectoryListing.controller.Manage', {
       }
 
       Ext.Ajax.request({
-          url: 'ajax.php?controller=authentication&action=updateshare',
+          url: 'index.php/authentication/updateshare',
           method:'post',
           params: {
-             'args[group]': groupname,
-             'args[path]': data.path,
-             'args[read]': data.read,
-             'args[protected]': data['protected'],
-             'args[upload]': data.upload,
-             'args[mkdir]': data.mkdir,
-             'args[copy]': data.copy,
-             'args[move_rename]': data.move_rename,
-             'args[download]': data.download,
-             'args[delete]': data['delete']
+             'group': groupname,
+             'path': data.path,
+             'read': data.read,
+             'protected': data['protected'],
+             'upload': data.upload,
+             'mkdir': data.mkdir,
+             'copy': data.copy,
+             'move_rename': data.move_rename,
+             'download': data.download,
+             'delete': data['delete']
           },
           success: function(response, opts) {
              Msg.show("Success", "Share edited successfull.");
@@ -334,11 +335,11 @@ Ext.define('DirectoryListing.controller.Manage', {
       var groupname = me.getGroupGrid().getSelectionModel().getSelection()[0].data.name;
 
       Ext.Ajax.request({
-          url: 'ajax.php?controller=authentication&action=deleteshare',
+          url: 'index.php/authentication/deleteshare',
           method:'post',
           params: {
-             'args[group]': groupname,
-             'args[share]': record.data.path
+             'group': groupname,
+             'share': record.data.path
           },
           success: function(response, opts) {
              Msg.show("Success", "Share deleted successfull.");
@@ -366,11 +367,11 @@ Ext.define('DirectoryListing.controller.Manage', {
       }
 
       Ext.Ajax.request({
-          url: 'ajax.php?controller=authentication&action=updateuser',
+          url: 'index.php/authentication/updateuser',
           method:'post',
           params: {
-             'args[username]': data.name,
-             'args[admin]': data.admin
+             'username': data.name,
+             'admin': data.admin
           },
           success: function(response, opts) {
              Msg.show("Success", "User edited successfull.");
@@ -392,10 +393,10 @@ Ext.define('DirectoryListing.controller.Manage', {
       grid.getStore().remove(record);
       var username = record.data.name;
       Ext.Ajax.request({
-          url: 'ajax.php?controller=authentication&action=deleteuser',
+          url: 'index.php/authentication/deleteuser',
           method:'post',
           params: {
-             'args[username]': username
+             'username': username
           },
           success: function(response, opts) {
              Msg.show("Success", "User deleted successfull.");
@@ -424,11 +425,11 @@ Ext.define('DirectoryListing.controller.Manage', {
 
    onChangePasswordClicked: function(name, password) {
       Ext.Ajax.request({
-          url: 'ajax.php?controller=authentication&action=setpassword',
+          url: 'index.php/authentication/setpassword',
           method:'post',
           params: {
-             'args[username]': name,
-             'args[password]': password
+             'username': name,
+             'password': password
           },
           success: function(response, opts) {
              Msg.show("Success", "Password changed.");
@@ -456,7 +457,7 @@ Ext.define('DirectoryListing.controller.Manage', {
       var grid = this.getMemberGrid();
       grid.getStore().load({
          params: {
-            'args[username]': record.data.name
+            'username': record.data.name
          }
       });
    },
@@ -470,12 +471,12 @@ Ext.define('DirectoryListing.controller.Manage', {
       var memberof = data.member;
 
       Ext.Ajax.request({
-          url: 'ajax.php?controller=authentication&action=changegroupmembership',
+          url: 'index.php/authentication/changegroupmembership',
           method:'post',
           params: {
-             'args[username]': username,
-             'args[group]': groupname,
-             'args[memberof]': memberof
+             'username': username,
+             'group': groupname,
+             'memberof': memberof
           },
           success: function(response, opts) {
              var grid = me.getUserGrid();

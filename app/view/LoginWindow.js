@@ -20,12 +20,12 @@ Ext.define('DirectoryListing.view.LoginWindow', {
          items: [
             {
                xtype:'textfield',
-               name:'args[username]',
+               name:'username',
                fieldLabel:'Username'
             },
             {
                xtype:'textfield',
-               name:'args[password]',
+               name:'password',
                inputType: "password",
                fieldLabel:'Password'
             }

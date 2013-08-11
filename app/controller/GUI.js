@@ -432,10 +432,11 @@ Ext.define('DirectoryListing.controller.GUI', {
    createDirectory: function(targetfolder, newfolder) {
       var me = this;
       Ext.Ajax.request({
-         url: 'ajax.php?controller=filesystem&action=createdirectory',
+         url: 'index.php/filesystem/createdirectory',
+         method:'POST',
          params: {
-            'args[newfolder]': newfolder,
-            'args[targetfolder]': targetfolder
+            'newfolder': newfolder,
+            'targetfolder': targetfolder
          },
          success: function(response, opts) {
             me.application.fireEvent('reloadfiletree');
@@ -473,10 +474,11 @@ Ext.define('DirectoryListing.controller.GUI', {
    onRenameFile: function(newname, filename) {
       var me = this;
       Ext.Ajax.request({
-         url: 'ajax.php?controller=filesystem&action=renamefile',
+         url: 'index.php/filesystem/renamefile',
+         method:'POST',
          params: {
-            'args[file]': filename,
-            'args[newname]': newname
+            'file': filename,
+            'newname': newname
          },
          success: function(response, opts) {
             me.application.fireEvent('reloadfiletree');
@@ -490,9 +492,10 @@ Ext.define('DirectoryListing.controller.GUI', {
 
    onRunDeleteFiles: function(record, target, callback) {
       Ext.Ajax.request({
-         url: 'ajax.php?controller=filesystem&action=deletefile',
+         url: 'index.php/filesystem/deletefile',
+         method:'POST',
          params: {
-            'args[filepath]': record.raw.id
+            'filepath': record.raw.id
          },
          success: function(response, opts) {
             var json = Ext.decode(response.responseText);
@@ -745,11 +748,12 @@ Ext.define('DirectoryListing.controller.GUI', {
 
    onRunCopyFiles: function(record, target, callback) {
       Ext.Ajax.request({
-         url: 'ajax.php?controller=filesystem&action=fileoperation',
+         url: 'index.php/filesystem/fileoperation',
+         method:'POST',
          params: {
-            'args[operation]': 'copy',
-            'args[filepath]': record.raw.id,
-            'args[target]': target.raw.id
+            'operation': 'copy',
+            'filepath': record.raw.id,
+            'target': target.raw.id
          },
          success: function(response, opts) {
             var json = Ext.decode(response.responseText);
@@ -771,11 +775,12 @@ Ext.define('DirectoryListing.controller.GUI', {
 
    onRunMoveFiles: function(record, target, callback) {
       Ext.Ajax.request({
-         url: 'ajax.php?controller=filesystem&action=fileoperation',
+         url: 'index.php/filesystem/fileoperation',
+         method:'POST',
          params: {
-            'args[operation]': 'move',
-            'args[filepath]': record.raw.id,
-            'args[target]': target.raw.id
+            'operation': 'move',
+            'filepath': record.raw.id,
+            'target': target.raw.id
          },
          success: function(response, opts) {
             var json = Ext.decode(response.responseText);

@@ -59,7 +59,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                            items: [
                               {
                                  xtype:'numberfield',
-                                 name:'args[windowwidth]',
+                                 name:'windowwidth',
                                  fieldLabel:'Width',
                                  checkChangeBuffer:1000,
                                  minValue:500,
@@ -71,7 +71,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                               },
                               {
                                  xtype:'numberfield',
-                                 name:'args[windowheight]',
+                                 name:'windowheight',
                                  fieldLabel:'Height',
                                  checkChangeBuffer:1000,
                                  minValue:100,
@@ -93,10 +93,10 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                                  columns: 2,
                                  vertical: true,
                                  items: [
-                                     { boxLabel: 'Blue', name: 'args[uitheme]', inputValue: 'classic' },
-                                     { boxLabel: 'Gray', name: 'args[uitheme]', inputValue: 'gray' },
-                                     { boxLabel: 'Neptune', name: 'args[uitheme]', inputValue: 'neptune' },
-                                     { boxLabel: 'Access', name: 'args[uitheme]', inputValue: 'access' }
+                                     { boxLabel: 'Blue', name: 'uitheme', inputValue: 'classic' },
+                                     { boxLabel: 'Gray', name: 'uitheme', inputValue: 'gray' },
+                                     { boxLabel: 'Neptune', name: 'uitheme', inputValue: 'neptune' },
+                                     { boxLabel: 'Access', name: 'uitheme', inputValue: 'access' }
                                  ],
                                  listeners: {
                                     change: function(field) {
@@ -118,7 +118,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                               {
                                  xtype:'checkboxfield',
                                  boxLabel:'Upload',
-                                 name:'args[upload]',
+                                 name:'upload',
                                  inputValue:'true',
                                  listeners: {
                                     change: function(field) {
@@ -128,7 +128,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                               },
                               {
                                  xtype:'numberfield',
-                                 name:'args[upload_maxsize]',
+                                 name:'upload_maxsize',
                                  fieldLabel:'Max Size in MB',
                                  minValue:1,
                                  checkChangeBuffer:1000,
@@ -155,11 +155,11 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                                     }
                                  },
                                  items: [
-                                    { boxLabel:'Delete', name:'args[delete]', inputValue:'true' },
-                                    { boxLabel:'Copy', name:'args[copy]', inputValue:'true' },
-                                    { boxLabel:'Move / Rename', name:'args[move_rename]', inputValue:'true' },
-                                    { boxLabel:'Create Directory', name:'args[mkdir]', inputValue:'true' },
-                                    { boxLabel:'Image Viewer', name:'args[imageviewer]', inputValue:'true' }
+                                    { boxLabel:'Delete', name:'delete', inputValue:'true' },
+                                    { boxLabel:'Copy', name:'copy', inputValue:'true' },
+                                    { boxLabel:'Move / Rename', name:'move_rename', inputValue:'true' },
+                                    { boxLabel:'Create Directory', name:'mkdir', inputValue:'true' },
+                                    { boxLabel:'Image Viewer', name:'imageviewer', inputValue:'true' }
                                  ]
                               }
                            ]
@@ -172,7 +172,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                            items: [
                               {
                                  xtype:'textareafield',
-                                 name:'args[about_content]',
+                                 name:'about_content',
                                  grow:true,
                                  checkChangeBuffer:1000,
                                  enableKeyEvents: true,
