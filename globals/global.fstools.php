@@ -7,7 +7,7 @@ namespace FsTools {
       $rgx = "/^".preg_quote(BASE, "/")."(.*?)".preg_quote(DIRECTORY_SEPARATOR, "/")."/";
       $result = preg_match($rgx, $path, $match);
       if($result!==1) {
-         throw new Exception("Share can't extracted");
+         throw new \Exception("Share can't extracted");
       }
       return $match[1];
    }
@@ -33,26 +33,43 @@ namespace FsTools {
       return $targetfile;
    }
 
-   function is_allowed($filter, $path) {
-      $path = realpath($path);
+   function is_allowed($filter, $path, $throw=false) {
+      $rpath = realpath($path);
+
+      if($rpath==false && $throw==true) {
+         throw new \Webshelf\FileNotFoundException("File not found: ".$path);
+      }
 
       // Filetype allowed?
       $typefilter = false;
-      if($filter=="folders" && is_dir($path)) {
+      if($filter=="folders" && is_dir($rpath)) {
          $typefilter = true;
-      } elseif($filter=="files" && is_file($path)) {
+      } elseif($filter=="files" && is_file($rpath)) {
          $typefilter = true;
-      } elseif($filter=="all" && (is_file($path) || is_dir($path))) {
+      } elseif($filter=="all" && (is_file($rpath) || is_dir($rpath))) {
          $typefilter = true;
       }
 
       // Share allowed?
       $shares = \JsonConfig::instance()->getUserShares();
-      $share = \FsTools\getShareFromPath($path);
+      $share = \FsTools\getShareFromPath($rpath);
 
       $final = ($typefilter && in_array($share, $shares));
+
+      if($final==false && $throw==true) {
+         throw new \Webshelf\AccessDeniedException("Access denied: ".$path);
+      }
+
       return $final;
 
+   }
+
+   function getBaseFolder() {
+      $urlpath = "/";
+      if(preg_match("/^\/(.*?)\/index\.php/", $_SERVER['PHP_SELF'], $foldermatch)===1) {
+         $urlpath = "/".$foldermatch[1]."/";
+      }
+      return $urlpath;
    }
 
 }

@@ -215,6 +215,8 @@ Ext.define('DirectoryListing.controller.GUI', {
                   me.getDirtree().getSelectionModel().select(this);
                   me.expandPath(me, this);
                });
+            } else {
+               me.expandPathIndex=-1;
             }
          }, 50);
 
@@ -271,8 +273,8 @@ Ext.define('DirectoryListing.controller.GUI', {
       var can_mkdir = (item[0].raw.can_mkdir && item[0].raw.can_mkdir==true ? true : false);
       me.getNewfolderMenu().setDisabled(!can_mkdir);
 
-      // when lase node reached
-      if(me.expandPathIndex>=(me.expandPathArray.length)) {
+      // when last node reached
+      if(me.expandPathIndex<1 || me.expandPathIndex>=me.expandPathArray.length) {
 
          // load filelist
          me.getImageviewerbutton().disable();

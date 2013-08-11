@@ -148,16 +148,11 @@ $fs->post('/getfiles', function(Request $request)
 
                      $protocol = ($_SERVER['SERVER_PORT']==443 ? "https://" : "http://");
                      $server = $_SERVER['SERVER_NAME'];
-                     $urlpath = trim(dirname($_SERVER['PHP_SELF']), "/");
-                     if(empty($urlpath)) {
-                        $urlpath = "/";
-                     } else {
-                        $urlpath = "/".$urlpath."/";
-                     }
+                     $urlpath = \FsTools\getBaseFolder();
 
                      // Protection
                      if($ifprotected==true) {
-                        $url = "index.php/filesystem/download&file=".urlencode($filebase.$file);
+                        $url = "index.php/get/".$filebase.$file;
                      } else {
                         $url = basename(BASE)."/".$filebase.$file;
                      }
@@ -381,8 +376,8 @@ $fs->post('/fileoperation', function(Request $request)
       $sourcepath = BASE.$filepath;
       $targetpath = BASE.$target;
 
-      $sourceshare = \FsTools::getShareFromPath($sourcepath);
-      $targetshare = \FsTools::getShareFromPath($targetpath);
+      $sourceshare = \FsTools\getShareFromPath($sourcepath);
+      $targetshare = \FsTools\getShareFromPath($targetpath);
 
       $rglobal = \JsonConfig::instance()->getSetting($permission);
       $rsharesorce = \JsonConfig::instance()->hasUserShareProperty($sourceshare, $permission, true);
@@ -452,6 +447,81 @@ $fs->post('/renamefile', function(Request $request)
          return Helper\response(true);
       } else {
          return Helper\response(false)->setMessage("Rename from '".$sourcefile."' to '".$targetfile."' failed");
+      }
+   }
+);
+
+
+$fs->put('/upload', function(Request $request)
+   {
+      if(\JsonConfig::instance()->getSetting("upload")!==true) {
+         return Helper\response(false)->setMessage("Upload not enabled");
+      }
+
+      // Try to disable time_limit
+      if(function_exists("set_time_limit")) {
+         set_time_limit(0);
+      }
+
+      // Request parameters
+      $length = $request->headers->get("Content-Length");
+      $xfilename = $request->headers->get("X-File-Name");
+
+      $maxsize = \JsonConfig::instance()->getSetting("upload_maxsize")*1024*1024;
+      $targetpath = $request->get("targetpath");
+
+      if(!$request->isXmlHttpRequest()) {
+         return Helper\response(false)->setMessage("Bad Request: XMLHttpRequest required");
+      }
+
+      if($length>$maxsize) {
+         return Helper\response(false)->setMessage("Bad Request: Content length larger than ".($maxsize/1024/1024)." MB");
+      }
+
+      // Check share permissions
+      $path = BASE.$targetpath;
+      $targetshare = FsTools\getShareFromPath($path);
+
+      if(\JsonConfig::instance()->hasUserShareProperty($targetshare, "upload", true)==false) {
+         return Helper\response(false)->setMessage("Operation not allowed");
+      }
+
+      // Make filenames
+      $targetfile = FsTools\getUniqName($path."/".$xfilename);
+
+      // Upload!
+      $stepsize = 1024;
+      $progress_size = 0;
+
+      $putdata = fopen("php://input", "r");
+      $fp = fopen($targetfile, "w");
+      while ($data = fread($putdata, $stepsize)) {
+         fwrite($fp, $data);
+         $progress_size += $stepsize;
+
+         // Check max filesize, detect incorrect content-length
+         if($progress_size>$maxsize) {
+            break;
+         }
+      }
+      fclose($fp);
+      fclose($putdata);
+
+      // Final checks
+      if($progress_size>$maxsize || $progress_size<$length) {
+         if(is_file($targetfile)) {
+            unlink($targetfile);
+         }
+
+         if($progress_size>$maxsize) {
+            return Helper\response(false)->setMessage("File (".($length/1024/1024)." MB) bigger than ".($maxsize/1024/1024)." MB");
+         } else {
+            return Helper\response(false)->setMessage(number_format($length>0 ? ($length/1024/1024) : 0, 2)." MB expected, ".
+                  number_format($progress_size>0 ? ($progress_size/1024/1024) : 0, 2)." MB written. Unknown error.");
+         }
+
+      } else {
+         return Helper\response(true);
       }
    }
 );
