@@ -1,8 +1,7 @@
 
 Tools = {
 
-   filesizeformat: function(value) {
-      var size = value.size;
+   filesizeformat: function(size) {
       var unit = "Byte";
 
       if(size>1024) {

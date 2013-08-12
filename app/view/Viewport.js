@@ -252,12 +252,28 @@ Ext.define('DirectoryListing.view.Viewport', {
                   columns: [
                      { header:'', dataIndex:'metadata', width:32, renderer:this.fileIconRenderer },
                      { header:'Filename', dataIndex:'text', flex:4 },
-                     { header:'Last modified', dataIndex:'metadata', flex:1, renderer: function(value) { return value.mtime; } },
-                     { header:'Size', dataIndex:'metadata', flex:1, renderer:Tools.filesizeformat }
+                     { header:'Last modified', dataIndex:'mtime', flex:1, xtype: 'datecolumn', format:'Y-m-d H:i' },
+                     { header:'Size', dataIndex:'filesize', flex:1, renderer:Tools.filesizeformat }
                   ],
 
                   store: Ext.create('Ext.data.Store', {
-                     fields:['text', 'children', 'metadata', 'qtip'],
+                     fields:[
+                        'text', 'children', 'metadata', 'qtip',
+                        {
+                           name:'mtime',
+                           type:'date',
+                           convert: function(v, record) {
+                              var d = Ext.Date.parse(record.raw.metadata.mtime, 'Y-m-d H:i:s');
+                              return d;
+                           }
+                        },
+                        {
+                           name:'filesize',
+                           convert: function(v, record) {
+                              return parseInt(record.raw.metadata.size);
+                           }
+                        }
+                     ],
                      proxy: {
                         type: 'ajax',
                         url: 'index.php/filesystem/getfiles',

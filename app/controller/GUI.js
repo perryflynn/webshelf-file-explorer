@@ -295,7 +295,7 @@ Ext.define('DirectoryListing.controller.GUI', {
                   sumbytes += record.raw.metadata.size;
                });
 
-               me.getFilebar().setText(sumfiles+' file'+(sumfiles==1 ? "" : "s")+", "+Tools.filesizeformat({size:sumbytes}));
+               me.getFilebar().setText(sumfiles+' file'+(sumfiles==1 ? "" : "s")+", "+Tools.filesizeformat(sumbytes));
 
             }
          });

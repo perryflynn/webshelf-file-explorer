@@ -202,9 +202,9 @@ $fs->post('/getfiles', function(Request $request)
                                "files" => $files
                             ),
                             "metadata" => array(
-                                "atime" => date("Y-m-d H:i", fileatime($absfile)),
-                                "ctime" => date("Y-m-d H:i", filectime($absfile)),
-                                "mtime" => date("Y-m-d H:i", filemtime($absfile)),
+                                "atime" => date("Y-m-d H:i:s", fileatime($absfile)),
+                                "ctime" => date("Y-m-d H:i:s", filectime($absfile)),
+                                "mtime" => date("Y-m-d H:i:s", filemtime($absfile)),
                                 "size" => filesize($absfile),
                                 "extension" => (is_array(explode(".", $file)) && count(explode(".", $file))>0 ? end(explode(".", $file)) : ""),
                                 "url" => $url,
