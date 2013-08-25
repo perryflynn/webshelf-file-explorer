@@ -338,8 +338,13 @@ Ext.define('DirectoryListing.view.Viewport', {
 
    },
 
-   fileIconRenderer: function(value) {
-      var ext = value.extension;
+   fileIconRenderer: function(value, meta, record) {
+      var ext = value.extension.toLowerCase();
+      /*console.log(ext);
+      if(value.isfile==true && (ext=="jpg" || ext=="png" || ext=="gif" || ext=="jpeg")) {
+         meta.tdAttr = 'data-qtip="<img src=\'' + value.thumbnailurl + '\' alt=\'t\'>"';
+      }*/
+
       var filename = "page_white";
       if(ext!=null && ext!="") {
 
@@ -434,7 +439,7 @@ Ext.define('DirectoryListing.view.Viewport', {
 
       }
 
-      return '<img src="fileicons/'+filename+'.png" alt="'+ext+'" title="'+ext+'">';
+      return '<img src="fileicons/'+filename+'.png" alt="'+ext+'">';
 
    }
 

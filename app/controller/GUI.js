@@ -50,6 +50,7 @@ Ext.define('DirectoryListing.controller.GUI', {
                drop: this.onDirTreeDrop
             },
             'window[xid=filewindow] gridpanel[xid=filelist]': {
+               afterrender: this.onFileListRendered,
                itemclick: this.onFilelistSelected,
                itemdblclick: this.onOpenFile,
                itemcontextmenu: this.onTreeItemContextMenu
@@ -173,6 +174,31 @@ Ext.define('DirectoryListing.controller.GUI', {
       if(typeof HashManager.get('path')!="string") {
          HashManager.set('path', '/');
       }
+   },
+
+   onFileListRendered: function(panel) {
+      var view = panel.getView();
+      var tip = Ext.create('Ext.tip.ToolTip', {
+         target: view.el,
+         delegate: view.itemSelector,
+         trackMouse: true,
+         renderTo: Ext.getBody(),
+         listeners: {
+            beforeshow: function updateTipBody(tip) {
+               var m = view.getRecord(tip.triggerElement).get('metadata');
+               if(m.isimage==false) {
+                  return false;
+               }
+               var id = "thumb-"+view.getRecord(tip.triggerElement).id;
+               tip.update('<img id="'+id+'" src="' + m.thumbnailurl + '" alt="thumb">');
+               var imgload = function() {
+                  tip.updateLayout();
+                  Ext.get(id).un('load', imgload)
+               };
+               Ext.get(id).on('load', imgload);
+            }
+         }
+      });
    },
 
    updateFeatures: function(features)

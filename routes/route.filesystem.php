@@ -158,6 +158,7 @@ $fs->post('/getfiles', function(Request $request)
                      }
 
                      $fqdnurl = $protocol.$server.$urlpath.$url;
+                     $thumburl = $protocol.$server.$urlpath."index.php/thumbnail/".$filebase.$file;
 
                      // Upload
                      $globalupload = \JsonConfig::instance()->getSetting("upload");
@@ -192,6 +193,12 @@ $fs->post('/getfiles', function(Request $request)
                            $id = DIRECTORY_SEPARATOR.trim($filebase.$file, DIRECTORY_SEPARATOR);
                         }
 
+                        $res = @getimagesize($absfile);
+                        $isimage = true;
+                        if(!is_array($res)) {
+                           $isimage = false;
+                        }
+
                         $result[] = array(
                             "id" => $id,
                             "text" => $file,
@@ -206,11 +213,15 @@ $fs->post('/getfiles', function(Request $request)
                                 "ctime" => date("Y-m-d H:i:s", filectime($absfile)),
                                 "mtime" => date("Y-m-d H:i:s", filemtime($absfile)),
                                 "size" => filesize($absfile),
-                                "extension" => (is_array(explode(".", $file)) && count(explode(".", $file))>0 ? end(explode(".", $file)) : ""),
+                                "isfile" => is_file($absfile),
+                                "isdir" => is_dir($absfile),
+                                "isimage" => $isimage,
+                                "extension" => (strpos($file, ".")===false ? null : (is_array(explode(".", $file)) && count(explode(".", $file))>0 ? end(explode(".", $file)) : "")),
                                 "url" => $url,
                                 "fqdnurl" => $fqdnurl,
+                                "thumbnailurl" => $thumburl,
                             ),
-                            "qtip" => $folders." Folders, ".$files." Files",
+                            "qtip" => $folders." Folders, ".$files." File".($files==1 ? "" : "s"),
 
                             "parent" => $parent,
                             "can_upload" => ($globalupload && $shareupload),
