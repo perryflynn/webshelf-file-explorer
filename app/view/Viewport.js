@@ -252,7 +252,9 @@ Ext.define('DirectoryListing.view.Viewport', {
                   columns: [
                      { header:'', dataIndex:'metadata', width:32, renderer:this.fileIconRenderer },
                      { header:'Filename', dataIndex:'text', flex:4 },
-                     { header:'Last modified', dataIndex:'mtime', flex:1, xtype: 'datecolumn', format:'Y-m-d H:i' },
+                     { header:'Created', dataIndex:'ctime', width:100, xtype: 'datecolumn', format:'Y-m-d H:i' },
+                     { header:'Last Accessed', hidden:true, dataIndex:'atime', width:100, xtype: 'datecolumn', format:'Y-m-d H:i' },
+                     { header:'Last modified', hidden:true, dataIndex:'mtime', width:100, xtype: 'datecolumn', format:'Y-m-d H:i' },
                      { header:'Size', dataIndex:'filesize', flex:1, renderer:Tools.filesizeformat }
                   ],
 
@@ -264,6 +266,22 @@ Ext.define('DirectoryListing.view.Viewport', {
                            type:'date',
                            convert: function(v, record) {
                               var d = Ext.Date.parse(record.raw.metadata.mtime, 'Y-m-d H:i:s');
+                              return d;
+                           }
+                        },
+                        {
+                           name:'ctime',
+                           type:'date',
+                           convert: function(v, record) {
+                              var d = Ext.Date.parse(record.raw.metadata.ctime, 'Y-m-d H:i:s');
+                              return d;
+                           }
+                        },
+                        {
+                           name:'atime',
+                           type:'date',
+                           convert: function(v, record) {
+                              var d = Ext.Date.parse(record.raw.metadata.atime, 'Y-m-d H:i:s');
                               return d;
                            }
                         },

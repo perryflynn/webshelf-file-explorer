@@ -6,6 +6,22 @@ use Symfony\Component\HttpFoundation\Request;
 $auth = $app['controllers_factory'];
 
 
+$auth->before(function ()
+   {
+      $cfg = \JsonConfig::instance()->loadConfiguration();
+
+      foreach($cfg['users'] as $username => &$user) {
+         if(empty($user['password'])) {
+            $user['password'] = sha1($username);
+         }
+      }
+      unset($user);
+
+      \JsonConfig::instance()->createConfiguration($cfg);
+   }
+);
+
+
 $auth->get('/userstatus', function()
    {
       $response = null;
