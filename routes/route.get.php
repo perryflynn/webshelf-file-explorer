@@ -9,7 +9,7 @@ $app->get('/get/{file}', function($file) use($app)
          if(FsTools\is_allowed("files", BASE.$file, true))
          {
             $download = false;
-            $ext = end(explode(".", $file));
+            $ext = strtolower(end(explode(".", $file)));
             $mime = null;
             switch($ext) {
                case "mp3":
