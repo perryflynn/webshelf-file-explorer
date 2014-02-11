@@ -117,11 +117,16 @@ class JsonConfig extends \Util\Singleton {
          $this->createConfiguration();
       }
 
-      include($this->configname);
-      if(!isset($config)) {
+      $cfgc = file_get_contents($this->configname);
+      $rgx = '/\$config = \<\<\<HEREDOC\n(.*?)\nHEREDOC;/s';
+      $result = preg_match($rgx, $cfgc, $match);
+      
+      if($result!==1)
+      {
          throw new \Exception("Configuration not found");
       }
-
+      
+      $config = $match[1];
       $config = @json_decode(trim($config), true);
       if(!is_array($config)) {
          throw new \Exception("Could not decode configuration");
