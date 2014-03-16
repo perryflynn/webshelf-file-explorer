@@ -26,7 +26,7 @@ Ext.define('DirectoryListing.view.Viewport', {
             closable:false,
             autoShow:true,
             layout:'border',
-            modal:true,
+            //modal:true,
 
             tbar: [
                {

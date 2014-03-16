@@ -3,7 +3,6 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
    extend:'Ext.panel.Panel',
    alias:'widget.imageviewer',
 
-   autoScroll:true,
    layout:'card',
 
    resizeMode:'fit',
@@ -126,12 +125,19 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
             ]
          },
          {
-            xtype:'dataview',
-            style:'padding:5px;',
-            store: thumbstore,
-            tpl: imageTpl,
-            itemSelector: 'div.thumb-wrap',
-            emptyText: 'No images available'
+            xtype:'panel',
+            xid:'thumbnails',
+            bodyPadding:5,
+            autoScroll:true,
+            items: [
+               {
+                  xtype:'dataview',
+                  store: thumbstore,
+                  tpl: imageTpl,
+                  itemSelector: 'div.thumb-wrap',
+                  emptyText: 'No images available'
+               }
+            ]
          }
       ];
 
@@ -140,8 +146,9 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
 
 
       me.child('[xid=image]').on('afterrender', this.onImagePanelRendered, this);
-      me.child('dataview').on('itemclick', this.onThumbnailClicked, this);
-      me.child('dataview').on('show', this.onThumbnailListShow, this);
+      me.child('[xid=thumbnails]').on('afterrender', this.onThumbnailPanelRendered, this);
+      me.child('[xid=thumbnails] dataview').on('itemclick', this.onThumbnailClicked, this);
+      me.child('[xid=thumbnails]').on('show', this.onThumbnailListShow, this);
       me.on('resize', this.onPanelResized, this);
       me.on('firstimage', this.onFirstImage, this);
       me.on('lastimage', this.onLastImage, this);
@@ -152,22 +159,27 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
    setImages: function(img) {
       this.images = img;
 
-      var store = this.child('dataview').getStore();
+      var dv = this.child('[xid=thumbnails] dataview');
+      var store = dv.getStore();
       store.removeAll();
       store.add(this.images);
-      this.child('dataview').refresh();
+      dv.refresh();
    },
 
-   setCurrentImage: function(img) {
-      var index = this.images.indexOf(img);
-      if(index>-1) {
-         this.imageindex = (index+1);
-      }
+   setCurrentImage: function(selimg) {
+      var me = this;
+      Ext.each(this.images, function(img, idx) {
+         if(img.image==selimg)
+         {
+            me.imageindex = idx+1;
+         }
+      });
    },
 
    // Events -----------------------------------------------------------------------------------------
 
-   onImagePanelRendered: function() {
+   onImagePanelRendered: function()
+   {
       var me = this;
       var bdy = this.child('[xid=image]').body;
       bdy.on('mousedown', this.onImagePanelMouseDown, this);
@@ -184,6 +196,13 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
 
       this.fireEvent('resize');
       //this.getLayout().setActiveItem(1);
+      //this.getLayout().setActiveItem(0);
+   },
+
+   onThumbnailPanelRendered: function()
+   {
+      var dv = this.child('[xid=thumbnails] dataview');
+      dv.refresh();
    },
 
    onPanelResized: function() {
@@ -300,7 +319,6 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
       var me = this;
       img.el.on({
          load: function (evt, ele, opts) {
-            console.log('load image');
             ele.style.width="";
             ele.style.height="";
             me.orgWidth = Ext.get(ele).getWidth();
@@ -318,7 +336,7 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
       this.prev();
    },
 
-   onThumbnailClicked: function(view, r, item, index, e)
+   onThumbnailClicked: function(view, r)
    {
       this.getLayout().setActiveItem(0);
       this.imageindex = view.getStore().indexOf(r);
@@ -327,9 +345,14 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
 
    onThumbnailListShow: function(view)
    {
-      var r = view.getStore().getAt(this.imageindex);
-      var node = view.getNode(r);
-      node.scrollIntoView(view);
+      var dv = view.child('dataview');
+      var store = dv.getStore();
+      var r = store.getAt(this.imageindex);
+      var node = dv.getNode(r);
+      if(r && node)
+      {
+         node.scrollIntoView(view);
+      }
    },
 
 

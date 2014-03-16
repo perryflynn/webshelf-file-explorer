@@ -1,4 +1,8 @@
 
+body {
+   background-color:#E5E5E5;
+}
+
 .mono {
    font-family:Monospace!important;
 }
