@@ -4,6 +4,7 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
    alias:'widget.imageviewer',
 
    autoScroll:true,
+   layout:'card',
 
    resizeMode:'fit',
    zoomLevel:100,
@@ -24,8 +25,15 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
       Ext.tip.QuickTipManager.init();
       var me = this;
 
+      /* Toolbar */
+
       this.bbar = [
          { xtype:'tbfill' },
+         {
+            tooltip:'Thumbnails',
+            iconCls:'iconcls-images',
+            xid:'thumbnails'
+         },
          {
             tooltip:'Previous',
             iconCls:'iconcls-arrow_left',
@@ -85,10 +93,45 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
          { xtype:'tbfill' }
       ];
 
+
+      /* Stores */
+      var thumbstore = Ext.create('Ext.data.Store', {
+         fields: [
+            { name:'image', type:'string' },
+            { name:'thumbnail', type:'string' }
+         ],
+         data: []
+      });
+
+      /* Image & DataView */
+
+      var imageTpl = new Ext.XTemplate(
+         '<tpl for=".">',
+            '<div style="margin:0px 5px 5px 0px; float:left; cursor:pointer;" class="thumb-wrap">',
+               '<img src="{thumbnail}">',
+            '</div>',
+         '</tpl>'
+      );
+
       this.items = [
          {
-            xtype:'image',
-            src:''
+            xtype:'panel',
+            xid:'image',
+            autoScroll:true,
+            items: [
+               {
+                  xtype:'image',
+                  src:''
+               }
+            ]
+         },
+         {
+            xtype:'dataview',
+            style:'padding:5px;',
+            store: thumbstore,
+            tpl: imageTpl,
+            itemSelector: 'div.thumb-wrap',
+            emptyText: 'No images available'
          }
       ];
 
@@ -96,16 +139,23 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
       me.callParent();
 
 
-      me.on('afterrender', this.onImagePanelRendered, this);
+      me.child('[xid=image]').on('afterrender', this.onImagePanelRendered, this);
+      me.child('dataview').on('itemclick', this.onThumbnailClicked, this);
+      me.child('dataview').on('show', this.onThumbnailListShow, this);
       me.on('resize', this.onPanelResized, this);
       me.on('firstimage', this.onFirstImage, this);
       me.on('lastimage', this.onLastImage, this);
       me.on('imagechange', this.onImageChange, this);
-      me.child('image').on('afterrender', this.onImageRendered, this);
+      me.child('[xid=image] image').on('afterrender', this.onImageRendered, this);
    },
 
    setImages: function(img) {
       this.images = img;
+
+      var store = this.child('dataview').getStore();
+      store.removeAll();
+      store.add(this.images);
+      this.child('dataview').refresh();
    },
 
    setCurrentImage: function(img) {
@@ -119,7 +169,7 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
 
    onImagePanelRendered: function() {
       var me = this;
-      var bdy = this.body;
+      var bdy = this.child('[xid=image]').body;
       bdy.on('mousedown', this.onImagePanelMouseDown, this);
       bdy.on('mouseup', this.onImagePanelMouseUp, this);
 
@@ -133,25 +183,29 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
       tb.child('slider[xid=zoomlevel]').getEl().on('click', this.onZoomlevelSelected, this);
 
       this.fireEvent('resize');
+      //this.getLayout().setActiveItem(1);
    },
 
    onPanelResized: function() {
-      this.panWidth = Ext.get(this.body.dom).getWidth()-20;
-      this.panHeight = Ext.get(this.body.dom).getHeight()-20;
+      var imgbdy = this.child('[xid=image]').body;
+      this.panWidth = Ext.get(imgbdy.dom).getWidth()-20;
+      this.panHeight = Ext.get(imgbdy.dom).getHeight()-20;
       this.resize();
    },
 
    onImagePanelMouseDown: function(e) {
+      var imgbdy = this.child('[xid=image]').body;
       if(e.button==0) {
          this.mousedowntime = new Date().getTime();
          this.sourceX = this.targetX = e.browserEvent.clientX;
          this.sourceY = this.targetY = e.browserEvent.clientY;
-         this.body.on('mousemove', this.onBodyMouseMove, this);
+         imgbdy.on('mousemove', this.onBodyMouseMove, this);
          e.stopEvent();
       }
    },
 
    onImagePanelMouseUp: function(e) {
+      var imgbdy = this.child('[xid=image]').body;
       if(e.button==0) {
 
          var klicktime = ((new Date().getTime())-this.mousedowntime);
@@ -163,14 +217,15 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
             this.next();
          }
 
-         this.body.un("mousemove", this.onBodyMouseMove, this);
+         imgbdy.un("mousemove", this.onBodyMouseMove, this);
 
       }
       this.mousedowntime = 0;
    },
 
    onBodyMouseMove: function(e) {
-      this.scrollBy((this.targetX-e.browserEvent.clientX), (this.targetY-e.browserEvent.clientY));
+      var imgpnl = this.child('[xid=image]');
+      imgpnl.scrollBy((this.targetX-e.browserEvent.clientX), (this.targetY-e.browserEvent.clientY));
       this.targetX = e.browserEvent.clientX;
       this.targetY = e.browserEvent.clientY;
    },
@@ -219,6 +274,14 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
       if(btn.xid=="zoom-out") {
          this.zoomOut(10);
       }
+      if(btn.xid=="thumbnails") {
+         if(this.getLayout().getPrev())
+         {
+            this.getLayout().prev();
+         } else {
+            this.getLayout().next();
+         }
+      }
    },
 
    onZoomlevelChanged: function(combo, newval) {
@@ -237,6 +300,7 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
       var me = this;
       img.el.on({
          load: function (evt, ele, opts) {
+            console.log('load image');
             ele.style.width="";
             ele.style.height="";
             me.orgWidth = Ext.get(ele).getWidth();
@@ -252,6 +316,20 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
          }
       });
       this.prev();
+   },
+
+   onThumbnailClicked: function(view, r, item, index, e)
+   {
+      this.getLayout().setActiveItem(0);
+      this.imageindex = view.getStore().indexOf(r);
+      this.setImage(r.data);
+   },
+
+   onThumbnailListShow: function(view)
+   {
+      var r = view.getStore().getAt(this.imageindex);
+      var node = view.getNode(r);
+      node.scrollIntoView(view);
    },
 
 
@@ -319,8 +397,8 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
    imageZoom: function(level) {
       var iwidth = this.orgWidth;
       var iheight = this.orgHeight;
-      this.child('image').getEl().dom.style.width = parseInt((iwidth/100*level))+"px";
-      this.child('image').getEl().dom.style.height = parseInt((iheight/100*level))+"px";
+      this.child('[xid=image] image').getEl().dom.style.width = parseInt((iwidth/100*level))+"px";
+      this.child('[xid=image] image').getEl().dom.style.height = parseInt((iheight/100*level))+"px";
    },
 
    zoomIn: function(interval) {
@@ -361,9 +439,9 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
    },
 
    setImage: function(img) {
-      var ip = this.child('image');
+      var ip = this.child('[xid=image] image');
       this.setLoading('Loading...');
-      ip.setSrc(img);
+      ip.setSrc(img.image);
    },
 
    next: function() {

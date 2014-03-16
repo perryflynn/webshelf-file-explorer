@@ -399,16 +399,19 @@ Ext.define('DirectoryListing.controller.GUI', {
       {
          Ext.require('DirectoryListing.view.ImageviewerWindow', function() {
             var store = me.getFilelist().getStore();
-            var imagerecords = store.query('text', /\.(jpg|gif|png)$/i).getRange();
+            var imagerecords = store.query('text', /\.(jpg|jpeg|gif|png)$/i).getRange();
 
             var images = [];
             Ext.each(imagerecords, function(record) {
-               images.push(record.raw.metadata.fqdnurl);
+               images.push({
+                  image: record.raw.metadata.fqdnurl,
+                  thumbnail: record.raw.metadata.thumbnailurl
+               });
             });
 
             var selected = null;
             var sele = me.getFilelist().getSelectionModel().getSelection();
-            if(sele[0] && /\.(jpg|gif|png)$/ig.test(sele[0].raw.text)) {
+            if(sele[0] && /\.(jpg|jpeg|gif|png)$/ig.test(sele[0].raw.text)) {
                selected = sele[0].raw.metadata.fqdnurl;
             }
 

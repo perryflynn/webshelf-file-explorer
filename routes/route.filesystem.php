@@ -193,10 +193,14 @@ $fs->post('/getfiles', function(Request $request)
                            $id = DIRECTORY_SEPARATOR.trim($filebase.$file, DIRECTORY_SEPARATOR);
                         }
 
-                        $res = @getimagesize($absfile);
-                        $isimage = true;
-                        if(!is_array($res)) {
-                           $isimage = false;
+
+                        $isimage = false;
+                        if(preg_match('/\.(png|jpg|jpeg|gif)$/i', $absfile)===1)
+                        {
+                           $res = @getimagesize($absfile);
+                           if(is_array($res)) {
+                              $isimage = true;
+                           }
                         }
 
                         $result[] = array(
@@ -219,7 +223,7 @@ $fs->post('/getfiles', function(Request $request)
                                 "extension" => (strpos($file, ".")===false ? null : (is_array(explode(".", $file)) && count(explode(".", $file))>0 ? end(explode(".", $file)) : "")),
                                 "url" => $url,
                                 "fqdnurl" => $fqdnurl,
-                                "thumbnailurl" => $thumburl,
+                                "thumbnailurl" => ($isimage ? $thumburl : null),
                             ),
                             "qtip" => $folders." Folders, ".$files." File".($files==1 ? "" : "s"),
 
