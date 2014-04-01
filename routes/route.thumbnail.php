@@ -21,8 +21,10 @@ $app->get('/thumbnail/{file}', function($file) use($app)
          {
             $checksum = sha1_file(BASE.$file);
             if(!is_file($thumbdir.$checksum)) {
-               $r = new \Util\ImageResize();
-               $r->resize(BASE.$file, $thumbdir.$checksum, 300, 300);
+               //$r = new \Util\ImageResize();
+               //$r->resize(BASE.$file, $thumbdir.$checksum, 300, 300);
+               $r = new \Util\NewImageResize(300, 150);
+               $r->load(BASE.$file)->resize()->chop()->display(true);
             }
 
             if(is_file($thumbdir.$checksum)) {

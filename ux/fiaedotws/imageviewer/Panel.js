@@ -3,7 +3,11 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
    extend:'Ext.panel.Panel',
    alias:'widget.imageviewer',
 
-   layout:'card',
+   //layout:'card',
+   layout: {
+      type:'card',
+      deferredRender:true
+   },
 
    resizeMode:'fit',
    zoomLevel:100,
@@ -106,7 +110,7 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
 
       var imageTpl = new Ext.XTemplate(
          '<tpl for=".">',
-            '<div style="margin:0px 5px 5px 0px; float:left; cursor:pointer;" class="thumb-wrap">',
+            '<div style="margin:0px 5px 5px 0px; float:left; cursor:pointer; border:1px solid black; padding:3px;" class="thumb-wrap">',
                '<img src="{thumbnail}">',
             '</div>',
          '</tpl>'
@@ -143,7 +147,6 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
 
 
       me.callParent();
-
 
       me.child('[xid=image]').on('afterrender', this.onImagePanelRendered, this);
       me.child('[xid=thumbnails]').on('afterrender', this.onThumbnailPanelRendered, this);
@@ -195,7 +198,7 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
       tb.child('slider[xid=zoomlevel]').getEl().on('click', this.onZoomlevelSelected, this);
 
       this.fireEvent('resize');
-      //this.getLayout().setActiveItem(1);
+      this.getLayout().setActiveItem(1);
       //this.getLayout().setActiveItem(0);
    },
 
@@ -300,6 +303,7 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
          } else {
             this.getLayout().next();
          }
+         this.fireEvent('resize');
       }
    },
 
@@ -341,6 +345,7 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
       this.getLayout().setActiveItem(0);
       this.imageindex = view.getStore().indexOf(r);
       this.setImage(r.data);
+      this.fireEvent('resize');
    },
 
    onThumbnailListShow: function(view)
