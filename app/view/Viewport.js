@@ -250,7 +250,7 @@ Ext.define('DirectoryListing.view.Viewport', {
                   },
 
                   columns: [
-                     { header:'', dataIndex:'metadata', width:32, renderer:this.fileIconRenderer },
+                     { header:'', dataIndex:'metadata', width:32, renderer:this.fileIconRenderer, align:'center' },
                      { header:'Filename', dataIndex:'text', flex:4 },
                      { header:'Created', dataIndex:'ctime', width:100, xtype: 'datecolumn', format:'Y-m-d H:i' },
                      { header:'Last Accessed', hidden:true, dataIndex:'atime', width:100, xtype: 'datecolumn', format:'Y-m-d H:i' },

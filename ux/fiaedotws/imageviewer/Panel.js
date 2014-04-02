@@ -342,8 +342,20 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
 
    onThumbnailClicked: function(view, r)
    {
+      this.getDockedItems('toolbar[dock=bottom]')[0].show();
       this.getLayout().setActiveItem(0);
       this.imageindex = view.getStore().indexOf(r);
+
+      this.fireEvent('imagechange');
+      if(this.imageindex==0)
+      {
+         this.fireEvent('firstimage');
+      }
+      else if(this.imageindex+1>=view.getStore().count())
+      {
+         this.fireEvent('lastimage');
+      }
+
       this.setImage(r.data);
       this.fireEvent('resize');
    },
@@ -358,6 +370,7 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
       {
          node.scrollIntoView(view);
       }
+      this.getDockedItems('toolbar[dock=bottom]')[0].hide();
    },
 
 
