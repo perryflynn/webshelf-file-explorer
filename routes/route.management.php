@@ -103,4 +103,39 @@ $mm->get('/getsettings', function()
 );
 
 
+$mm->get('/thumbnailstatus', function() use($app)
+{
+   $thumbfolder = ROOT."thumbnails".DIRECTORY_SEPARATOR;
+   $files = glob($thumbfolder."*");
+
+   $size = 0;
+   $count = 0;
+   foreach($files as $file)
+   {
+      $size += filesize($file);
+      $count++;
+   }
+
+   return Helper\response(true)->setResult(array("size"=>$size, "count"=>$count));
+});
+
+
+$mm->get('/deletethumbnailcache', function() use($app)
+{
+   if(!\JsonConfig::instance()->isAdmin()) {
+      return Helper\response(false)->setMessage("Forbidden");
+   }
+
+   $thumbfolder = ROOT."thumbnails".DIRECTORY_SEPARATOR;
+   $files = glob($thumbfolder."*");
+
+   foreach($files as $file)
+   {
+      @unlink($file);
+   }
+
+   return Helper\response(true);
+});
+
+
 $app->mount('/management', $mm);

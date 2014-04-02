@@ -745,9 +745,52 @@ Ext.define('DirectoryListing.view.ManageWindow', {
 
                ]
 
-            }
+            },
 
             /*** User Tab END ***/
+
+/*   Maintenance   ***********************************************************************************************/
+
+            {
+               title:'Maintenance',
+               icon:'fileicons/bin.png',
+               xid:'maintenance',
+               bodyPadding:5,
+
+               defaults: {
+                  padding:5
+               },
+
+               layout: {
+                  xtype:'vbox',
+                  align:'stretch'
+               },
+
+               items: [
+                  {
+                     xtype:'fieldset',
+                     xid:'thumbnailcache',
+                     title:'Thumbnail Cache',
+                     items: [
+                        {
+                           xtype:'panel',
+                           xid:'thumbnailstatus',
+                           border:0,
+                           defaults: {
+                              border:0
+                           }
+                        },
+                        {
+                           xtype:'button',
+                           margin:'5 0 0 0',
+                           text:'Clear thumbnail cache'
+                        }
+                     ]
+                  }
+               ]
+
+            }
+
 
          ]
       }

@@ -110,7 +110,7 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
 
       var imageTpl = new Ext.XTemplate(
          '<tpl for=".">',
-            '<div style="margin:0px 5px 5px 0px; float:left; cursor:pointer; border:1px solid black; padding:3px;" class="thumb-wrap">',
+            '<div style="margin:0px 5px 5px 0px; float:left; cursor:pointer; border:1px solid #a0a0a0; padding:3px;" class="thumb-wrap">',
                '<img src="{thumbnail}">',
             '</div>',
          '</tpl>'

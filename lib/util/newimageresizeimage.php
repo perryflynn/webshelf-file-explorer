@@ -160,8 +160,22 @@ class NewImageResizeImage {
       $xy = $this->getCurrentSize();
       list($newx, $newy) = $this->getResizeSize($xy->getX(), $xy->getY(), $this->resizer->getTargetWidth(), $this->resizer->getTargetHeight());
 
-      $destination = $this->createNewDestination($newx, $newy);
-      imagecopyresized($destination, $this->image_resource, 0, 0, 0, 0, $newx, $newy, $xy->getX(), $xy->getY());
+      $destination = null;
+      if($newx<$xy->getX() && $newy<$xy->getY())
+      {
+         $destination = $this->createNewDestination($newx, $newy);
+         imagecopyresized($destination, $this->image_resource, 0, 0, 0, 0, $newx, $newy, $xy->getX(), $xy->getY());
+      }
+      else
+      {
+         $newx = $this->resizer->getTargetWidth();
+         $newy = $this->resizer->getTargetHeight();
+         $dst_x = intval((($newx/2)-($xy->getX()/2)));
+         $dst_y = intval((($newy/2)-($xy->getY()/2)));
+
+         $destination = $this->createNewDestination($newx, $newy);
+         imagecopy($destination, $this->image_resource, $dst_x, $dst_y, 0, 0, $xy->getX(), $xy->getY());
+      }
 
       $this->image_resource = $destination;
 
@@ -226,5 +240,13 @@ class NewImageResizeImage {
          exit;
       }
    }
+
+
+   public function save($file)
+   {
+      $method = $this->image_save_function;
+      $method($this->image_resource, $file);
+   }
+
 
 }

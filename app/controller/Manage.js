@@ -12,7 +12,8 @@ Ext.define('DirectoryListing.controller.Manage', {
         { ref: 'groupGrid', selector: 'window[xid=managewindow] gridpanel[xid=grouplist]' },
         { ref: 'shareGrid', selector: 'window[xid=managewindow] gridpanel[xid=sharelist]' },
         { ref: 'userGrid', selector: 'window[xid=managewindow] gridpanel[xid=userlist]' },
-        { ref: 'memberGrid', selector: 'window[xid=managewindow] gridpanel[xid=groupmemberlist]' }
+        { ref: 'memberGrid', selector: 'window[xid=managewindow] gridpanel[xid=groupmemberlist]' },
+        { ref: 'maintenancePanel', selector:'window[xid=managewindow] [xid=maintenance]' }
     ],
 
     cachedLoginStatus: null,
@@ -63,6 +64,9 @@ Ext.define('DirectoryListing.controller.Manage', {
            },
            'window[xid=managewindow] gridpanel[xid=groupmemberlist]': {
               edit: this.onGroupMemberShipChanged
+           },
+           'window[xid=managewindow] [xid=maintenance] [xid=thumbnailcache] button': {
+              click: this.onThumbnailCacheClear
            },
            scope:this
         });
@@ -148,6 +152,11 @@ Ext.define('DirectoryListing.controller.Manage', {
                }
             }
          });
+      }
+
+      else if(newtab.xid=="maintenance")
+      {
+         this.loadThumbnailStatus();
       }
 
    },
@@ -502,6 +511,41 @@ Ext.define('DirectoryListing.controller.Manage', {
           }
       });
 
+   },
+
+   loadThumbnailStatus: function()
+   {
+      var me = this;
+      me.getMaintenancePanel().setLoading('Load data...');
+      Ext.Ajax.request({
+          url: 'index.php/management/thumbnailstatus',
+          success: function(response, opts) {
+             var json = Ext.decode(response.responseText);
+             var status = me.getMaintenancePanel().query('[xid=thumbnailstatus]')[0];
+             status.removeAll();
+             status.add([{ xtype:'panel', html: 'Number of cached Thumbnails: '+json.result.count+'<br>Cache size: '+Tools.filesizeformat(json.result.size) }]);
+             me.getMaintenancePanel().setLoading(false);
+          },
+          failure: function(response, opts) {
+             Msg.show("Failure", "Get maintenance data failed.");
+          }
+      });
+   },
+
+   onThumbnailCacheClear: function()
+   {
+      var me = this;
+      me.getMaintenancePanel().setLoading('Clear...');
+      Ext.Ajax.request({
+          url: 'index.php/management/deletethumbnailcache',
+          success: function(response, opts) {
+             me.loadThumbnailStatus();
+             me.getMaintenancePanel().setLoading(false);
+          },
+          failure: function(response, opts) {
+             Msg.show("Failure", "Clear thumbnail cache failed.");
+          }
+      });
    }
 
 
