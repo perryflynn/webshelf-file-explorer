@@ -190,7 +190,7 @@ Ext.define('DirectoryListing.controller.GUI', {
                   return false;
                }
                var id = "thumb-"+view.getRecord(tip.triggerElement).id;
-               tip.update('<img id="'+id+'" src="' + m.thumbnailurl + '" alt="thumb">');
+               tip.update('<img id="'+id+'" src="' + m.thumbnailurl + '" alt="thumb"><br>Type: '+m.extension+', Resolution: '+m.image_width+'x'+m.image_height);
                var imgload = function() {
                   tip.updateLayout();
                   Ext.get(id).un('load', imgload)

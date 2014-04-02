@@ -195,11 +195,15 @@ $fs->post('/getfiles', function(Request $request)
 
 
                         $isimage = false;
+                        $image_width=null;
+                        $image_height=null;
                         if(preg_match('/\.(png|jpg|jpeg|gif)$/i', $absfile)===1)
                         {
                            $res = @getimagesize($absfile);
                            if(is_array($res)) {
                               $isimage = true;
+                              $image_width = $res[0];
+                              $image_height = $res[1];
                            }
                         }
 
@@ -220,6 +224,8 @@ $fs->post('/getfiles', function(Request $request)
                                 "isfile" => is_file($absfile),
                                 "isdir" => is_dir($absfile),
                                 "isimage" => $isimage,
+                                "image_width" => $image_width,
+                                "image_height" => $image_height,
                                 "extension" => (strpos($file, ".")===false ? null : (is_array(explode(".", $file)) && count(explode(".", $file))>0 ? end(explode(".", $file)) : "")),
                                 "url" => $url,
                                 "fqdnurl" => $fqdnurl,
