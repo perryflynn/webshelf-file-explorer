@@ -415,6 +415,7 @@ Ext.define('DirectoryListing.view.Viewport', {
             case 'ico':
             case 'xpm':
                filename='page_white_picture'; break;
+            case 'm3u':
             case 'mp3':
             case 'm4a':
             case 'wav':

@@ -38,14 +38,30 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
             xid:'thumbnails'
          },
          {
+            tooltip:'Slideshow',
+            iconCls:'iconcls-control_play_blue',
+            enableToggle:true,
+            xid:'slideshow'
+         },
+         {
+            tooltip:'First',
+            iconCls:'iconcls-control_start_blue',
+            xid:'first'
+         },
+         {
             tooltip:'Previous',
-            iconCls:'iconcls-arrow_left',
+            iconCls:'iconcls-control_rewind_blue',
             xid:'prev'
          },
          {
             tooltip:'Next',
-            iconCls:'iconcls-arrow_right',
+            iconCls:'iconcls-control_fastforward_blue',
             xid:'next'
+         },
+         {
+            tooltip:'Last',
+            iconCls:'iconcls-control_end_blue',
+            xid:'last'
          },
          {
             tooltip:'Original',
@@ -193,6 +209,8 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
          btn.on('click', me.onToolbarButtonClicked, me);
       });
 
+      tb.child('button[xid=slideshow]').on('toggle', this.onToggleSlideShow, this);
+
       tb.child('slider[xid=zoomlevel]').on('change', this.onZoomlevelChanged, this);
       tb.child('slider[xid=zoomlevel]').on('drag', this.onZoomlevelSelected, this);
       tb.child('slider[xid=zoomlevel]').getEl().on('click', this.onZoomlevelSelected, this);
@@ -256,16 +274,20 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
       var tb = this.getDockedItems('toolbar[dock=bottom]')[0];
       tb.child('button[xid=next]').enable();
       tb.child('button[xid=prev]').enable();
+      tb.child('button[xid=first]').enable();
+      tb.child('button[xid=last]').enable();
    },
 
    onFirstImage: function() {
       var tb = this.getDockedItems('toolbar[dock=bottom]')[0];
       tb.child('button[xid=prev]').disable();
+      tb.child('button[xid=first]').disable();
    },
 
    onLastImage: function() {
       var tb = this.getDockedItems('toolbar[dock=bottom]')[0];
       tb.child('button[xid=next]').disable();
+      tb.child('button[xid=last]').disable();
    },
 
    onToolbarButtonClicked: function(btn) {
@@ -289,6 +311,12 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
       }
       if(btn.xid=="prev") {
          this.prev();
+      }
+      if(btn.xid=="last") {
+         this.last();
+      }
+      if(btn.xid=="first") {
+         this.first();
       }
       if(btn.xid=="zoom-in") {
          this.zoomIn(10);
@@ -351,7 +379,7 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
       {
          this.fireEvent('firstimage');
       }
-      else if(this.imageindex+1>=view.getStore().count())
+      if(this.imageindex+1>=view.getStore().count())
       {
          this.fireEvent('lastimage');
       }
@@ -371,6 +399,38 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
          node.scrollIntoView(view);
       }
       this.getDockedItems('toolbar[dock=bottom]')[0].hide();
+
+      var tb = this.getDockedItems('toolbar[dock=bottom]')[0];
+      tb.child('[xid=slideshow]').toggle(false);
+   },
+
+   intervalhandler:null,
+
+   onToggleSlideShow: function(btn, checked)
+   {
+      var me = this;
+      var nextbutton = btn.up().child('[xid=next]');
+
+      if(checked)
+      {
+         me.intervalhandler = window.setInterval(function()
+         {
+            if(nextbutton.isDisabled()==false)
+            {
+               nextbutton.fireEvent('click', nextbutton);
+            }
+            else
+            {
+               me.first();
+            }
+         },
+         5000);
+      }
+      else
+      {
+         window.clearInterval(me.intervalhandler);
+         me.intervalhandler=null;
+      }
    },
 
 
@@ -483,6 +543,22 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
       var ip = this.child('[xid=image] image');
       this.setLoading('Loading...');
       ip.setSrc(img.image);
+   },
+
+   last: function()
+   {
+      this.imageindex=this.images.length-1;
+      this.setImage(this.images[this.imageindex]);
+      this.fireEvent('imagechange');
+      this.fireEvent('lastimage');
+   },
+
+   first: function()
+   {
+      this.imageindex=0;
+      this.setImage(this.images[this.imageindex]);
+      this.fireEvent('imagechange');
+      this.fireEvent('firstimage');
    },
 
    next: function() {
