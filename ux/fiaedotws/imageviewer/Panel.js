@@ -178,6 +178,9 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
    setImages: function(img) {
       this.images = img;
 
+      var tb = this.getDockedItems('toolbar[dock=bottom]')[0];
+      tb.child('[xid=slideshow]').setDisabled((this.images.length<2))
+
       var dv = this.child('[xid=thumbnails] dataview');
       var store = dv.getStore();
       store.removeAll();
@@ -541,6 +544,7 @@ Ext.define('Ext.ux.fiaedotws.imageviewer.Panel', {
 
    setImage: function(img) {
       var ip = this.child('[xid=image] image');
+      ip.setSrc('');
       this.setLoading('Loading...');
       ip.setSrc(img.image);
    },
