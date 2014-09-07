@@ -7,6 +7,8 @@
       <script type="text/javascript">
          var hostname = "{{app.request.host}}";
          var separator = "{{app.webshelf.dirseparator}}";
+         var webshelf_version = "{{app.webshelf.release_version}}";
+         var webshelf_date = "{{app.webshelf.release_date}}";
          {{app.webshelf.jssettings|raw}}
       </script>
 

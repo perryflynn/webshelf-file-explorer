@@ -2,6 +2,9 @@
 
 session_start();
 
+define("WEBSHELF_VERSION", "2.3.5");
+define("WEBSHELF_DATE", "2014-09-08");
+
 define('ROOT', dirname(__FILE__).DIRECTORY_SEPARATOR);
 define('BASE', ROOT."files".DIRECTORY_SEPARATOR);
 define('JSONCONFIG', ROOT.'jsonconfig.php');

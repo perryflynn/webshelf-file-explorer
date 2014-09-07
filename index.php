@@ -47,6 +47,8 @@ $app['webshelf'] = array(
     "dirseparator" => addslashes(DIRECTORY_SEPARATOR),
     "uitheme" => $uitheme,
     "jssettings" => $jssettings,
+    "release_version" => WEBSHELF_VERSION,
+    "release_date" => WEBSHELF_DATE,
 );
 
 unset($settings, $uitheme, $search, $replace, $varlist, $jssettings);

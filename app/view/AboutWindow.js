@@ -1,22 +1,33 @@
 
-Ext.define('DirectoryListing.view.AboutWindow', {
+Ext.define('DirectoryListing.view.AboutWindow',
+{
    extend: 'Ext.window.Window',
    layout:'fit',
 
-   title:'About',
+   title:'About webshelf '+webshelf_version+' ('+webshelf_date+')',
    iconCls:'iconcls-information',
    width:400,
+   height:300,
 
    items: [{
          xtype:'panel',
-         bodyPadding:10,
+         border:0,
+         layout:'border',
+         defaults: {
+            split:true,
+            border:0,
+            bodyPadding:5
+         },
          items: [
             {
-               xtype:'container',
-               html:(Settings.about_content && Settings.about_content.length>0 ? Settings.about_content+"<br>&nbsp;<br><hr>&nbsp;<br>" : "")
+               xtype:'panel',
+               region:'center',
+               autoScroll:true,
+               html:(Settings.about_content && Settings.about_content.length>0 ? Settings.about_content : "")
             },
             {
-               xtype:'container',
+               xtype:'panel',
+               region:'south',
                html:
                   '<b><u>Credits</u></b><br>'+
                   'webshelf by Christian Blechert (<a href="http://fiae.ws" target="_blank">http://fiae.ws</a>)<br>'+
