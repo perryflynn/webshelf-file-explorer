@@ -16,7 +16,8 @@ class JsonConfig extends \Webshelf\Util\Singleton {
 
    }
 
-   public function getSkeleton() {
+   public function getSkeleton()
+   {
       $stdclass = array(
           "filebase" => "files/",
           "public_group" => "anonymous",
@@ -113,6 +114,14 @@ class JsonConfig extends \Webshelf\Util\Singleton {
       return $this->sessionuser;
    }
 
+   private static function json_decode_nice($json, $assoc = FALSE)
+   {
+      // http://de2.php.net/json_decode#95782
+      $json = str_replace(array("\n","\r"),"",$json);
+      $json = preg_replace('/([{,]+)(\s*)([^"]+?)\s*:/','$1"$3":',$json);
+      return json_decode($json,$assoc);
+   }
+
    public function loadConfiguration() {
       if(!$this->configurationExists()) {
          $this->createConfiguration();
@@ -128,7 +137,7 @@ class JsonConfig extends \Webshelf\Util\Singleton {
       }
 
       $config = $match[1];
-      $config = @json_decode(trim($config), true);
+      $config = self::json_decode_nice(trim($config), true);
       if(!is_array($config)) {
          throw new \Exception("Could not decode configuration");
       }
