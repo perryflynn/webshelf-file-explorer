@@ -41,7 +41,7 @@ Ext.define('DirectoryListing.controller.GUI', {
                toggle: this.onShowHiddenFilesToggled
             },
             'window[xid=filewindow] treepanel[xid=dirtree]': {
-               selectionchange: this.onTreeDirSelected,
+               select: this.onTreeDirSelected,
                load: this.onDirTreeLoad,
                itemcontextmenu: this.onTreeItemContextMenu
             },
@@ -53,7 +53,8 @@ Ext.define('DirectoryListing.controller.GUI', {
                afterrender: this.onFileListRendered,
                itemclick: this.onFilelistSelected,
                itemdblclick: this.onOpenFile,
-               itemcontextmenu: this.onTreeItemContextMenu
+               itemcontextmenu: this.onTreeItemContextMenu,
+               containercontextmenu: this.onTreeContainerContextMenu
             },
             'window[xid=uploadwindow]': {
                uploadcomplete: this.onUploadCompleted,
@@ -77,11 +78,11 @@ Ext.define('DirectoryListing.controller.GUI', {
             'window[xid=renamewindow]': {
                renamefile: this.onRenameFile
             },
+            'window[xid=newfolderwindow]': {
+               renamefile: this.onCreateFolderByDialog
+            },
             'window[xid=filewindow] button[xid=newmenu] menuitem': {
                click: this.onNewMenuItemClicked
-            },
-            'menuitem[xid=newfolder] textfield': {
-               specialkey: this.onNewMenuCreateFolder
             },
             'viewport': {
                afterrender: this.onBodyRendered
@@ -244,7 +245,7 @@ Ext.define('DirectoryListing.controller.GUI', {
             } else {
                me.expandPathIndex=-1;
             }
-         }, 50);
+         }, 200);
 
       }
    },
@@ -252,6 +253,7 @@ Ext.define('DirectoryListing.controller.GUI', {
    onDirTreeLoad: function(store, node, records) {
       var me = this;
 
+      // Only on root node, build expand array
       if(node.data.id=="root")
       {
          Ext.Ajax.request({
@@ -288,15 +290,15 @@ Ext.define('DirectoryListing.controller.GUI', {
 
    onTreeDirSelected: function(tree, item) {
       var me = this;
-      if(item.length<1 || !item[0].data) {
+      if(!item.data) {
          return;
       }
-      me.currentpath = item[0].data.id;
+      me.currentpath = item.data.id;
 
-      var can_upload = (item[0].raw.can_upload && item[0].raw.can_upload==true ? true : false);
+      var can_upload = (item.raw.can_upload && item.raw.can_upload==true ? true : false);
       me.getUploadbutton().setDisabled(!can_upload);
 
-      var can_mkdir = (item[0].raw.can_mkdir && item[0].raw.can_mkdir==true ? true : false);
+      var can_mkdir = (item.raw.can_mkdir && item.raw.can_mkdir==true ? true : false);
       me.getNewfolderMenu().setDisabled(!can_mkdir);
 
       // when last node reached
@@ -331,7 +333,7 @@ Ext.define('DirectoryListing.controller.GUI', {
 
       }
 
-      item[0].expand();
+      item.expand();
       this.getOpenbutton().disable();
       this.getDirectlinkbutton().disable();
       this.getCurrentpath().setValue((me.currentpath=="root" ? "/" : me.currentpath));
@@ -438,8 +440,45 @@ Ext.define('DirectoryListing.controller.GUI', {
             win.show();
          });
       }
+      if(btn.xid=="newfolder")
+      {
+         me.showCreateFolderDialog({raw:{id:me.currentpath}});
+      }
    },
 
+   showCreateFolderDialog: function(record)
+   {
+      Ext.require('DirectoryListing.view.NewFolderWindow', function() {
+         var win = Ext.create('DirectoryListing.view.NewFolderWindow');
+         win.setFile(record.raw.id);
+         win.show();
+      });
+   },
+
+   onCreateFolderByDialog: function(newname, oldname)
+   {
+      var me = this;
+      Ext.Ajax.request({
+         url: 'index.php/filesystem/createdirectory',
+         method:'POST',
+         params: {
+            'newfolder': newname
+         },
+         success: function(response, opts) {
+            var json = Ext.decode(response.responseText);
+            if(json.success==true)
+            {
+               me.application.fireEvent('reloadfiletree');
+               Msg.show("Success", "Folder created.");
+            }
+         },
+         failure: function(response, opts) {
+             Msg.show("Failure", "Folder creation failed.");
+         }
+      });
+   },
+
+   /*
    onNewMenuCreateFolder: function(field, e) {
       var me = this;
       if(e.keyCode==e.ENTER) {
@@ -459,6 +498,7 @@ Ext.define('DirectoryListing.controller.GUI', {
 
       }
    },
+   */
 
    createDirectory: function(targetfolder, newfolder) {
       var me = this;
@@ -476,19 +516,6 @@ Ext.define('DirectoryListing.controller.GUI', {
          failure: function(response, opts) {
              Msg.show("Failure", "Folder creation failed.");
          }
-      });
-   },
-
-   showDeleteDialog: function(records) {
-      Ext.require('DirectoryListing.view.BatchWindow', function() {
-         var win = Ext.create('DirectoryListing.view.BatchWindow', {
-            title:"Really delete "+records.length+" File"+(records.length==1 ? "" : "s")+"?",
-            iconCls:'iconcls-folder_delete',
-            xid:'deletebatchwindow',
-            oktext:'Delete all files',
-            records:records
-         });
-         win.show();
       });
    },
 
@@ -519,6 +546,19 @@ Ext.define('DirectoryListing.controller.GUI', {
       });
    },
 
+   showDeleteDialog: function(records) {
+      Ext.require('DirectoryListing.view.BatchWindow', function() {
+         var win = Ext.create('DirectoryListing.view.BatchWindow', {
+            title:"Really delete "+records.length+" File"+(records.length==1 ? "" : "s")+"?",
+            iconCls:'iconcls-folder_delete',
+            xid:'deletebatchwindow',
+            oktext:'Delete all files',
+            records:records
+         });
+         win.show();
+      });
+   },
+
    onRunDeleteFiles: function(record, target, callback) {
       Ext.Ajax.request({
          url: 'index.php/filesystem/deletefile',
@@ -528,6 +568,11 @@ Ext.define('DirectoryListing.controller.GUI', {
          },
          success: function(response, opts) {
             var json = Ext.decode(response.responseText);
+            if(record.parentNode && record.parentNode.data.id)
+            {
+               // Set current path to parent, important for tree reload
+               HashManager.set('path', record.parentNode.data.id);
+            }
             callback(json.success);
          },
          failure: function(response, opts) {
@@ -545,7 +590,8 @@ Ext.define('DirectoryListing.controller.GUI', {
    },
 
    onBatchWindowClosed: function() {
-      this.application.fireEvent('reloadfiletree');
+      var me = this;
+      me.application.fireEvent('reloadfiletree');
    },
 
    deleteFile: function(filepath) {
@@ -568,14 +614,27 @@ Ext.define('DirectoryListing.controller.GUI', {
       }
    },
 
-   onTreeItemContextMenu: function(view, singlerecord, html, index, e) {
+   onTreeContainerContextMenu: function(view, e)
+   {
+      e.preventDefault();
+      var sel = this.getDirtree().getSelectionModel().getSelection();
+      this.treeContextmenu(sel[0], e);
+   },
 
-      var me = this;
+   onTreeItemContextMenu: function(view, singlerecord, html, index, e)
+   {
       e.preventDefault();
 
       var grid = view.up('tablepanel')
       var records = grid.getSelectionModel().getSelection();
       var record = records[0]; // For check permissions and other stuff
+
+      this.treeContextmenu(record, e);
+   },
+
+   treeContextmenu: function(record, e)
+   {
+      var me = this;
 
       var can_delete = (record.raw.can_delete && record.raw.can_delete==true ? true : false);
       var can_mkdir = (record.raw.can_mkdir && record.raw.can_mkdir==true ? true : false);
@@ -625,12 +684,10 @@ Ext.define('DirectoryListing.controller.GUI', {
                xid:'newfolder',
                disabled: !can_mkdir,
                hidden:(Settings.features && !Settings.features.mkdir),
-               menu: [
-                  {
-                     xtype:'textfield',
-                     emptyText:'New Folder'
-                  }
-               ]
+               handler: function()
+               {
+                  me.showCreateFolderDialog(record);
+               }
             },
             {
                text:'Delete',

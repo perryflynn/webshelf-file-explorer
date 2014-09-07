@@ -322,10 +322,9 @@ $fs->post('/createdirectory', function(Request $request)
          return Helper\response(false)->setMessage("mkdir not enabled");
       }
 
-      $targetfolder = $request->get("targetfolder");
       $newfolder = $request->get("newfolder");
 
-      $path = BASE.$targetfolder;
+      $path = BASE.ltrim($newfolder, DIRECTORY_SEPARATOR);
       if(is_file($path)) {
          $path = dirname($path);
       }
@@ -339,9 +338,9 @@ $fs->post('/createdirectory', function(Request $request)
       }
 
       // Prepare name
-      $newfoldername = FsTools\getUniqName($path."/".$newfolder);
+      $newfoldername = FsTools\getUniqName($path);
 
-      $result = mkdir($newfoldername, 0755);
+      $result = mkdir($newfoldername, 0755, true);
 
       if($result) {
          return Helper\response(true);
@@ -360,7 +359,7 @@ $fs->post('/deletefile', function(Request $request)
       }
 
       $filepath = $request->get("filepath");
-      $path = BASE.$filepath;
+      $path = BASE.ltrim($filepath, DIRECTORY_SEPARATOR);
       $targetshare = \FsTools\getShareFromPath($path);
 
       // Check permissions

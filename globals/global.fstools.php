@@ -2,14 +2,29 @@
 
 namespace FsTools {
 
-   function getShareFromPath($path) {
-      $path = realpath($path).DIRECTORY_SEPARATOR;
-      $rgx = "/^".preg_quote(BASE, "/")."(.*?)".preg_quote(DIRECTORY_SEPARATOR, "/")."/";
-      $result = preg_match($rgx, $path, $match);
-      if($result!==1) {
-         throw new \Exception("Share can't extracted");
+   function getShareFromPath($path)
+   {
+      $pathlist = array(
+          $path,
+          realpath($path).DIRECTORY_SEPARATOR
+      );
+
+      foreach($pathlist as $currentpath)
+      {
+         $rgx = "/^".preg_quote(BASE, "/")."(.*?)".preg_quote(DIRECTORY_SEPARATOR, "/")."/";
+
+         $match = array();
+         $result = preg_match($rgx, $currentpath, $match);
+         if($result===1)
+         {
+            $temp = trim($match[1]);
+            if(!empty($temp) && $temp!="." && $temp!="..")
+            {
+               return $temp;
+            }
+         }
       }
-      return $match[1];
+      throw new \Exception("Share can't extracted");
    }
 
    function getUniqName($file) {

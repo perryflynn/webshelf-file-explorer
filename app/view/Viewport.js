@@ -107,13 +107,7 @@ Ext.define('DirectoryListing.view.Viewport', {
                         text:'New Folder',
                         iconCls:'iconcls-folder_add',
                         xid:'newfolder',
-                        hidden:(!Settings.mkdir),
-                        menu: [
-                           {
-                              xtype:'textfield',
-                              emptyText:'New Folder'
-                           }
-                        ]
+                        hidden:(!Settings.mkdir)
                      }
 
                   ]
