@@ -393,8 +393,8 @@ $fs->post('/fileoperation', function(Request $request)
          $permission = "move_rename";
       }
 
-      $sourcepath = BASE.$filepath;
-      $targetpath = BASE.$target;
+      $sourcepath = BASE.ltrim($filepath, DIRECTORY_SEPARATOR);
+      $targetpath = BASE.ltrim($target, DIRECTORY_SEPARATOR);
 
       $sourceshare = \FsTools\getShareFromPath($sourcepath);
       $targetshare = \FsTools\getShareFromPath($targetpath);

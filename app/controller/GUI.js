@@ -618,7 +618,7 @@ Ext.define('DirectoryListing.controller.GUI', {
    {
       e.preventDefault();
       var sel = this.getDirtree().getSelectionModel().getSelection();
-      this.treeContextmenu(sel[0], e);
+      this.treeContextmenu(sel, e);
    },
 
    onTreeItemContextMenu: function(view, singlerecord, html, index, e)
@@ -627,14 +627,14 @@ Ext.define('DirectoryListing.controller.GUI', {
 
       var grid = view.up('tablepanel')
       var records = grid.getSelectionModel().getSelection();
-      var record = records[0]; // For check permissions and other stuff
 
-      this.treeContextmenu(record, e);
+      this.treeContextmenu(records, e);
    },
 
-   treeContextmenu: function(record, e)
+   treeContextmenu: function(records, e)
    {
       var me = this;
+      var record = records[0];
 
       var can_delete = (record.raw.can_delete && record.raw.can_delete==true ? true : false);
       var can_mkdir = (record.raw.can_mkdir && record.raw.can_mkdir==true ? true : false);
@@ -657,8 +657,8 @@ Ext.define('DirectoryListing.controller.GUI', {
                xid:'upload',
                disabled: !can_upload,
                hidden:(Settings.features && !Settings.features.upload),
-               handler: function(btn) {
-
+               handler: function(btn)
+               {
                   Ext.require('DirectoryListing.view.UploadWindow', function() {
                      var win = Ext.create('DirectoryListing.view.UploadWindow', {
                         targetpath: path

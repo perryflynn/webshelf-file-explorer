@@ -9,6 +9,7 @@ div.iconcls {
    height:16px;
 }
 
+.iconcls-page_white { background-image:url(../fileicons/page_white.png); }
 .iconcls-folder_delete { background-image:url(../fileicons/folder_delete.png); }
 .iconcls-page_white_get { background-image:url(../fileicons/page_white_get.png); }
 .iconcls-textfield_rename { background-image:url(../fileicons/textfield_rename.png); }
