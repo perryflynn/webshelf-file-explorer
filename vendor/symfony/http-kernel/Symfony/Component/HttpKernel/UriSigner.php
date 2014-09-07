@@ -54,7 +54,7 @@ class UriSigner
      *
      * @param string $uri A signed URI
      *
-     * @return Boolean True if the URI is signed correctly, false otherwise
+     * @return bool    True if the URI is signed correctly, false otherwise
      */
     public function check($uri)
     {
@@ -67,6 +67,6 @@ class UriSigner
 
     private function computeHash($uri)
     {
-        return urlencode(base64_encode(hash_hmac('sha1', $uri, $this->secret, true)));
+        return urlencode(base64_encode(hash_hmac('sha256', $uri, $this->secret, true)));
     }
 }

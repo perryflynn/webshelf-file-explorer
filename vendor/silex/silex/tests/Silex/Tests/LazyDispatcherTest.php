@@ -12,7 +12,6 @@
 namespace Silex\Tests;
 
 use Silex\Application;
-
 use Symfony\Component\HttpFoundation\Request;
 
 class LazyDispatcherTest extends \PHPUnit_Framework_TestCase
@@ -37,5 +36,24 @@ class LazyDispatcherTest extends \PHPUnit_Framework_TestCase
         $app->handle($request);
 
         $this->assertTrue($dispatcherCreated);
+    }
+
+    /** @test */
+    public function eventHelpersShouldDirectlyAddListenersAfterBoot()
+    {
+        $app = new Application();
+
+        $fired = false;
+        $app->get("/", function () use ($app, &$fired) {
+            $app->finish(function () use (&$fired) {
+                $fired = true;
+            });
+        });
+
+        $request = Request::create('/');
+        $response = $app->handle($request);
+        $app->terminate($request, $response);
+
+        $this->assertTrue($fired, 'Event was not fired');
     }
 }

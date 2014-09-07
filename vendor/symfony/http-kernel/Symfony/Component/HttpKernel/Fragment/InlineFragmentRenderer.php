@@ -32,7 +32,8 @@ class InlineFragmentRenderer extends RoutableFragmentRenderer
     /**
      * Constructor.
      *
-     * @param HttpKernelInterface $kernel A HttpKernelInterface instance
+     * @param HttpKernelInterface      $kernel     A HttpKernelInterface instance
+     * @param EventDispatcherInterface $dispatcher A EventDispatcherInterface instance
      */
     public function __construct(HttpKernelInterface $kernel, EventDispatcherInterface $dispatcher = null)
     {
@@ -53,13 +54,22 @@ class InlineFragmentRenderer extends RoutableFragmentRenderer
         if ($uri instanceof ControllerReference) {
             $reference = $uri;
 
-            // Remove attributes from the genereated URI because if not, the Symfony
+            // Remove attributes from the generated URI because if not, the Symfony
             // routing system will use them to populate the Request attributes. We don't
             // want that as we want to preserve objects (so we manually set Request attributes
             // below instead)
             $attributes = $reference->attributes;
             $reference->attributes = array();
-            $uri = $this->generateFragmentUri($uri, $request);
+
+            // The request format and locale might have been overridden by the user
+            foreach (array('_format', '_locale') as $key) {
+                if (isset($attributes[$key])) {
+                    $reference->attributes[$key] = $attributes[$key];
+                }
+            }
+
+            $uri = $this->generateFragmentUri($uri, $request, false, false);
+
             $reference->attributes = array_merge($attributes, $reference->attributes);
         }
 
@@ -83,9 +93,7 @@ class InlineFragmentRenderer extends RoutableFragmentRenderer
             }
 
             // let's clean up the output buffers that were created by the sub-request
-            while (ob_get_level() > $level) {
-                ob_get_clean();
-            }
+            Response::closeOutputBuffers($level, false);
 
             if (isset($options['alt'])) {
                 $alt = $options['alt'];
@@ -111,17 +119,18 @@ class InlineFragmentRenderer extends RoutableFragmentRenderer
         // Sub-request object will point to localhost as client ip and real client ip
         // will be included into trusted header for client ip
         try {
-            $trustedHeaderName = Request::getTrustedHeaderName(Request::HEADER_CLIENT_IP);
-            $currentXForwardedFor = $request->headers->get($trustedHeaderName, '');
+            if ($trustedHeaderName = Request::getTrustedHeaderName(Request::HEADER_CLIENT_IP)) {
+                $currentXForwardedFor = $request->headers->get($trustedHeaderName, '');
 
-            $server['HTTP_'.$trustedHeaderName] = ($currentXForwardedFor ? $currentXForwardedFor.', ' : '').$request->getClientIp();
+                $server['HTTP_'.$trustedHeaderName] = ($currentXForwardedFor ? $currentXForwardedFor.', ' : '').$request->getClientIp();
+            }
         } catch (\InvalidArgumentException $e) {
             // Do nothing
         }
 
         $server['REMOTE_ADDR'] = '127.0.0.1';
 
-        $subRequest = $request::create($uri, 'get', array(), $cookies, array(), $server);
+        $subRequest = Request::create($uri, 'get', array(), $cookies, array(), $server);
         if ($request->headers->has('Surrogate-Capability')) {
             $subRequest->headers->set('Surrogate-Capability', $request->headers->get('Surrogate-Capability'));
         }

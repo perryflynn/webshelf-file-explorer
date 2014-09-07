@@ -31,7 +31,7 @@ class UploadedFile extends File
      *
      * Local files are used in test mode hence the code should not enforce HTTP uploads.
      *
-     * @var Boolean
+     * @var bool
      */
     private $test = false;
 
@@ -59,7 +59,7 @@ class UploadedFile extends File
     /**
      * The UPLOAD_ERR_XXX constant provided by the uploader.
      *
-     * @var integer
+     * @var int
      */
     private $error;
 
@@ -80,9 +80,9 @@ class UploadedFile extends File
      * @param string  $path         The full temporary path to the file
      * @param string  $originalName The original file name
      * @param string  $mimeType     The type of the file as provided by PHP
-     * @param integer $size         The file size
-     * @param integer $error        The error constant of the upload (one of PHP's UPLOAD_ERR_XXX constants)
-     * @param Boolean $test         Whether the test mode is active
+     * @param int     $size         The file size
+     * @param int     $error        The error constant of the upload (one of PHP's UPLOAD_ERR_XXX constants)
+     * @param bool    $test         Whether the test mode is active
      *
      * @throws FileException         If file_uploads is disabled
      * @throws FileNotFoundException If the file does not exist
@@ -91,15 +91,11 @@ class UploadedFile extends File
      */
     public function __construct($path, $originalName, $mimeType = null, $size = null, $error = null, $test = false)
     {
-        if (!ini_get('file_uploads')) {
-            throw new FileException(sprintf('Unable to create UploadedFile because "file_uploads" is disabled in your php.ini file (%s)', get_cfg_var('cfg_file_path')));
-        }
-
         $this->originalName = $this->getName($originalName);
         $this->mimeType = $mimeType ?: 'application/octet-stream';
         $this->size = $size;
         $this->error = $error ?: UPLOAD_ERR_OK;
-        $this->test = (Boolean) $test;
+        $this->test = (bool) $test;
 
         parent::__construct($path, UPLOAD_ERR_OK === $this->error);
     }
@@ -108,7 +104,7 @@ class UploadedFile extends File
      * Returns the original file name.
      *
      * It is extracted from the request from which the file has been uploaded.
-     * Then is should not be considered as a safe value.
+     * Then it should not be considered as a safe value.
      *
      * @return string|null The original name
      *
@@ -123,7 +119,7 @@ class UploadedFile extends File
      * Returns the original file extension
      *
      * It is extracted from the original file name that was uploaded.
-     * Then is should not be considered as a safe value.
+     * Then it should not be considered as a safe value.
      *
      * @return string The extension
      */
@@ -181,9 +177,9 @@ class UploadedFile extends File
      * Returns the file size.
      *
      * It is extracted from the request from which the file has been uploaded.
-     * Then is should not be considered as a safe value.
+     * Then it should not be considered as a safe value.
      *
-     * @return integer|null The file size
+     * @return int|null     The file size
      *
      * @api
      */
@@ -198,7 +194,7 @@ class UploadedFile extends File
      * If the upload was successful, the constant UPLOAD_ERR_OK is returned.
      * Otherwise one of the other UPLOAD_ERR_XXX constants is returned.
      *
-     * @return integer The upload error
+     * @return int     The upload error
      *
      * @api
      */
@@ -210,7 +206,7 @@ class UploadedFile extends File
     /**
      * Returns whether the file was uploaded successfully.
      *
-     * @return Boolean True if the file has been uploaded with HTTP and no error occurred.
+     * @return bool    True if the file has been uploaded with HTTP and no error occurred.
      *
      * @api
      */
@@ -252,7 +248,7 @@ class UploadedFile extends File
             return $target;
         }
 
-        throw new FileException($this->getErrorMessage($this->getError()));
+        throw new FileException($this->getErrorMessage());
     }
 
     /**
@@ -262,44 +258,52 @@ class UploadedFile extends File
      */
     public static function getMaxFilesize()
     {
-        $max = strtolower(ini_get('upload_max_filesize'));
+        $iniMax = strtolower(ini_get('upload_max_filesize'));
 
-        if ('' === $max) {
+        if ('' === $iniMax) {
             return PHP_INT_MAX;
         }
 
-        if (preg_match('#^\+?(0x?)?(.*?)([kmg]?)$#', $max, $match)) {
-            $shifts = array('' => 0, 'k' => 10, 'm' => 20, 'g' => 30);
-            $bases = array('' => 10, '0' => 8, '0x' => 16);
-
-            return intval($match[2], $bases[$match[1]]) << $shifts[$match[3]];
+        $max = ltrim($iniMax, '+');
+        if (0 === strpos($max, '0x')) {
+            $max = intval($max, 16);
+        } elseif (0 === strpos($max, '0')) {
+            $max = intval($max, 8);
+        } else {
+            $max = intval($max);
         }
 
-        return 0;
+        switch (substr($iniMax, -1)) {
+            case 't': $max *= 1024;
+            case 'g': $max *= 1024;
+            case 'm': $max *= 1024;
+            case 'k': $max *= 1024;
+        }
+
+        return $max;
     }
 
     /**
      * Returns an informative upload error message.
      *
-     * @param int $code The error code returned by an upload attempt
-     *
      * @return string The error message regarding the specified error code
      */
-    private function getErrorMessage($errorCode)
+    public function getErrorMessage()
     {
         static $errors = array(
-            UPLOAD_ERR_INI_SIZE   => 'The file "%s" exceeds your upload_max_filesize ini directive (limit is %d kb).',
+            UPLOAD_ERR_INI_SIZE   => 'The file "%s" exceeds your upload_max_filesize ini directive (limit is %d KiB).',
             UPLOAD_ERR_FORM_SIZE  => 'The file "%s" exceeds the upload limit defined in your form.',
             UPLOAD_ERR_PARTIAL    => 'The file "%s" was only partially uploaded.',
             UPLOAD_ERR_NO_FILE    => 'No file was uploaded.',
             UPLOAD_ERR_CANT_WRITE => 'The file "%s" could not be written on disk.',
             UPLOAD_ERR_NO_TMP_DIR => 'File could not be uploaded: missing temporary directory.',
-            UPLOAD_ERR_EXTENSION  => 'File upload was stopped by a php extension.',
+            UPLOAD_ERR_EXTENSION  => 'File upload was stopped by a PHP extension.',
         );
 
+        $errorCode = $this->error;
         $maxFilesize = $errorCode === UPLOAD_ERR_INI_SIZE ? self::getMaxFilesize() / 1024 : 0;
         $message = isset($errors[$errorCode]) ? $errors[$errorCode] : 'The file "%s" was not uploaded due to an unknown error.';
 
-       return sprintf($message, $this->getClientOriginalName(), $maxFilesize);
+        return sprintf($message, $this->getClientOriginalName(), $maxFilesize);
     }
 }

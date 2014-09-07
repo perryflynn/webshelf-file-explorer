@@ -11,10 +11,11 @@
 
 namespace Symfony\Component\HttpFoundation\Tests\Session\Storage;
 
-use Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeSessionHandler;
-use Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage;
-use Symfony\Component\HttpFoundation\Session\Flash\FlashBag;
 use Symfony\Component\HttpFoundation\Session\Attribute\AttributeBag;
+use Symfony\Component\HttpFoundation\Session\Flash\FlashBag;
+use Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeSessionHandler;
+use Symfony\Component\HttpFoundation\Session\Storage\Handler\NullSessionHandler;
+use Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage;
 use Symfony\Component\HttpFoundation\Session\Storage\Proxy\NativeProxy;
 use Symfony\Component\HttpFoundation\Session\Storage\Proxy\SessionHandlerProxy;
 
@@ -59,7 +60,7 @@ class NativeSessionStorageTest extends \PHPUnit_Framework_TestCase
     protected function getStorage(array $options = array())
     {
         $storage = new NativeSessionStorage($options);
-        $storage->registerBag(new AttributeBag);
+        $storage->registerBag(new AttributeBag());
 
         return $storage;
     }
@@ -85,7 +86,11 @@ class NativeSessionStorageTest extends \PHPUnit_Framework_TestCase
     {
         $storage = $this->getStorage();
         $this->assertEquals('', $storage->getId());
+
         $storage->start();
+        $this->assertNotEquals('', $storage->getId());
+
+        $storage->save();
         $this->assertNotEquals('', $storage->getId());
     }
 
@@ -154,7 +159,7 @@ class NativeSessionStorageTest extends \PHPUnit_Framework_TestCase
     public function testSetSaveHandlerException()
     {
         $storage = $this->getStorage();
-        $storage->setSaveHandler(new \StdClass);
+        $storage->setSaveHandler(new \stdClass());
     }
 
     public function testSetSaveHandler53()
@@ -171,9 +176,9 @@ class NativeSessionStorageTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\Session\Storage\Proxy\NativeProxy', $storage->getSaveHandler());
         $storage->setSaveHandler(new NativeSessionHandler());
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\Session\Storage\Proxy\NativeProxy', $storage->getSaveHandler());
-        $storage->setSaveHandler(new SessionHandlerProxy(new SessionHandler()));
+        $storage->setSaveHandler(new SessionHandlerProxy(new NullSessionHandler()));
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\Session\Storage\Proxy\SessionHandlerProxy', $storage->getSaveHandler());
-        $storage->setSaveHandler(new SessionHandler());
+        $storage->setSaveHandler(new NullSessionHandler());
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\Session\Storage\Proxy\SessionHandlerProxy', $storage->getSaveHandler());
         $storage->setSaveHandler(new NativeProxy());
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\Session\Storage\Proxy\NativeProxy', $storage->getSaveHandler());
@@ -195,9 +200,9 @@ class NativeSessionStorageTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\Session\Storage\Proxy\SessionHandlerProxy', $storage->getSaveHandler());
         $storage->setSaveHandler(new NativeSessionHandler());
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\Session\Storage\Proxy\SessionHandlerProxy', $storage->getSaveHandler());
-        $storage->setSaveHandler(new SessionHandlerProxy(new SessionHandler()));
+        $storage->setSaveHandler(new SessionHandlerProxy(new NullSessionHandler()));
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\Session\Storage\Proxy\SessionHandlerProxy', $storage->getSaveHandler());
-        $storage->setSaveHandler(new SessionHandler());
+        $storage->setSaveHandler(new NullSessionHandler());
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\Session\Storage\Proxy\SessionHandlerProxy', $storage->getSaveHandler());
     }
 
@@ -248,32 +253,5 @@ class NativeSessionStorageTest extends \PHPUnit_Framework_TestCase
         $key = $storage->getMetadataBag()->getStorageKey();
         $this->assertFalse(isset($_SESSION[$key]));
         $storage->start();
-    }
-}
-
-class SessionHandler implements \SessionHandlerInterface
-{
-    public function open($savePath, $sessionName)
-    {
-    }
-
-    public function close()
-    {
-    }
-
-    public function read($id)
-    {
-    }
-
-    public function write($id, $data)
-    {
-    }
-
-    public function destroy($id)
-    {
-    }
-
-    public function gc($maxlifetime)
-    {
     }
 }

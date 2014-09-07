@@ -13,8 +13,7 @@ namespace Silex\Provider;
 
 use Silex\Application;
 use Silex\ServiceProviderInterface;
-
-use Symfony\Component\Translation\Translator;
+use Silex\Translator;
 use Symfony\Component\Translation\MessageSelector;
 use Symfony\Component\Translation\Loader\ArrayLoader;
 use Symfony\Component\Translation\Loader\XliffFileLoader;
@@ -29,9 +28,14 @@ class TranslationServiceProvider implements ServiceProviderInterface
     public function register(Application $app)
     {
         $app['translator'] = $app->share(function ($app) {
-            $translator = new Translator($app['locale'], $app['translator.message_selector']);
+            $translator = new Translator($app, $app['translator.message_selector']);
 
-            $translator->setFallbackLocale($app['locale_fallback']);
+            // Handle deprecated 'locale_fallback'
+            if (isset($app['locale_fallback'])) {
+                $app['locale_fallbacks'] = (array) $app['locale_fallback'];
+            }
+
+            $translator->setFallbackLocales($app['locale_fallbacks']);
 
             $translator->addLoader('array', new ArrayLoader());
             $translator->addLoader('xliff', new XliffFileLoader());
@@ -50,8 +54,7 @@ class TranslationServiceProvider implements ServiceProviderInterface
         });
 
         $app['translator.domains'] = array();
-
-        $app['locale_fallback'] = 'en';
+        $app['locale_fallbacks'] = array('en');
     }
 
     public function boot(Application $app)

@@ -6,6 +6,9 @@ define('ROOT', dirname(__FILE__).DIRECTORY_SEPARATOR);
 define('BASE', ROOT."files".DIRECTORY_SEPARATOR);
 define('JSONCONFIG', ROOT.'jsonconfig.php');
 
+//--> Composer autoloader
+require_once ROOT.'vendor/autoload.php';
+
 //--> Check base
 if(!(file_exists(BASE) && is_dir(BASE))) {
    if(@mkdir(BASE, 0775)!==true) {
@@ -19,10 +22,6 @@ $globals = glob(ROOT."globals/global.*.php");
 foreach($globals as $global) {
    include($global);
 }
-
-//--> Autoloader
-include_once('lib/autoload.php');
-spl_autoload_register('\Autoloader::load');
 
 //--> Load config
 JsonConfig::instance()->setConfigName(JSONCONFIG);

@@ -29,7 +29,7 @@ class File extends \SplFileInfo
      * Constructs a new file from the given path.
      *
      * @param string  $path      The path to the file
-     * @param Boolean $checkPath Whether to check the path or not
+     * @param bool    $checkPath Whether to check the path or not
      *
      * @throws FileNotFoundException If the given path is not a file
      *
@@ -137,7 +137,7 @@ class File extends \SplFileInfo
             throw new FileException(sprintf('Unable to write in the "%s" directory', $directory));
         }
 
-        $target = $directory.DIRECTORY_SEPARATOR.(null === $name ? $this->getBasename() : $this->getName($name));
+        $target = rtrim($directory, '/\\').DIRECTORY_SEPARATOR.(null === $name ? $this->getBasename() : $this->getName($name));
 
         return new File($target, false);
     }

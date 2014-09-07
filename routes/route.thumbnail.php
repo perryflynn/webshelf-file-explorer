@@ -22,7 +22,7 @@ $app->get('/thumbnail/{file}', function($file) use($app)
             $checksum = sha1_file(BASE.$file);
             if(!is_file($thumbdir.$checksum))
             {
-               $r = new \Util\NewImageResize(200, 200);
+               $r = new \Webshelf\Util\NewImageResize(200, 200);
                $r->load(BASE.$file)->resize()->chop()->save($thumbdir.$checksum);
             }
 

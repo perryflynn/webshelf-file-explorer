@@ -1,4 +1,5 @@
 nbproject/
-jsonconfig.php
-files/
+/files/
+/thumbnails/
 composer.phar
+/jsonconfig.php

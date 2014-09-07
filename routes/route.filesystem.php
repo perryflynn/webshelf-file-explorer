@@ -147,7 +147,7 @@ $fs->post('/getfiles', function(Request $request)
                      }
 
                      $protocol = ($_SERVER['SERVER_PORT']==443 ? "https://" : "http://");
-                     $server = $_SERVER['SERVER_NAME'];
+                     $server = $_SERVER['HTTP_HOST'];
                      $urlpath = \FsTools\getBaseFolder();
 
                      // Protection
@@ -369,7 +369,7 @@ $fs->post('/deletefile', function(Request $request)
       }
 
       try {
-         \Util\File::deleteRecusive($path);
+         \Webshelf\Util\File::deleteRecusive($path);
          return Helper\response(true);
       } catch(\Exception $ex) {
          return Helper\response(false)->setMessage("Delete failed");
@@ -428,7 +428,7 @@ $fs->post('/fileoperation', function(Request $request)
       }
 
       $methodname = "r".$operation;
-      $result = \Util\File::$methodname($sourcepath, $targetpath);
+      $result = \Webshelf\Util\File::$methodname($sourcepath, $targetpath);
       if($result) {
          return Helper\response(true);
       } else {

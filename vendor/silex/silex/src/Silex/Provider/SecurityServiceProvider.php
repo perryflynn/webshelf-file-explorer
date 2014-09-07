@@ -13,7 +13,6 @@ namespace Silex\Provider;
 
 use Silex\Application;
 use Silex\ServiceProviderInterface;
-
 use Symfony\Component\HttpFoundation\RequestMatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\SecurityContext;
@@ -71,6 +70,7 @@ class SecurityServiceProvider implements ServiceProviderInterface
 
         $app['security.role_hierarchy'] = array();
         $app['security.access_rules'] = array();
+        $app['security.hide_user_not_found'] = true;
 
         $app['security'] = $app->share(function ($app) {
             return new SecurityContext($app['security.authentication_manager'], $app['security.access_manager']);
@@ -130,7 +130,7 @@ class SecurityServiceProvider implements ServiceProviderInterface
                 $entryPoint = 'form';
             }
 
-            $app['security.authentication_listener.factory.'.$type] = $app->protect(function($name, $options) use ($type, $app, $entryPoint) {
+            $app['security.authentication_listener.factory.'.$type] = $app->protect(function ($name, $options) use ($type, $app, $entryPoint) {
                 if ($entryPoint && !isset($app['security.entry_point.'.$name.'.'.$entryPoint])) {
                     $app['security.entry_point.'.$name.'.'.$entryPoint] = $app['security.entry_point.'.$entryPoint.'._proto']($name, $options);
                 }
@@ -510,7 +510,8 @@ class SecurityServiceProvider implements ServiceProviderInterface
                     $app['security.user_provider.'.$name],
                     $app['security.user_checker'],
                     $name,
-                    $app['security.encoder_factory']
+                    $app['security.encoder_factory'],
+                    $app['security.hide_user_not_found']
                 );
             });
         });
@@ -541,7 +542,7 @@ class SecurityServiceProvider implements ServiceProviderInterface
         foreach ($this->fakeRoutes as $route) {
             list($method, $pattern, $name) = $route;
 
-            $app->$method($pattern, function() {})->bind($name);
+            $app->$method($pattern)->run(null)->bind($name);
         }
     }
 

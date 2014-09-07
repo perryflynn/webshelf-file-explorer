@@ -19,13 +19,6 @@ use Symfony\Component\HttpKernel\UriSigner;
 
 class FragmentListenerTest extends \PHPUnit_Framework_TestCase
 {
-    protected function setUp()
-    {
-        if (!class_exists('Symfony\Component\EventDispatcher\EventDispatcher')) {
-            $this->markTestSkipped('The "EventDispatcher" component is not available');
-        }
-    }
-
     public function testOnlyTriggeredOnFragmentRoute()
     {
         $request = Request::create('http://example.com/foo?_path=foo%3Dbar%26_controller%3Dfoo');
@@ -47,19 +40,6 @@ class FragmentListenerTest extends \PHPUnit_Framework_TestCase
     public function testAccessDeniedWithNonSafeMethods()
     {
         $request = Request::create('http://example.com/_fragment', 'POST');
-
-        $listener = new FragmentListener(new UriSigner('foo'));
-        $event = $this->createGetResponseEvent($request);
-
-        $listener->onKernelRequest($event);
-    }
-
-    /**
-     * @expectedException \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException
-     */
-    public function testAccessDeniedWithNonLocalIps()
-    {
-        $request = Request::create('http://example.com/_fragment', 'GET', array(), array(), array(), array('REMOTE_ADDR' => '10.0.0.1'));
 
         $listener = new FragmentListener(new UriSigner('foo'));
         $event = $this->createGetResponseEvent($request);
