@@ -179,7 +179,7 @@ Ext.define('DirectoryListing.controller.GUI', {
 
    onFileListRendered: function(panel) {
       var view = panel.getView();
-      var tip = Ext.create('Ext.tip.ToolTip', {
+      Ext.create('Ext.tip.ToolTip', {
          target: view.el,
          delegate: view.itemSelector,
          trackMouse: true,
@@ -187,7 +187,7 @@ Ext.define('DirectoryListing.controller.GUI', {
          listeners: {
             beforeshow: function updateTipBody(tip) {
                var m = view.getRecord(tip.triggerElement).get('metadata');
-               if(m.isimage==false) {
+               if(m.isimage==false || !Settings.thumbnailmouseover) {
                   return false;
                }
                var id = "thumb-"+view.getRecord(tip.triggerElement).id;
@@ -205,6 +205,7 @@ Ext.define('DirectoryListing.controller.GUI', {
    updateFeatures: function(features)
    {
       // "delete", "upload", "mkdir", "copy", "move_rename", "download"
+      console.log(features);
       Settings.features = features;
 
       // Drag & Drop

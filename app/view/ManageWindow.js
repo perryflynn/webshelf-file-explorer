@@ -159,7 +159,8 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                                     { boxLabel:'Copy', name:'copy', inputValue:'true' },
                                     { boxLabel:'Move / Rename', name:'move_rename', inputValue:'true' },
                                     { boxLabel:'Create Directory', name:'mkdir', inputValue:'true' },
-                                    { boxLabel:'Image Viewer', name:'imageviewer', inputValue:'true' }
+                                    { boxLabel:'Image Viewer', name:'imageviewer', inputValue:'true' },
+                                    { boxLabel:'Thumbnail Mouseover', name:'thumbnailmouseover', inputValue:'true' }
                                  ]
                               }
                            ]

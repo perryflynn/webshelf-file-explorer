@@ -37,7 +37,7 @@ $mm->get('/featurelist', function()
          }
       }
 
-      $settings = array("imageviewer");
+      $settings = array("imageviewer", "thumbnailmouseover");
       foreach($settings as $setting) {
          try {
             $result[$setting] = \JsonConfig::instance()->getSetting($setting);
@@ -80,6 +80,7 @@ $mm->post('/savesettings', function(Request $request)
       try { $settings['move_rename'] = ($request->get("move_rename")=="true"); } catch(Exception $ex) {  }
       try { $settings['imageviewer'] = ($request->get("imageviewer")=="true"); } catch(Exception $ex) {  }
       try { $settings['about_content'] = $request->get("about_content"); } catch(Exception $ex) {  }
+      try { $settings['thumbnailmouseover'] = ($request->get("thumbnailmouseover")=="true"); } catch(Exception $ex) {  }
 
       $cfg['settings'] = $settings;
 

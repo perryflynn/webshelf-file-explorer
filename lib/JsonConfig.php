@@ -31,6 +31,7 @@ class JsonConfig extends \Webshelf\Util\Singleton {
                "delete" => false,
                "imageviewer" => false,
                "move_rename" => false,
+               "thumbnailmouseover" => false,
                "about_content" => "Please modify this text in settings.",
           ),
           "users" => array(
