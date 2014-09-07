@@ -1,43 +1,6 @@
-<!DOCTYPE html>
-<html>
-   <head>
-      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-      <title>webshelf file explorer @ {{app.request.host}}</title>
+{% extends "extjsbase.html.twig" %}
 
-      <script type="text/javascript">
-         var hostname = "{{app.request.host}}";
-         var separator = "{{dirseparator}}";
-         {{jssettings|raw}}
-      </script>
-
-      <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
-      <link rel='StyleSheet' type='text/css' href='ext/resources/css/ext-all{{uitheme}}.css'>
-      <link rel='StyleSheet' type='text/css' href='style.css'>
-      <link rel='StyleSheet' type='text/css' href='ux/upload/css/upload.css'>
-      <link rel='StyleSheet' type='text/css' href='ux/fiaedotws/imageviewer/icons.css'>
-
-      <script type="text/javascript" src="{{extjscore}}"></script>
-      <script type="text/javascript" src="app/msg.js"></script>
-      <script type="text/javascript" src="app/tools.js"></script>
-      <script type="text/javascript" src="app/hashmanager.js"></script>
-
-      <script type="text/javascript">
-         HashManager.init();
-      </script>
-
-      <link rel='StyleSheet' type='text/css' href='app/app.css'>
-      <script type="text/javascript" src="app/app.js"></script>
-
-   </head>
-   <body>
-
-      <noscript>
-         <div style="position:absolute; top:32px; left:32px; font-size:16px; color:red; font-weight: bold; font-family: Arial;">
-            Please enable Java Script!
-         </div>
-      </noscript>
-
-      <img src="ajax.gif" style="display:block; margin:200px auto 0px auto;" alt="Loading..." title="Loading...">
-
-   </body>
-</html>
+{% block loaderscripts %}
+<link rel='StyleSheet' type='text/css' href='app/app.css'>
+<script type="text/javascript" src="app/app.js"></script>
+{% endblock %}

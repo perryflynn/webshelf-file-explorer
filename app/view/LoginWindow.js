@@ -10,10 +10,18 @@ Ext.define('DirectoryListing.view.LoginWindow', {
    iconCls:'iconcls-key',
    width:400,
 
+   listeners: {
+      afterrender: function(me)
+      {
+         me.child('form textfield[name=username]').focus(true,true);
+      }
+   },
+
    items: [{
          xtype:'form',
          bodyPadding:5,
          layout: 'anchor',
+         border:0,
          defaults: {
              anchor: '100%'
          },

@@ -205,7 +205,6 @@ Ext.define('DirectoryListing.controller.GUI', {
    updateFeatures: function(features)
    {
       // "delete", "upload", "mkdir", "copy", "move_rename", "download"
-      console.log(features);
       Settings.features = features;
 
       // Drag & Drop

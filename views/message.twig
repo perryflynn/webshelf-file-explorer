@@ -1,36 +1,20 @@
-<!DOCTYPE html>
-<html>
-   <head>
-      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-      <title>webshelf file explorer @ {{app.request.host}}</title>
+{% extends "extjsbase.html.twig" %}
 
-      <link rel="shortcut icon" type="image/x-icon" href="{{baseFolder()}}favicon.ico">
-      <link rel='StyleSheet' type='text/css' href='{{baseFolder()}}ext/resources/css/ext-all{{getSetting('uitheme') == "classic" ? "" : "-"~getSetting('uitheme') }}.css'>
-
-      <script type="text/javascript" src="{{baseFolder()}}ext/ext-all.js"></script>
-
-      <script type="text/javascript">
-         Ext.onReady(function() {
-
-            Ext.MessageBox.show({
-               closable:false,
-               title: '{{title|raw}}',
-               msg: '{{message|raw}}',
-               buttons: null,
-               icon: Ext.MessageBox.{{button|upper}}
-           });
-
-         });
-      </script>
-
-   </head>
-   <body>
-
-      <noscript>
-         <div style="position:absolute; top:32px; left:32px; font-size:16px; color:red; font-weight: bold; font-family: Arial;">
-            Please enable Java Script!
-         </div>
-      </noscript>
-
-   </body>
-</html>
+{% block loaderscripts %}
+<script type="text/javascript">
+   window.onload = function()
+   {
+      document.body.innerHTML="";
+      Ext.onReady(function()
+      {
+         Ext.MessageBox.show({
+            closable:false,
+            title: '{{title|raw}}',
+            msg: '{{message|raw}}',
+            buttons: null,
+            icon: Ext.MessageBox.{{button|upper}}
+        });
+      });
+   };
+</script>
+{% endblock %}

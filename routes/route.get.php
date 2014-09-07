@@ -65,11 +65,7 @@ $app->get('/get/{file}', function($file) use($app)
       }
       catch(Webshelf\AccessDeniedException $ex)
       {
-         return $app['twig']->render('message.twig', array(
-             "title" => "403 Forbidden",
-             "message" => "Permission denied.<br>Please log in or contact the administrator!",
-             "button" => "error"
-         ));
+         return $app['twig']->render('loginproxy.html.twig');
       }
 
       return Helper\response(false)->setMessage("File not found or permission denied.");

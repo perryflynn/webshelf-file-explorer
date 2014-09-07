@@ -59,13 +59,17 @@ Ext.define('DirectoryListing.controller.Authentication', {
              var json = Ext.decode(response.responseText);
              Settings.user = json.result;
 
-             if(json.result.loggedin==true && (me.cachedLoginStatus==false || me.cachedLoginStatus==null)) {
+             if(json.result.loggedin==true && (me.cachedLoginStatus==false || me.cachedLoginStatus==null))
+             {
                 me.application.fireEvent('loggedin', Settings.user);
-             } else if(json.result.loggedin==false && (me.cachedLoginStatus==true || me.cachedLoginStatus==null)) {
+             }
+             else if(json.result.loggedin==false && (me.cachedLoginStatus==true || me.cachedLoginStatus==null))
+             {
                 me.application.fireEvent('loggedout');
              }
 
              me.cachedLoginStatus = json.result.loggedin;
+             me.application.fireEvent('loginstatuscached', Settings.user);
 
           },
           failure: function(response, opts) {
