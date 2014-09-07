@@ -5,12 +5,12 @@ include('init.php');
 // Initialize silex
 $app = new Silex\Application();
 
-//--> Debugging settings
+// Debugging settings
 $debug_remotehosts = array(
-    "^192\.168\.42\."
+    "/^192\.168\.42\./"
 );
 
-foreach($debug_hosts as $host)
+foreach($debug_remotehosts as $host)
 {
    if(preg_match($host, $_SERVER['REMOTE_ADDR'])===1)
    {

@@ -483,7 +483,7 @@ Ext.define('DirectoryListing.controller.GUI', {
       Ext.require('DirectoryListing.view.BatchWindow', function() {
          var win = Ext.create('DirectoryListing.view.BatchWindow', {
             title:"Really delete "+records.length+" File"+(records.length==1 ? "" : "s")+"?",
-            icon:'fileicons/folder_delete.png',
+            iconCls:'iconcls-folder_delete',
             xid:'deletebatchwindow',
             oktext:'Delete all files',
             records:records
@@ -494,10 +494,8 @@ Ext.define('DirectoryListing.controller.GUI', {
 
    showRenameDialog: function(record) {
       Ext.require('DirectoryListing.view.RenameWindow', function() {
-         var win = Ext.create('DirectoryListing.view.RenameWindow', {
-            title:"Rename "+record.raw.id,
-            filename:record.raw.id
-         });
+         var win = Ext.create('DirectoryListing.view.RenameWindow');
+         win.setFile(record.raw.id);
          win.show();
       });
    },
@@ -596,7 +594,7 @@ Ext.define('DirectoryListing.controller.GUI', {
          items: [
             {
                text:'Upload multiple files',
-               icon:'fileicons/page_white_get.png',
+               iconCls:'iconcls-page_white_get',
                xid:'upload',
                disabled: !can_upload,
                hidden:(Settings.features && !Settings.features.upload),
@@ -613,7 +611,7 @@ Ext.define('DirectoryListing.controller.GUI', {
             },
             {
                text:'Rename',
-               icon:'fileicons/textfield_rename.png',
+               iconCls:'iconcls-textfield_rename',
                xid:'rename',
                //disabled:
                hidden:(Settings.features && !Settings.features.move_rename),
@@ -623,7 +621,7 @@ Ext.define('DirectoryListing.controller.GUI', {
             },
             {
                text:'New Folder',
-               icon:'fileicons/folder_add.png',
+               iconCls:'iconcls-folder_add',
                xid:'newfolder',
                disabled: !can_mkdir,
                hidden:(Settings.features && !Settings.features.mkdir),
@@ -637,7 +635,7 @@ Ext.define('DirectoryListing.controller.GUI', {
             {
                text:'Delete',
                disabled: (!can_delete || record.raw.is_share),
-               icon:'fileicons/folder_delete.png',
+               iconCls:'iconcls-folder_delete',
                xid:'delete-folder',
                hidden:(Settings.features && !Settings.features['delete']),
                handler: function(btn) {
@@ -729,7 +727,7 @@ Ext.define('DirectoryListing.controller.GUI', {
          items: [
             {
                text:'Copy selected files',
-               icon:'fileicons/page_white_copy.png',
+               iconCls:'iconcls-page_white_copy',
                xid:'copy',
                disabled: !copyenabled,
                hidden:(!Settings.copy),
@@ -738,7 +736,7 @@ Ext.define('DirectoryListing.controller.GUI', {
                   Ext.require('DirectoryListing.view.BatchWindow', function() {
                      var win = Ext.create('DirectoryListing.view.BatchWindow', {
                         title:"Really copy "+data.records.length+" File"+(data.records.length==1 ? "" : "s")+"?",
-                        icon:'fileicons/page_white_copy.png',
+                        iconCls:'iconcls-page_white_copy',
                         xid:'copybatchwindow',
                         oktext:'Copy all files',
                         autostart:true,
@@ -751,7 +749,7 @@ Ext.define('DirectoryListing.controller.GUI', {
             },
             {
                text:'Move selected files',
-               icon:'fileicons/page_white_go.png',
+               iconCls:'iconcls-page_white_go',
                xid:'move',
                disabled: !moveenabled,
                hidden:(!Settings.move_rename),
@@ -760,7 +758,7 @@ Ext.define('DirectoryListing.controller.GUI', {
                   Ext.require('DirectoryListing.view.BatchWindow', function() {
                      var win = Ext.create('DirectoryListing.view.BatchWindow', {
                         title:"Really move "+data.records.length+" File"+(data.records.length==1 ? "" : "s")+"?",
-                        icon:'fileicons/page_white_go.png',
+                        iconCls:'iconcls-page_white_go',
                         xid:'movebatchwindow',
                         oktext:'Move all files',
                         autostart:true,

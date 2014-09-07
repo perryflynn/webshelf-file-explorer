@@ -19,7 +19,7 @@ Ext.define('DirectoryListing.view.Viewport', {
             xid:'filewindow',
 
             title:'webshelf file explorer @ '+hostname,
-            icon:'fileicons/folder_explore.png',
+            iconCls:'iconcls-folder_explore',
             width:Settings.windowwidth,
             height:Settings.windowheight,
             maximizable:true,
@@ -32,33 +32,33 @@ Ext.define('DirectoryListing.view.Viewport', {
                {
                   text:'Refresh',
                   tooltip:'Refresh Tree',
-                  icon:'fileicons/arrow_refresh.png',
+                  iconCls:'iconcls-arrow_refresh',
                   xid:'tree-reload'
                },
                {
                   text:'Expand',
                   tooltip:'Expand all',
-                  icon:'fileicons/arrow_out.png',
+                  iconCls:'iconcls-arrow_out',
                   xid:'expandall',
                   hidden:true
                },
                {
                   text:'Collapse',
                   tooltip:'Collapse all',
-                  icon:'fileicons/arrow_in.png',
+                  iconCls:'iconcls-arrow_in',
                   xid:'collapseall'
                },
                {
                   text:'Open',
                   tooltip:'Open',
-                  icon:'fileicons/application_go.png',
+                  iconCls:'iconcls-application_go',
                   xid:'file-open',
                   disabled:true
                },
                {
                   text:'Image Viewer',
                   tooltip:'Image Viewer',
-                  icon:'fileicons/photo.png',
+                  iconCls:'iconcls-photo',
                   xid:'image-viewer',
                   hidden:true,
                   disabled:true
@@ -66,24 +66,24 @@ Ext.define('DirectoryListing.view.Viewport', {
                {
                   text:'URL',
                   tooltip:'Direct URL',
-                  icon:'fileicons/application_link.png',
+                  iconCls:'iconcls-application_link',
                   xid:'direct-link',
                   disabled:true
                },
                {
                   text:'Show',
                   tooltip:'Show hidden files',
-                  icon:'fileicons/flag_red.png',
+                  iconCls:'iconcls-flag_red',
                   xid:'hidden-files',
                   enableToggle: true,
                   listeners: {
                      toggle: function(btn, pressed) {
                         if(pressed) {
-                           this.setIcon("fileicons/flag_green.png");
+                           this.setIconCls("iconcls-flag_green");
                            this.setTooltip("Hide hidden files");
                            this.setText("Hide");
                         } else {
-                           this.setIcon("fileicons/flag_red.png");
+                           this.setIconCls("iconcls-flag_red");
                            this.setTooltip("Show hidden files");
                            this.setText("Show");
                         }
@@ -93,19 +93,19 @@ Ext.define('DirectoryListing.view.Viewport', {
                {
                   text:'New Item',
                   tooltip:'Create or upload new Files or Folders',
-                  icon:'fileicons/new.png',
+                  iconCls:'iconcls-new',
                   hidden:true,
                   xid:'newmenu',
                   menu: [
                      {
                         text:'Upload multiple files',
-                        icon:'fileicons/page_white_get.png',
+                        iconCls:'iconcls-page_white_get',
                         xid:'upload',
                         hidden:(!Settings.upload)
                      },
                      {
                         text:'New Folder',
-                        icon:'fileicons/folder_add.png',
+                        iconCls:'iconcls-folder_add',
                         xid:'newfolder',
                         hidden:(!Settings.mkdir),
                         menu: [
@@ -127,25 +127,25 @@ Ext.define('DirectoryListing.view.Viewport', {
                },
                {
                   tooltip:'Manage settings, users, groups and shares',
-                  icon:'fileicons/cog.png',
+                  iconCls:'iconcls-cog',
                   disabled:true,
                   hidden:true,
                   xid:'manage'
                },
                {
                   tooltip:'Get Status...',
-                  icon:'fileicons/user_go.png',
+                  iconCls:'iconcls-user_go',
                   xid:'login'
                },
                {
                   tooltip:'Change password of current user',
-                  icon:'fileicons/key_go.png',
+                  iconCls:'iconcls-key_go',
                   xid:'changepw',
                   hidden:true
                },
                {
                   tooltip:'About',
-                  icon:'fileicons/information.png',
+                  iconCls:'iconcls-information',
                   xid:'about'
                }
 
@@ -440,7 +440,7 @@ Ext.define('DirectoryListing.view.Viewport', {
 
       }
 
-      return '<img src="fileicons/'+filename+'.png" alt="'+ext+'">';
+      return '<div class="iconcls iconcls-'+filename+'"></div>';
 
    }
 

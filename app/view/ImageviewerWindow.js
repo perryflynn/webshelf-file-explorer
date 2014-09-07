@@ -9,7 +9,7 @@ Ext.define('DirectoryListing.view.ImageviewerWindow', {
    ],
 
    title:'Imageviewer',
-   icon:'fileicons/photo.png',
+   iconCls:'iconcls-photo',
    width:800,
    height:600,
    maximizable:true,

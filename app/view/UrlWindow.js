@@ -4,7 +4,7 @@ Ext.define('DirectoryListing.view.UrlWindow', {
    layout:'fit',
 
    title:'Direct URL',
-   icon:'fileicons/link.png',
+   iconCls:'iconcls-link',
    width:600,
    height:120,
    modal:true,

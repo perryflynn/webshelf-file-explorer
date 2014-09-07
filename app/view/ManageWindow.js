@@ -7,7 +7,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
    xid:'managewindow',
 
    title:'Manage Shares, Groups and Users',
-   icon:'fileicons/cog.png',
+   iconCls:'iconcls-cog',
    width:Settings.windowwidth,
    height:Settings.windowheight,
 
@@ -23,7 +23,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
 
             {
                title:'Settings',
-               icon:'fileicons/wrench_orange.png',
+               iconCls:'iconcls-wrench_orange',
                xid:'settingstab',
                xtype:'form',
                layout:{
@@ -207,7 +207,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
             /*** Group Tab ***/
             {
                title:'Groups',
-               icon:'fileicons/group.png',
+               iconCls:'iconcls-group',
                xid:'grouptab',
                layout:{
                   type:'hbox',
@@ -250,7 +250,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                            sortable: false,
                            menuDisabled: true,
                            items: [{
-                               icon: 'fileicons/group_delete.png',
+                               iconCls: 'iconcls-group_delete',
                                tooltip: 'Delete Group',
                                scope: this,
                                handler: function(grid, rowIndex, colIndex, item, e, record) {
@@ -515,7 +515,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                            sortable: false,
                            menuDisabled: true,
                            items: [{
-                               icon: 'fileicons/drive_delete.png',
+                               iconCls: 'iconcls-drive_delete',
                                tooltip: 'Delete Share',
                                scope: this,
                                handler: function(grid, rowIndex, colIndex, item, e, record) {
@@ -565,7 +565,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
 
             {
                title:'Users',
-               icon:'fileicons/user_green.png',
+               iconCls:'iconcls-user_green',
                xid:'usertab',
                layout:{
                   type:'hbox',
@@ -635,7 +635,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                            menuDisabled: true,
                            items: [
                               {
-                                 icon: 'fileicons/key_go.png',
+                                 iconCls: 'iconcls-key_go',
                                  tooltip: 'Change Password',
                                  scope: this,
                                  handler: function(grid, rowIndex, colIndex, item, e, record) {
@@ -656,7 +656,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
                            menuDisabled: true,
                            items: [
                               {
-                                 icon: 'fileicons/user_delete.png',
+                                 iconCls: 'iconcls-user_delete',
                                  tooltip: 'Delete User',
                                  scope: this,
                                  handler: function(grid, rowIndex, colIndex, item, e, record) {
@@ -753,7 +753,7 @@ Ext.define('DirectoryListing.view.ManageWindow', {
 
             {
                title:'Maintenance',
-               icon:'fileicons/bin.png',
+               iconCls:'iconcls-bin',
                xid:'maintenance',
                bodyPadding:5,
 

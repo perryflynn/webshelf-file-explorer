@@ -7,7 +7,7 @@ Ext.define('DirectoryListing.view.LoginWindow', {
    xid:'loginwindow',
 
    title:'Login',
-   icon:'fileicons/key.png',
+   iconCls:'iconcls-key',
    width:400,
 
    items: [{

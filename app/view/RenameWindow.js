@@ -5,24 +5,34 @@ Ext.define('DirectoryListing.view.RenameWindow', {
    xid:'renamewindow',
 
    title:'Rename',
-   icon:'fileicons/textfield_rename.png',
+   iconCls:'iconcls-textfield_rename',
    width:600,
    height:120,
    modal:true,
    focusOnToFront:false,
 
+   isfolder:false,
+   fullname: null,
    filename: null,
+
+   setFile: function(filename)
+   {
+      this.fullname = filename;
+      this.filename = filename.substring(filename.lastIndexOf('/')+1);
+      if(this.filename.length<1) {
+         var myRegexp = /\/([^\/]*?)\/$/g;
+         var match = myRegexp.exec(filename);
+         this.filename = match[1];
+         this.isfolder=true;
+      }
+
+      this.child('textfield[xid=newname]').setValue(this.filename);
+      this.setTitle('Rename '+this.fullname);
+   },
 
    initComponent: function()
    {
-      var isfolder = false;
-      var thename = this.filename.substring(this.filename.lastIndexOf('/')+1);
-      if(thename.length<1) {
-         var myRegexp = /\/([^\/]*?)\/$/g;
-         var match = myRegexp.exec(this.filename);
-         thename = match[1];
-         isfolder=true;
-      }
+      var me = this;
 
       this.items = [
          {
@@ -37,20 +47,19 @@ Ext.define('DirectoryListing.view.RenameWindow', {
                   xtype:'textfield',
                   xid:'newname',
                   editable:false,
-                  value: thename,
                   listeners: {
-                     afterrender: function(txt) {
-                        txt.focus(true, true);
-                        if(isfolder==false) {
-                           txt.selectText(0, thename.lastIndexOf('.'));
+                     change: function(txt, newval) {
+                        txt.focus(false, true);
+                        if(me.isfolder==false) {
+                           txt.selectText(0, me.filename.lastIndexOf('.'));
                         }
                      },
                      specialkey: function(field, e) {
                         if (e.getKey() == e.ENTER) {
-                           var newname = field.up('window').child('form textfield[xid=newname]').getSubmitValue();
-                           var oldname = field.up('window').filename;
-                           field.up('window').fireEvent('renamefile', newname, oldname);
-                           field.up('window').close();
+                           var newname = me.child('form textfield[xid=newname]').getSubmitValue();
+                           var oldname = me.filename;
+                           me.fireEvent('renamefile', newname, oldname);
+                           me.close();
                         }
                      }
                   }
@@ -62,10 +71,10 @@ Ext.define('DirectoryListing.view.RenameWindow', {
                   text:'Rename',
                   listeners: {
                      click: function(btn) {
-                        var newname = btn.up('window').child('form textfield[xid=newname]').getSubmitValue();
-                        var oldname = btn.up('window').filename;
-                        btn.up('window').fireEvent('renamefile', newname, oldname);
-                        btn.up('window').close();
+                        var newname = me.child('form textfield[xid=newname]').getSubmitValue();
+                        var oldname = me.filename;
+                        me.fireEvent('renamefile', newname, oldname);
+                        me.close();
                      }
                   }
                },
@@ -74,7 +83,7 @@ Ext.define('DirectoryListing.view.RenameWindow', {
                   text:'Cancel',
                   listeners: {
                      click: function(btn) {
-                        btn.up('window').close();
+                        me.close();
                      }
                   }
                }
