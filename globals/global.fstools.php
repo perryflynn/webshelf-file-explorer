@@ -1,12 +1,13 @@
 <?php
 
-namespace FsTools {
+namespace FsTools
+{
 
    function getShareFromPath($path)
    {
       $pathlist = array(
-          $path,
-          realpath($path).DIRECTORY_SEPARATOR
+          \Webshelf\Util\File::truepath($path),
+          //realpath($path).DIRECTORY_SEPARATOR
       );
 
       foreach($pathlist as $currentpath)
@@ -24,10 +25,11 @@ namespace FsTools {
             }
          }
       }
-      throw new \Exception("Share can't extracted");
+      throw new \Exception("Unable to extract share");
    }
 
-   function getUniqName($file) {
+   function getUniqName($file)
+   {
       $path = dirname($file)."/";
       $xfilename = basename($file);
 
@@ -38,7 +40,8 @@ namespace FsTools {
       $targetfile = $path."/".$xfilename;
       $namecount = 0;
 
-      while(file_exists($targetfile)) {
+      while(file_exists($targetfile))
+      {
          $namecount++;
          preg_match("/^([^\.]*)(?:\.(.*?))?\$/", $xfilename, $filenameparts);
          unset($filenameparts[0]);

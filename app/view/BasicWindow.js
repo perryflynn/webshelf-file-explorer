@@ -56,8 +56,10 @@ Ext.define('DirectoryListing.view.BasicWindow', {
          if(me.windowState=="restored" && (wwidth>bwidth || wheight>bheight)) {
             win.setPosition(0,0);
             win.maximize();
+            win.getHeader().hide();
          } else if(me.windowState=="maximized" && wwidth<=bwidth && wheight<=bheight) {
             win.restore();
+            win.getHeader().show();
          }
 
          if(me.windowState=="restored") {
