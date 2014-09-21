@@ -368,7 +368,9 @@ Ext.define('DirectoryListing.controller.GUI', {
       // Grid
       if(btn.xid=='about') {
          Ext.require('DirectoryListing.view.AboutWindow', function() {
-            Ext.create('DirectoryListing.view.AboutWindow').show();
+            var win = Ext.create('DirectoryListing.view.AboutWindow');
+            me.getViewport().add([win]);
+            win.show();
          });
       }
       var record = btn.up('window').child('gridpanel[xid=filelist]').getSelectionModel().getSelection()[0];

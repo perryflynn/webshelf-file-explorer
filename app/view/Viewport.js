@@ -19,7 +19,7 @@ Ext.define('DirectoryListing.view.Viewport', {
             xid:'filewindow',
 
             title:'webshelf file explorer @ '+hostname,
-            iconCls:'iconcls-folder_explore',
+            iconCls:'iconcls-webshelf_logo',
             width:Settings.windowwidth,
             height:Settings.windowheight,
             maximizable:true,
@@ -430,6 +430,9 @@ Ext.define('DirectoryListing.view.Viewport', {
             case 'html':
             case 'htm':
                filename='page_white_world'; break;
+            case 'epub':
+            case 'acsm':
+               filename='book'; break;
          }
 
       }
