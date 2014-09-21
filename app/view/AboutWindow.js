@@ -60,7 +60,7 @@ Ext.define('DirectoryListing.view.AboutWindow',
                      region:'center',
                      autoScroll:true,
                      html:
-                        '<p style="font-weight:bold; text-decoration:underline;">About the operator</p>'+
+                        '<p style="font-weight:bold; text-decoration:underline;">About</p>'+
                         (Settings.about_content && Settings.about_content.length>0 ? Settings.about_content : "-")
                   },
                   {
