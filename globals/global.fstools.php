@@ -37,7 +37,7 @@ namespace FsTools
       $replace = array("ae", "ue", "oe", "ss", "euro", "Ae", "Ue", "Oe");
       $xfilename = str_replace($search, $replace, $xfilename);
       $xfilename = preg_replace("/[^A-Za-z0-9_\-\.]/", "_", $xfilename);
-      $targetfile = $path."/".$xfilename;
+      $targetfile = $path.$xfilename;
       $namecount = 0;
 
       while(file_exists($targetfile))
@@ -45,7 +45,7 @@ namespace FsTools
          $namecount++;
          preg_match("/^([^\.]*)(?:\.(.*?))?\$/", $xfilename, $filenameparts);
          unset($filenameparts[0]);
-         $targetfile = $path."/".$filenameparts[1]."_".$namecount.(isset($filenameparts[2]) ? ".".$filenameparts[2] : "");
+         $targetfile = $path.$filenameparts[1]."_".$namecount.(isset($filenameparts[2]) ? ".".$filenameparts[2] : "");
       }
 
       return $targetfile;

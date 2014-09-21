@@ -94,7 +94,7 @@ $fs->post('/getfiles', function(Request $request)
          $ifprotected = \JsonConfig::instance()->isShareProtected($sharename);
 
          $result = array();
-         $path = realpath($path);
+         $path = rtrim(\Webshelf\Util\File::truepath($path), "/");
          $file = null;
 
          $filter = $request->get("filter");
@@ -112,7 +112,7 @@ $fs->post('/getfiles', function(Request $request)
                $file = basename($path);
             }
 
-            $filebase = str_replace(BASE, "", $path);
+            $filebase = preg_replace("/^".preg_quote(BASE, "/")."/", "", $path);
             $filebase = (empty($filebase) ? DIRECTORY_SEPARATOR : $filebase);
 
             $files = @scandir($path);
@@ -499,7 +499,7 @@ $fs->put('/upload', function(Request $request)
       }
 
       // Check share permissions
-      $path = BASE.$targetpath;
+      $path = BASE.trim($targetpath, "/");
       $targetshare = FsTools\getShareFromPath($path);
 
       if(\JsonConfig::instance()->hasUserShareProperty($targetshare, "upload", true)==false) {
@@ -507,7 +507,11 @@ $fs->put('/upload', function(Request $request)
       }
 
       // Make filenames
-      $targetfile = FsTools\getUniqName($path."/".$xfilename);
+      $targetfile = FsTools\getUniqName($path.DIRECTORY_SEPARATOR.$xfilename);
+
+      \FB::info($path);
+      \FB::info($xfilename);
+      \FB::info($targetfile);
 
       // Upload!
       $stepsize = 1024;
@@ -515,7 +519,8 @@ $fs->put('/upload', function(Request $request)
 
       $putdata = fopen("php://input", "r");
       $fp = fopen($targetfile, "w");
-      while ($data = fread($putdata, $stepsize)) {
+      while ($data = fread($putdata, $stepsize))
+      {
          fwrite($fp, $data);
          $progress_size += $stepsize;
 
@@ -528,20 +533,32 @@ $fs->put('/upload', function(Request $request)
       fclose($putdata);
 
       // Final checks
-      if($progress_size>$maxsize || $progress_size<$length) {
-         if(is_file($targetfile)) {
+      if($progress_size>$maxsize || $progress_size<$length)
+      {
+         if(is_file($targetfile))
+         {
             unlink($targetfile);
          }
 
-         if($progress_size>$maxsize) {
+         if($progress_size>$maxsize)
+         {
             return Helper\response(false)->setMessage("File (".($length/1024/1024)." MB) bigger than ".($maxsize/1024/1024)." MB");
-         } else {
+         }
+         else
+         {
             return Helper\response(false)->setMessage(number_format($length>0 ? ($length/1024/1024) : 0, 2)." MB expected, ".
                   number_format($progress_size>0 ? ($progress_size/1024/1024) : 0, 2)." MB written. Unknown error.");
          }
 
-      } else {
-         return Helper\response(true);
+      }
+      else
+      {
+         $sfile = new \Webshelf\ShareFile($targetfile, \JsonConfig::instance());
+         $result = array(
+             "downloadurl" => $sfile->getDownloadUrl(),
+         );
+
+         return Helper\response(true)->setResult($result);
       }
    }
 );
