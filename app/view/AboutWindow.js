@@ -27,7 +27,7 @@ Ext.define('DirectoryListing.view.AboutWindow',
                   type:'vbox',
                   align: 'stretch'
                },
-               width:135,
+               width:140,
                defaults: {
                   border:0
                },
