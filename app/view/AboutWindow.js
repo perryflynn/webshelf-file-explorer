@@ -23,7 +23,10 @@ Ext.define('DirectoryListing.view.AboutWindow',
             {
                xtype:'panel',
                region:'west',
-               layout:'vbox',
+               layout: {
+                  type:'vbox',
+                  align: 'stretch'
+               },
                width:135,
                defaults: {
                   border:0
