@@ -33,3 +33,11 @@ body {
     margin: 0;
 }
 
+.logo-128 {
+   background-image:url(logo-128.png);
+   background-repeat: no-repeat;
+   background-position: center center;
+   background-color:transparent;
+   width:128px;
+   height:128px;
+}

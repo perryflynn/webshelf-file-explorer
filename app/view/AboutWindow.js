@@ -34,7 +34,7 @@ Ext.define('DirectoryListing.view.AboutWindow',
                items: [
                   {
                      xtype:'panel',
-                     html:'<p style="text-align:center; margin:0px; padding:0px;"><img src="res/logo-128.png" alt="Logo"></p>',
+                     html:'<div style="display:block; text-align:center; margin:0px; padding:0px;"><div class="logo-128"></div></div>',
                   },
                   {
                      xtype:'panel',
