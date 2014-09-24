@@ -11,7 +11,8 @@ $app->get('/get/{file}', function($file) use($app)
             $download = false;
             $ext = strtolower(end(explode(".", $file)));
             $mime = null;
-            switch($ext) {
+            switch($ext) 
+            {
                case "mp3":
                   $mime = "audio/mp3"; break;
                case "wav":
@@ -24,9 +25,11 @@ $app->get('/get/{file}', function($file) use($app)
                   $mime = "image/gif"; break;
                case "html":
                   $mime = "text/html"; break;
-               case "txt":
                case "css":
+                  $mime = "text/css"; break;
                case "js":
+                  $mime = "text/javascript"; break;
+               case "txt":
                case "cs":
                case "c":
                case "cpp":
